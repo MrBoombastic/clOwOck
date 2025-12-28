@@ -28,6 +28,7 @@ class SensorUpdateWorker(
         if (!bluetoothManager.adapter.isEnabled) {
             Log.w("SensorUpdateWorker", "Bluetooth is disabled. Cannot scan for sensors.")
             // Return success to keep periodic work going, but don't update anything
+            updateWidget()
             return Result.success()
         }
 

@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">bUwUdzik</string>
-    
+
     <!-- Main Screen -->
     <string name="scanning_status" tools:ignore="Typos">Scanning for Qingping CGD1…</string>
     <string name="battery_label">Battery: %1$d%%</string>
@@ -20,7 +20,7 @@
     <string name="mode_low_power">Low Power</string>
     <string name="mode_balanced">Balanced</string>
     <string name="mode_low_latency">Low Latency</string>
-    
+
     <!-- New Settings -->
     <string name="language_label">Language</string>
     <string name="language_system">System</string>
@@ -40,14 +40,10 @@
     <string name="hours_24">24 hours</string>
 
     <!-- Widget -->
-    <string name="widget_updated_format">dd.MM HH:mm</string>
-    <string name="widget_no_data">No Data</string>
-    <string name="widget_refresh_desc">Refresh</string>
-    
     <string name="widget_action_label">Widget Click Action</string>
     <string name="select_app_label">Select App to Launch</string>
     <string name="default_app_label">Default (this app)</string>
-    
+
     <!-- Theme -->
     <string name="theme_label">Theme</string>
     <string name="theme_system">System</string>

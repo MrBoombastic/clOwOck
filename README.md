@@ -1,7 +1,12 @@
 # bUwUdzik
 
-bUwUdzik is an Android application for displaying data from a Qingping CGD1 - Bluetooth LE alarm
+Android app for displaying data from the Qingping CGD1 - Bluetooth LE alarm
 clock with sensors.
+
+## Warning
+
+App was partially created using LLMs. I still have reviewed the code,
+so it's only semi-slop, but you have been warned, etc., etc.
 
 ## Features
 
@@ -14,19 +19,23 @@ clock with sensors.
 
 ## Technical Details
 
-The application is built with modern Android development technologies and targets recent Android versions.
+The application is built with modern Android development technologies and targets recent Android
+versions.
 
-*   **Target API:** The application targets Android 15 (API level 36) and has a minimum requirement of Android 14 (API level 34).
-*   **UI:** Jetpack Compose for a declarative and modern UI.
-*   **Bluetooth LE:** It uses Android's native Bluetooth LE scanner to listen for advertisement packets from the sensor. It filters for devices advertising the specific service UUID `0000fdcd-0000-1000-8000-00805f9b34fb`.
-*   **Data Parsing:** The sensor data is extracted from the service data field of the advertisement packet. The custom data format is as follows:
-    *   Byte 1: Device ID (must be `0x0C` for CGD1)
-    *   Bytes 10-11: Temperature (16-bit Little Endian signed integer, divided by 10)
-    *   Bytes 12-13: Humidity (16-bit Little Endian unsigned integer, divided by 10)
-    *   Byte 16: Battery level (unsigned 8-bit integer)
-*   **Background Processing:** `WorkManager` and `AlarmManager` for scheduling periodic data fetches, ensuring the widget is always up-to-date.
-*   **Navigation:** Jetpack Navigation for navigating between screens.
-*   **Data Persistence:** `SharedPreferences` for storing user settings like the device MAC address and theme preferences.
+* **Target API:** The application targets Android 15 (API level 36) and has a minimum requirement of
+  Android 14 (API level 34).
+* **UI:** Jetpack Compose for a declarative and modern UI.
+* **Bluetooth LE:** It uses Android's native Bluetooth LE scanner to listen for advertisement
+  packets from the sensor. It filters for devices advertising the specific service UUID
+  `0000fdcd-0000-1000-8000-00805f9b34fb`.
+* **Data Parsing:** The sensor data is extracted from the service data field of the advertisement
+  packet. The custom data format is as follows:
+    * Byte 1: Device ID (must be `0x0C` for CGD1)
+    * Bytes 10-11: Temperature (16-bit Little Endian signed integer, divided by 10)
+    * Bytes 12-13: Humidity (16-bit Little Endian unsigned integer, divided by 10)
+    * Byte 16: Battery level (unsigned 8-bit integer)
+* **Background Processing:** `WorkManager` and `AlarmManager` for scheduling periodic data fetches,
+  ensuring the widget is always up-to-date.
 
 ## Screenshots
 

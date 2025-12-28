@@ -42,27 +42,13 @@ class UpdateChecker(private val context: Context) {
         }
     }
 
-    suspend fun checkForUpdates() {
-        try {
-            val release: GitHubRelease = client.get("https://api.github.com/repos/MrBoombastic/bUwUdzik/releases/latest").body()
-            val latestVersion = release.tagName.removePrefix("v")
-            val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
-
-            if (isNewerVersion(latestVersion, currentVersion)) {
-                val asset = release.assets.firstOrNull { it.name.endsWith(".apk") }
-                asset?.let {
-                    downloadAndInstall(it.browserDownloadURL)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("UpdateChecker", "Error checking for updates", e)
-        }
-    }
-
     suspend fun checkForUpdatesWithResult(): UpdateCheckResult {
-        val release: GitHubRelease = client.get("https://api.github.com/repos/MrBoombastic/bUwUdzik/releases/latest").body()
+        // bruh moment for the hardcoded url
+        val release: GitHubRelease =
+            client.get("https://api.github.com/repos/MrBoombastic/bUwUdzik/releases/latest").body()
         val latestVersion = release.tagName.removePrefix("v")
-        val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        val currentVersion =
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
 
         val updateAvailable = isNewerVersion(latestVersion, currentVersion)
         if (updateAvailable) {
@@ -111,7 +97,8 @@ class UpdateChecker(private val context: Context) {
                 file.writeBytes(bytes)
 
                 val intent = Intent(Intent.ACTION_VIEW)
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                val uri =
+                    FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
                 intent.setDataAndType(uri, "application/vnd.android.package-archive")
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
