@@ -43,7 +43,7 @@
 
     <string name="widget_action_label">Akcja po kliknięciu</string>
     <string name="select_app_label">Wybierz aplikację</string>
-    <string name="default_app_label">Domyślnie (ta aplikacji)</string>
+    <string name="default_app_label">Domyślnie (ta aplikacja)</string>
     
     <!-- Theme -->
     <string name="theme_label">Motyw</string>
@@ -60,6 +60,14 @@
     <string name="no_updates_available">Brak dostępnych aktualizacji</string>
     <string name="update_available">Dostępna aktualizacja: %1$s</string>
     <string name="update_error">Błąd sprawdzania aktualizacji</string>
+    <string name="update_download_channel_name">Pobieranie aktualizacji</string>
+    <string name="update_download_channel_desc">Powiadomienia o postępie pobierania aktualizacji</string>
+    <string name="update_downloading_title">Pobieranie aktualizacji</string>
+    <string name="update_downloading_progress">%1$d%% (%2$d MB / %3$d MB)</string>
+    <string name="update_download_complete">Pobieranie zakończone</string>
+    <string name="update_download_complete_desc">Aktualizacja została pobrana. Kliknij aby zainstalować.</string>
+    <string name="update_download_error">Błąd pobierania</string>
+    <string name="update_download_error_desc">Nie udało się pobrać aktualizacji</string>
 
     <!-- Bluetooth -->
     <string name="bluetooth_disabled">Bluetooth jest wyłączony</string>

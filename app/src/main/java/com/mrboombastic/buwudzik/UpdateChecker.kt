@@ -1,5 +1,8 @@
 package com.mrboombastic.buwudzik
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -9,8 +12,9 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
+import io.ktor.http.contentLength
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -20,14 +24,12 @@ import java.io.File
 
 @Serializable
 data class GitHubRelease(
-    @SerialName("tag_name")
-    val tagName: String,
-    val assets: List<GitHubAsset>
+    @SerialName("tag_name") val tagName: String, val assets: List<GitHubAsset>
 )
 
 @Serializable
 data class GitHubAsset(
-    val name: String, val browserDownloadURL: String
+    val name: String, @SerialName("browser_download_url") val browserDownloadURL: String
 )
 
 data class UpdateCheckResult(
@@ -35,6 +37,11 @@ data class UpdateCheckResult(
 )
 
 class UpdateChecker(private val context: Context) {
+
+    companion object {
+        private const val NOTIFICATION_CHANNEL_ID = "update_download_channel"
+        private const val NOTIFICATION_ID = 1001
+    }
 
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -72,6 +79,19 @@ class UpdateChecker(private val context: Context) {
         )
     }
 
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            context.getString(R.string.update_download_channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = context.getString(R.string.update_download_channel_desc)
+        }
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+
     private fun isNewerVersion(latestVersion: String, currentVersion: String?): Boolean {
         if (currentVersion == null) return true
         try {
@@ -93,11 +113,72 @@ class UpdateChecker(private val context: Context) {
 
     private suspend fun downloadAndInstall(url: String) {
         withContext(Dispatchers.IO) {
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
             try {
-                val response: HttpResponse = client.get(url)
-                val bytes = response.body<ByteArray>()
-                val file = File(context.cacheDir, "update.apk")
-                file.writeBytes(bytes)
+                createNotificationChannel()
+
+                val file = File(context.cacheDir, "buwudzik-update.apk")
+
+                client.prepareGet(url).execute { httpResponse ->
+                    val contentLength = httpResponse.contentLength() ?: -1L
+                    val channel = httpResponse.body<io.ktor.utils.io.ByteReadChannel>()
+
+                    var downloadedBytes = 0L
+                    val buffer = ByteArray(8192)
+
+                    file.outputStream().use { outputStream ->
+                        while (!channel.isClosedForRead) {
+                            val bytesRead = channel.readAvailable(buffer, 0, buffer.size)
+                            if (bytesRead > 0) {
+                                outputStream.write(buffer, 0, bytesRead)
+                                downloadedBytes += bytesRead
+
+                                if (contentLength > 0) {
+                                    val progress = downloadedBytes.toInt()
+                                    val totalBytes = contentLength.toInt()
+                                    val progressPercent = (downloadedBytes * 100 / contentLength).toInt()
+                                    val downloadedMB = downloadedBytes / 1024 / 1024
+                                    val totalMB = contentLength / 1024 / 1024
+
+                                    val progressStyle = Notification.ProgressStyle()
+                                        .setStyledByProgress(true)
+                                        .setProgress(progress)
+                                        .setProgressSegments(
+                                            listOf(
+                                                Notification.ProgressStyle.Segment(totalBytes)
+                                            )
+                                        )
+
+                                    val notification = Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+                                        .setContentTitle(context.getString(R.string.update_downloading_title))
+                                        .setContentText(
+                                            context.getString(
+                                                R.string.update_downloading_progress,
+                                                progressPercent,
+                                                downloadedMB.toInt(),
+                                                totalMB.toInt()
+                                            )
+                                        )
+                                        .setSmallIcon(android.R.drawable.stat_sys_download)
+                                        .setStyle(progressStyle)
+                                        .setOngoing(true)
+                                        .build()
+                                    notificationManager.notify(NOTIFICATION_ID, notification)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                val completionNotification = Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(context.getString(R.string.update_download_complete))
+                    .setContentText(context.getString(R.string.update_download_complete_desc))
+                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setAutoCancel(true)
+                    .build()
+                notificationManager.notify(NOTIFICATION_ID, completionNotification)
 
                 val intent = Intent(Intent.ACTION_VIEW)
                 val uri =
@@ -108,6 +189,14 @@ class UpdateChecker(private val context: Context) {
                 context.startActivity(intent)
             } catch (e: Exception) {
                 Log.e("UpdateChecker", "Error downloading or installing update", e)
+
+                val errorNotification = Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(context.getString(R.string.update_download_error))
+                    .setContentText(context.getString(R.string.update_download_error_desc))
+                    .setSmallIcon(android.R.drawable.stat_notify_error)
+                    .setAutoCancel(true)
+                    .build()
+                notificationManager.notify(NOTIFICATION_ID, errorNotification)
             }
         }
     }

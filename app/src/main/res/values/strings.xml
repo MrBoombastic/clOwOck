@@ -61,6 +61,14 @@
     <string name="no_updates_available">No updates available</string>
     <string name="update_available">Update available: %1$s</string>
     <string name="update_error">Error checking for updates</string>
+    <string name="update_download_channel_name">Update Download</string>
+    <string name="update_download_channel_desc">Notifications for update download progress</string>
+    <string name="update_downloading_title">Downloading update</string>
+    <string name="update_downloading_progress">%1$d%% (%2$d MB / %3$d MB)</string>
+    <string name="update_download_complete">Download complete</string>
+    <string name="update_download_complete_desc">Update downloaded. Tap to install.</string>
+    <string name="update_download_error">Download error</string>
+    <string name="update_download_error_desc">Failed to download update</string>
 
     <!-- Bluetooth -->
     <string name="bluetooth_disabled">Bluetooth is disabled</string>
