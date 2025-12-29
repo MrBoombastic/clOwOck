@@ -75,6 +75,7 @@ fun DeviceSetupScreen(navController: NavController) {
         perms.add(Manifest.permission.BLUETOOTH_CONNECT)
         perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
         perms.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        perms.add(Manifest.permission.POST_NOTIFICATIONS)
         perms.toTypedArray()
     }
 

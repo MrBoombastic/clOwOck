@@ -75,7 +75,7 @@
 
     <!-- Device Setup -->
     <string name="setup_title">Device Setup</string>
-    <string name="setup_subtitle">Select your bUwUdzik device</string>
+    <string name="setup_subtitle">Select your device</string>
     <string name="setup_scanning">Scanning for devices…</string>
     <string name="setup_no_devices">No devices found</string>
     <string name="setup_enable_bluetooth">Please enable Bluetooth</string>

@@ -41,9 +41,9 @@
 
     <!-- Widget -->
 
-    <string name="widget_action_label">Akcja po kliknięciu</string>
+    <string name="widget_action_label">Akcja po kliknięciu widżetu</string>
     <string name="select_app_label">Wybierz aplikację</string>
-    <string name="default_app_label">Domyślnie (ta aplikacja)</string>
+    <string name="default_app_label">Domyślna (ta aplikacja)</string>
     
     <!-- Theme -->
     <string name="theme_label">Motyw</string>
@@ -74,7 +74,7 @@
 
     <!-- Device Setup -->
     <string name="setup_title">Konfiguracja urządzenia</string>
-    <string name="setup_subtitle">Wybierz swoje urządzenie bUwUdzik</string>
+    <string name="setup_subtitle">Wybierz swoje urządzenie</string>
     <string name="setup_scanning">Skanowanie urządzeń…</string>
     <string name="setup_no_devices">Nie znaleziono urządzeń</string>
     <string name="setup_enable_bluetooth">Włącz Bluetooth</string>

@@ -128,3 +128,4 @@ app/release/
 *.apk
 *.aab
 
+/.kotlin/
