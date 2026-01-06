@@ -50,7 +50,7 @@
 
     <!-- Battery Type -->
     <string name="battery_type_label">Typ baterii</string>
-    <string name="battery_alkaline">Alkaliczne (domyślne)</string>
+    <string name="battery_alkaline">alkaliczne (domyślne)</string>
     <string name="battery_nimh">NiMH (akumulatorki, 1.2V)</string>
 
     <string name="about_app_label">O aplikacji</string>
@@ -200,10 +200,10 @@
     <string name="pairing_step3_title">Połącz</string>
     <string name="pairing_step3_desc">Stuknij przycisk poniżej, aby sparować.</string>
     <string name="pair_and_connect">Sparuj i połącz</string>
-    <string name="unpair_device">Odłącz urządzenie</string>
-    <string name="unpair_confirm_title">Odłączyć urządzenie?</string>
+    <string name="unpair_device">Zapomnij urządzenie</string>
+    <string name="unpair_confirm_title">Zapomnieć urządzenie?</string>
     <string name="unpair_confirm_message">Przed ponownym połączeniem będziesz musiał znowu sparować urządzenie.</string>
-    <string name="unpair_confirm">Odłącz</string>
+    <string name="unpair_confirm">Zapomnij</string>
 
     <!-- Local Settings -->
     <string name="local_settings_header">Ustawienia lokalne</string>

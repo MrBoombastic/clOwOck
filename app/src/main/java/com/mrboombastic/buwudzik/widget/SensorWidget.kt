@@ -35,7 +35,10 @@ class SensorWidget : AppWidgetProvider() {
     ) {
         if (appWidgetIds.isEmpty()) return
 
-        AppLogger.d(TAG, "onUpdate called for ${appWidgetIds.size} widget(s)")
+        AppLogger.d(
+            TAG,
+            "onUpdate triggered. Updating ${appWidgetIds.size} widgets: ${appWidgetIds.joinToString()}"
+        )
 
         // Batch update all widgets with shared data
         val widgetData = WidgetData.load(context)
@@ -52,7 +55,7 @@ class SensorWidget : AppWidgetProvider() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        AppLogger.d(TAG, "First widget added, scheduling updates...")
+        AppLogger.d(TAG, "First widget instance added. Scheduling background updates.")
 
         val settingsRepository = SettingsRepository(context)
         MainActivity.scheduleUpdates(context, settingsRepository.updateInterval)
@@ -61,14 +64,17 @@ class SensorWidget : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        AppLogger.d(TAG, "Last widget removed")
+        AppLogger.d(
+            TAG,
+            "Last widget instance removed. Background updates may continue until cancelled."
+        )
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
 
         if (intent.action == ACTION_FORCE_UPDATE) {
-            AppLogger.d(TAG, "Force update requested")
+            AppLogger.d(TAG, "Received ACTION_FORCE_UPDATE broadcast.")
 
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val widgetIds = appWidgetManager.getAppWidgetIds(

@@ -331,7 +331,10 @@ class QPController(private val context: Context) {
                 0x10 -> "Audio Init"
                 else -> "Cmd $cmdId"
             }
-            AppLogger.d(TAG, "Received ACK for $cmdName with status $status")
+            AppLogger.d(
+                TAG,
+                "Received ACK for command '$cmdName' (ID: ${cmdId.toHexString()}). Status: ${status.toHexString()}"
+            )
 
             // Handle audio upload ACKs
             if (cmdId == 0x08 || cmdId == 0x10) {
@@ -347,7 +350,7 @@ class QPController(private val context: Context) {
                     authInitAckReceived = true
                     // Don't write here - wait for onCharacteristicWrite callback
                 } else if (cmdId == 0x02) {
-                    AppLogger.d(TAG, "Authentication successful!")
+                    AppLogger.d(TAG, "Authentication successful! Device is now authenticated.")
                     isAuthenticated = true
                     pendingAuthWriteChar = null
                 }
@@ -1485,7 +1488,8 @@ class QPController(private val context: Context) {
         var totalPacketsSent = 0
 
         AppLogger.d(
-            TAG, "Upload plan: ${pcmData.size} bytes, $totalBlocks blocks, packetSize=$packetSize"
+            TAG,
+            "Starting Audio Upload. Plan: Total size=${pcmData.size} bytes. Blocks: $totalBlocks. Packet size: $packetSize bytes."
         )
 
         while (offset < pcmData.size) {
@@ -1501,7 +1505,8 @@ class QPController(private val context: Context) {
                 val paddedAudio = if (audioChunk.size < packetSize) {
                     val padding = packetSize - audioChunk.size
                     AppLogger.d(
-                        TAG, "Packet $totalPacketsSent: ${audioChunk.size} bytes + $padding padding"
+                        TAG,
+                        "Padding final packet $totalPacketsSent. Data: ${audioChunk.size} bytes. Padding: $padding bytes."
                     )
                     audioChunk + ByteArray(padding) { 0xFF.toByte() }
                 } else {

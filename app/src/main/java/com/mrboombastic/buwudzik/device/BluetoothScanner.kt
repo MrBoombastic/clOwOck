@@ -40,7 +40,10 @@ class BluetoothScanner(context: Context) {
     fun scan(
         targetAddress: String? = null, scanMode: Int = ScanSettings.SCAN_MODE_LOW_LATENCY
     ): Flow<SensorData> = callbackFlow {
-        AppLogger.d("BluetoothScanner", "Starting scan flow for target: $targetAddress")
+        AppLogger.d(
+            "BluetoothScanner",
+            "Starting BLE Scan. Target: ${targetAddress ?: "All Devices"}. Mode: $scanMode."
+        )
         val leScanner = scanner
         if (leScanner == null) {
             Log.e("BluetoothScanner", "BluetoothLeScanner is null")
@@ -89,7 +92,10 @@ class BluetoothScanner(context: Context) {
 
         val settings = ScanSettings.Builder().setScanMode(scanMode).build()
 
-        AppLogger.d("BluetoothScanner", "Invoking startScan...")
+        AppLogger.d(
+            "BluetoothScanner",
+            "Starting BLE Scanner with configured filters and settings."
+        )
         leScanner.startScan(filters, settings, callback)
 
         awaitClose {

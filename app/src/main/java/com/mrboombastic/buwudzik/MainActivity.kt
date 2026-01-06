@@ -105,6 +105,7 @@ import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.widget.SensorUpdateReceiver
 import com.mrboombastic.buwudzik.widget.SensorUpdateWorker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -214,7 +215,7 @@ class MainViewModel(
         val targetMac = settingsRepository.targetMacAddress
         val scanMode = settingsRepository.scanMode
         AppLogger.d("MainViewModel", "Starting scanning flow for $targetMac with mode $scanMode...")
-        scanJob = viewModelScope.launch {
+        scanJob = viewModelScope.launch(Dispatchers.IO) {
             scanner.scan(targetMac, scanMode).collect { data ->
                 AppLogger.d("MainViewModel", "Received data: $data")
                 val correctedBattery = BluetoothUtils.correctBatteryLevel(

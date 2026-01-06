@@ -86,9 +86,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     var language by remember { mutableStateOf(repository.language) }
     var updateInterval by remember { mutableLongStateOf(repository.updateInterval) }
     var selectedAppPackage by remember { mutableStateOf(repository.selectedAppPackage) }
-
     var theme by remember { mutableStateOf(repository.theme) }
-
 
     var expandedWidgetAction by remember { mutableStateOf(false) }
 
@@ -98,7 +96,20 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     var isCheckingUpdates by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
+    var versionName by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Load version name asynchronously to avoid blocking main thread
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                versionName = packageInfo.versionName
+            } catch (_: Exception) {
+                versionName = "N/A"
+            }
+        }
+    }
 
     // Check Bluetooth status
     val isBluetoothEnabled = BluetoothUtils.isBluetoothEnabled(context)
@@ -479,8 +490,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val versionName: String? = packageInfo.versionName
             Text(stringResource(R.string.version_label, versionName ?: "N/A"))
             Text(stringResource(R.string.author_label, "MrBoombastic"))
 

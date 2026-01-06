@@ -24,7 +24,7 @@ class SensorUpdateWorker(
         private const val TAG = "SensorUpdateWorker"
         private const val SCAN_TIMEOUT_MS = 15_000L
         private const val MAX_RETRY_ATTEMPTS = 3
-        private const val FRESH_DATA_THRESHOLD_MS = 30_000L // 30 seconds
+        private const val FRESH_DATA_THRESHOLD_MS = 20_000L
     }
 
     override suspend fun doWork(): Result {

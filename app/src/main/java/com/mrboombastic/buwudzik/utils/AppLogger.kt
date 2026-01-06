@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.mrboombastic.buwudzik.utils
 
 import android.util.Log
@@ -6,25 +8,25 @@ import com.mrboombastic.buwudzik.BuildConfig
 object AppLogger {
     fun d(tag: String, msg: String) {
         if (BuildConfig.DEBUG) {
-            Log.d(tag, msg)
+            Log.d(tag, "${getCallerInfo()}$msg")
         }
     }
 
     fun d(tag: String, msg: String, tr: Throwable) {
         if (BuildConfig.DEBUG) {
-            Log.d(tag, msg, tr)
+            Log.d(tag, "${getCallerInfo()}$msg", tr)
         }
     }
 
     fun v(tag: String, msg: String) {
         if (BuildConfig.DEBUG) {
-            Log.v(tag, msg)
+            Log.v(tag, "${getCallerInfo()}$msg")
         }
     }
 
     fun v(tag: String, msg: String, tr: Throwable) {
         if (BuildConfig.DEBUG) {
-            Log.v(tag, msg, tr)
+            Log.v(tag, "${getCallerInfo()}$msg", tr)
         }
     }
 
@@ -50,5 +52,18 @@ object AppLogger {
 
     fun e(tag: String, msg: String, tr: Throwable) {
         Log.e(tag, msg, tr)
+    }
+
+    private fun getCallerInfo(): String {
+        // Optimize: throwable stack trace is usually faster than thread stack trace on Android
+        val stackTrace = Throwable().stackTrace
+        // Find the first frame that is NOT AppLogger and NOT internal VM calls
+        val caller = stackTrace.firstOrNull { element ->
+            val className = element.className
+            className != AppLogger::class.java.name &&
+                    className != "java.lang.Thread" &&
+                    className != "dalvik.system.VMStack"
+        }
+        return if (caller != null) "* (${caller.fileName}:${caller.lineNumber}) " else ""
     }
 }
