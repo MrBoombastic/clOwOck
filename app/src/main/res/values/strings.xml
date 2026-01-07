@@ -225,8 +225,6 @@
     <!-- Device Sharing -->
     <string name="share_device_title">Share Device</string>
     <string name="import_device_title">Import Device</string>
-    <string name="share_tab">Share</string>
-    <string name="import_tab">Import</string>
     <string name="share_qr_instruction">Scan this QR code on another device to import settings</string>
     <string name="import_qr_instruction">Point camera at QR code</string>
     <string name="import_success">Device imported successfully!</string>

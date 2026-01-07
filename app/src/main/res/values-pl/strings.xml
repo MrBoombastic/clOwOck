@@ -216,8 +216,6 @@
     <!-- Device Sharing -->
     <string name="share_device_title">Udostępnij urządzenie</string>
     <string name="import_device_title">Importuj urządzenie</string>
-    <string name="share_tab">Udostępnij</string>
-    <string name="import_tab">Importuj</string>
     <string name="share_qr_instruction">Zeskanuj ten kod QR na innym urządzeniu, aby zaimportować ustawienia</string>
     <string name="import_qr_instruction">Skieruj aparat na kod QR</string>
     <string name="import_success">Urządzenie zaimportowane pomyślnie!</string>
