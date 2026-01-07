@@ -1165,47 +1165,60 @@ class QPController(private val context: Context) {
         snooze: Boolean = false
     ): Boolean = gattMutex.withLock {
         withContext(NonCancellable) {
-            suspendCancellableCoroutine { continuation ->
-                val currentGatt = gatt ?: run {
-                    continuation.resumeWithException(Exception("GATT not connected"))
-                    return@suspendCancellableCoroutine
-                }
+            withTimeout(5000) {
+                suspendCancellableCoroutine { continuation ->
+                    val currentGatt = gatt ?: run {
+                        continuation.resumeWithException(Exception("GATT not connected"))
+                        return@suspendCancellableCoroutine
+                    }
 
-                if (!isAuthenticated) {
-                    continuation.resumeWithException(Exception("Not authenticated"))
-                    return@suspendCancellableCoroutine
-                }
+                    if (!isAuthenticated) {
+                        continuation.resumeWithException(Exception("Not authenticated"))
+                        return@suspendCancellableCoroutine
+                    }
 
-                pendingAckContinuations[0x05] = continuation
+                    pendingAckContinuations[0x05] = continuation
 
-                val command = byteArrayOf(
-                    0x07.toByte(),
-                    0x05.toByte(),
-                    alarmId.toByte(),
-                    if (enable) 0x01.toByte() else 0x00.toByte(),
-                    hour.toByte(),
-                    minute.toByte(),
-                    days.toByte(),
-                    if (snooze) 0x01.toByte() else 0x00.toByte()
-                )
+                    val command = byteArrayOf(
+                        0x07.toByte(),
+                        0x05.toByte(),
+                        alarmId.toByte(),
+                        if (enable) 0x01.toByte() else 0x00.toByte(),
+                        hour.toByte(),
+                        minute.toByte(),
+                        days.toByte(),
+                        if (snooze) 0x01.toByte() else 0x00.toByte()
+                    )
 
-                val dataService =
-                    currentGatt.services.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
-                val dataWriteChar = dataService?.getCharacteristic(UUID_DATA_WRITE)
+                    val dataService =
+                        currentGatt.services.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
+                    val dataWriteChar = dataService?.getCharacteristic(UUID_DATA_WRITE)
+                    val dataNotifyChar = dataService?.getCharacteristic(UUID_DATA_NOTIFY)
 
-                if (dataWriteChar == null) {
-                    pendingAckContinuations.remove(0x05)
-                    continuation.resumeWithException(Exception("Data write characteristic not found"))
-                    return@suspendCancellableCoroutine
-                }
+                    if (dataWriteChar == null || dataNotifyChar == null) {
+                        pendingAckContinuations.remove(0x05)
+                        continuation.resumeWithException(Exception("Data characteristics not found"))
+                        return@suspendCancellableCoroutine
+                    }
 
-                AppLogger.d(TAG, "Setting alarm #$alarmId to ${hour}:${minute}")
-                val status = currentGatt.writeCharacteristic(
-                    dataWriteChar, command, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                )
-                if (status != BluetoothGatt.GATT_SUCCESS) {
-                    pendingAckContinuations.remove(0x05)
-                    continuation.resumeWithException(Exception("writeCharacteristic failed for alarm: $status"))
+                    // Ensure data notifications are enabled to receive ACK
+                    if (!enabledNotifications.contains(UUID_DATA_NOTIFY)) {
+                        currentGatt.setCharacteristicNotification(dataNotifyChar, true)
+                        val descriptor = dataNotifyChar.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG)
+                        descriptor?.let {
+                            currentGatt.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                        }
+                        enabledNotifications.add(UUID_DATA_NOTIFY)
+                    }
+
+                    AppLogger.d(TAG, "Setting alarm #$alarmId to ${hour}:${minute}, snooze=$snooze, days=$days, command=${command.joinToString(" ") { "%02x".format(it) }}")
+                    val status = currentGatt.writeCharacteristic(
+                        dataWriteChar, command, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                    )
+                    if (status != BluetoothGatt.GATT_SUCCESS) {
+                        pendingAckContinuations.remove(0x05)
+                        continuation.resumeWithException(Exception("writeCharacteristic failed for alarm: $status"))
+                    }
                 }
             }
         }
@@ -1213,47 +1226,60 @@ class QPController(private val context: Context) {
 
     suspend fun deleteAlarm(alarmId: Int): Boolean = gattMutex.withLock {
         withContext(NonCancellable) {
-            suspendCancellableCoroutine { continuation ->
-                val currentGatt = gatt ?: run {
-                    continuation.resumeWithException(Exception("GATT not connected"))
-                    return@suspendCancellableCoroutine
-                }
+            withTimeout(5000) {
+                suspendCancellableCoroutine { continuation ->
+                    val currentGatt = gatt ?: run {
+                        continuation.resumeWithException(Exception("GATT not connected"))
+                        return@suspendCancellableCoroutine
+                    }
 
-                if (!isAuthenticated) {
-                    continuation.resumeWithException(Exception("Not authenticated"))
-                    return@suspendCancellableCoroutine
-                }
+                    if (!isAuthenticated) {
+                        continuation.resumeWithException(Exception("Not authenticated"))
+                        return@suspendCancellableCoroutine
+                    }
 
-                pendingAckContinuations[0x05] = continuation
+                    pendingAckContinuations[0x05] = continuation
 
-                val command = byteArrayOf(
-                    0x07.toByte(),
-                    0x05.toByte(),
-                    alarmId.toByte(),
-                    0xFF.toByte(),
-                    0xFF.toByte(),
-                    0xFF.toByte(),
-                    0xFF.toByte(),
-                    0xFF.toByte()
-                )
+                    val command = byteArrayOf(
+                        0x07.toByte(),
+                        0x05.toByte(),
+                        alarmId.toByte(),
+                        0xFF.toByte(),
+                        0xFF.toByte(),
+                        0xFF.toByte(),
+                        0xFF.toByte(),
+                        0xFF.toByte()
+                    )
 
-                val dataService =
-                    currentGatt.services.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
-                val dataWriteChar = dataService?.getCharacteristic(UUID_DATA_WRITE)
+                    val dataService =
+                        currentGatt.services.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
+                    val dataWriteChar = dataService?.getCharacteristic(UUID_DATA_WRITE)
+                    val dataNotifyChar = dataService?.getCharacteristic(UUID_DATA_NOTIFY)
 
-                if (dataWriteChar == null) {
-                    pendingAckContinuations.remove(0x05)
-                    continuation.resumeWithException(Exception("Data write characteristic not found"))
-                    return@suspendCancellableCoroutine
-                }
+                    if (dataWriteChar == null || dataNotifyChar == null) {
+                        pendingAckContinuations.remove(0x05)
+                        continuation.resumeWithException(Exception("Data characteristics not found"))
+                        return@suspendCancellableCoroutine
+                    }
 
-                AppLogger.d(TAG, "Deleting alarm #$alarmId")
-                val status = currentGatt.writeCharacteristic(
-                    dataWriteChar, command, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                )
-                if (status != BluetoothGatt.GATT_SUCCESS) {
-                    pendingAckContinuations.remove(0x05)
-                    continuation.resumeWithException(Exception("writeCharacteristic failed for alarm delete: $status"))
+                    // Ensure data notifications are enabled to receive ACK
+                    if (!enabledNotifications.contains(UUID_DATA_NOTIFY)) {
+                        currentGatt.setCharacteristicNotification(dataNotifyChar, true)
+                        val descriptor = dataNotifyChar.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG)
+                        descriptor?.let {
+                            currentGatt.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                        }
+                        enabledNotifications.add(UUID_DATA_NOTIFY)
+                    }
+
+                    AppLogger.d(TAG, "Deleting alarm #$alarmId")
+                    val status = currentGatt.writeCharacteristic(
+                        dataWriteChar, command, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                    )
+                    if (status != BluetoothGatt.GATT_SUCCESS) {
+                        pendingAckContinuations.remove(0x05)
+                        continuation.resumeWithException(Exception("writeCharacteristic failed for alarm delete: $status"))
+                    }
                 }
             }
         }
