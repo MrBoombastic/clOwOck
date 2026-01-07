@@ -1,4 +1,4 @@
-package com.mrboombastic.buwudzik
+package com.mrboombastic.buwudzik.device
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
@@ -9,6 +9,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
+import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -39,7 +40,10 @@ class BluetoothScanner(context: Context) {
     fun scan(
         targetAddress: String? = null, scanMode: Int = ScanSettings.SCAN_MODE_LOW_LATENCY
     ): Flow<SensorData> = callbackFlow {
-        Log.d("BluetoothScanner", "Starting scan flow for target: $targetAddress")
+        AppLogger.d(
+            "BluetoothScanner",
+            "Starting BLE Scan. Target: ${targetAddress ?: "All Devices"}. Mode: $scanMode."
+        )
         val leScanner = scanner
         if (leScanner == null) {
             Log.e("BluetoothScanner", "BluetoothLeScanner is null")
@@ -68,7 +72,8 @@ class BluetoothScanner(context: Context) {
                 val serviceData = result.scanRecord?.getServiceData(serviceUUID) ?: return
 
                 try {
-                    val sensorData = parseCGD1(serviceData, result.rssi, displayName, device.address)
+                    val sensorData =
+                        parseCGD1(serviceData, result.rssi, displayName, device.address)
                     if (sensorData != null) trySend(sensorData)
 
                 } catch (e: Exception) {
@@ -82,23 +87,26 @@ class BluetoothScanner(context: Context) {
         }
 
         val filters = emptyList<ScanFilter>().plus(
-            ScanFilter.Builder()
-                .setServiceData(serviceUUID, null)
-                .build()
+            ScanFilter.Builder().setServiceData(serviceUUID, null).build()
         )
 
         val settings = ScanSettings.Builder().setScanMode(scanMode).build()
 
-        Log.d("BluetoothScanner", "Invoking startScan...")
+        AppLogger.d(
+            "BluetoothScanner",
+            "Starting BLE Scanner with configured filters and settings."
+        )
         leScanner.startScan(filters, settings, callback)
 
         awaitClose {
-            Log.d("BluetoothScanner", "Flow closing/cancelled. Stopping scan.")
+            AppLogger.d("BluetoothScanner", "Flow closing/cancelled. Stopping scan.")
             leScanner.stopScan(callback)
         }
     }
 
-    private fun parseCGD1(serviceData: ByteArray, rssi: Int, name: String?, macAddress: String): SensorData? {
+    private fun parseCGD1(
+        serviceData: ByteArray, rssi: Int, name: String?, macAddress: String
+    ): SensorData? {
         if (serviceData.size < 17) return null
 
         // Byte 1 must be 0x0C (CGD1 model ID)
@@ -126,3 +134,5 @@ class BluetoothScanner(context: Context) {
     }
 
 }
+
+

@@ -1,15 +1,16 @@
-package com.mrboombastic.buwudzik
+package com.mrboombastic.buwudzik.audio
+
 
 import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
-import android.util.Log
+import com.mrboombastic.buwudzik.utils.AppLogger
 import java.io.ByteArrayOutputStream
 
 /**
- * Audio converter for Qingping CGD1
+ * Audio converter for QP CGD1
  * Converts audio files to PCM Unsigned 8-bit, 8kHz, Mono
  */
 class AudioConverter(private val context: Context) {
@@ -23,9 +24,7 @@ class AudioConverter(private val context: Context) {
     }
 
     data class ConversionResult(
-        val pcmData: ByteArray,
-        val durationMs: Long,
-        val originalSampleRate: Int
+        val pcmData: ByteArray, val durationMs: Long, val originalSampleRate: Int
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -46,9 +45,7 @@ class AudioConverter(private val context: Context) {
      * Convert audio file to PCM U8 8kHz mono
      */
     fun convertToPcm(
-        uri: Uri,
-        startMs: Long = 0,
-        durationMs: Long = 3000
+        uri: Uri, startMs: Long = 0, durationMs: Long = 3000
     ): ConversionResult {
         val extractor = MediaExtractor()
         extractor.setDataSource(context, uri, null)
@@ -80,7 +77,7 @@ class AudioConverter(private val context: Context) {
         val originalSampleRate = audioFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
         val channels = audioFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
 
-        Log.d(TAG, "Source: $mime, $originalSampleRate Hz, $channels ch")
+        AppLogger.d(TAG, "Source: $mime, $originalSampleRate Hz, $channels ch")
 
         val codec = MediaCodec.createDecoderByType(mime)
         codec.configure(audioFormat, null, null, 0)
@@ -100,7 +97,9 @@ class AudioConverter(private val context: Context) {
                     val sampleSize = extractor.readSampleData(inputBuffer, 0)
 
                     if (sampleSize < 0 || extractor.sampleTime > endTimeUs) {
-                        codec.queueInputBuffer(inputIdx, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                        codec.queueInputBuffer(
+                            inputIdx, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM
+                        )
                         inputDone = true
                     } else {
                         codec.queueInputBuffer(inputIdx, 0, sampleSize, extractor.sampleTime, 0)
@@ -155,7 +154,7 @@ class AudioConverter(private val context: Context) {
         val pcmData = outputStream.toByteArray()
         val actualDurationMs = (pcmData.size * 1000L) / SAMPLE_RATE
 
-        Log.d(TAG, "Output: ${pcmData.size} bytes, ${actualDurationMs}ms")
+        AppLogger.d(TAG, "Output: ${pcmData.size} bytes, ${actualDurationMs}ms")
 
         return ConversionResult(pcmData, actualDurationMs, originalSampleRate)
     }
@@ -196,4 +195,6 @@ class AudioConverter(private val context: Context) {
     }
 
 }
+
+
 

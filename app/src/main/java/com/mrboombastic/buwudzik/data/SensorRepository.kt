@@ -1,11 +1,13 @@
-package com.mrboombastic.buwudzik
+package com.mrboombastic.buwudzik.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.mrboombastic.buwudzik.device.SensorData
 
 class SensorRepository(context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences("sensor_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences("sensor_prefs", Context.MODE_PRIVATE)
 
     companion object {
         private const val KEY_TEMP = "temp"

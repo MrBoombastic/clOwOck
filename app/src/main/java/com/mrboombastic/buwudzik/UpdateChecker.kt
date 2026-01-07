@@ -1,5 +1,6 @@
 package com.mrboombastic.buwudzik
 
+
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,13 +9,15 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
+import com.mrboombastic.buwudzik.utils.AppLogger
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.client.request.prepareGet
 import io.ktor.http.contentLength
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -46,7 +49,8 @@ class UpdateChecker(private val context: Context) {
 
     companion object {
         private const val TAG = "UpdateChecker"
-        private const val GITHUB_API_URL = "https://api.github.com/repos/MrBoombastic/bUwUdzik/releases/latest"
+        private const val GITHUB_API_URL =
+            "https://api.github.com/repos/MrBoombastic/bUwUdzik/releases/latest"
         private const val NOTIFICATION_CHANNEL_ID = "update_download_channel_v2"
         private const val NOTIFICATION_ID = 1001
     }
@@ -67,13 +71,15 @@ class UpdateChecker(private val context: Context) {
     suspend fun checkForUpdates(): UpdateCheckResult = withContext(Dispatchers.IO) {
         try {
             val release: GitHubRelease = client.get(GITHUB_API_URL).body()
-            Log.d(TAG, "Latest release: ${release.tagName}")
+            AppLogger.d(TAG, "Latest release: ${release.tagName}")
 
             val latestVersion = release.tagName.removePrefix("v")
-            val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0"
+            val currentVersion =
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0"
 
             val updateAvailable = isNewerVersion(latestVersion, currentVersion)
-            val downloadUrl = release.assets.firstOrNull { it.name.endsWith(".apk") }?.browserDownloadURL
+            val downloadUrl =
+                release.assets.firstOrNull { it.name.endsWith(".apk") }?.browserDownloadURL
 
             UpdateCheckResult(
                 updateAvailable = updateAvailable,
@@ -92,7 +98,8 @@ class UpdateChecker(private val context: Context) {
      * Shows a notification with download progress.
      */
     suspend fun downloadAndInstall(url: String): Boolean = withContext(Dispatchers.IO) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         try {
             createNotificationChannel()
@@ -104,7 +111,7 @@ class UpdateChecker(private val context: Context) {
                 file.delete()
             }
 
-            Log.d(TAG, "Starting download from: $url")
+            AppLogger.d(TAG, "Starting download from: $url")
 
             client.prepareGet(url).execute { httpResponse ->
                 val contentLength = httpResponse.contentLength() ?: -1L
@@ -132,7 +139,7 @@ class UpdateChecker(private val context: Context) {
                 }
             }
 
-            Log.d(TAG, "Download complete, launching installer")
+            AppLogger.d(TAG, "Download complete, launching installer")
             showCompletionNotification(notificationManager)
             launchInstaller(file)
             true
@@ -151,7 +158,8 @@ class UpdateChecker(private val context: Context) {
         ).apply {
             description = context.getString(R.string.update_download_channel_desc)
         }
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -234,7 +242,11 @@ class UpdateChecker(private val context: Context) {
                 if (latestPart < currentPart) return false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse version names: latest=$latestVersion, current=$currentVersion", e)
+            Log.e(
+                TAG,
+                "Failed to parse version names: latest=$latestVersion, current=$currentVersion",
+                e
+            )
             return false
         }
         return false
@@ -248,4 +260,6 @@ class UpdateChecker(private val context: Context) {
         client.close()
     }
 }
+
+
 
