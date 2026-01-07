@@ -5,7 +5,7 @@ clock with sensors.
 
 ## Warning
 
-App was partially created using LLMs. I still have reviewed the code,
+App was largely created using LLMs. I still have reviewed the code,
 so it's only semi-slop, but you have been warned, etc., etc.
 
 ## Features
@@ -30,15 +30,6 @@ versions.
 * **Target API:** The application targets Android 16 (API level 36) and has a minimum requirement of
   Android 14 (API level 34).
 * **UI:** Jetpack Compose for a declarative and modern UI.
-* **Bluetooth LE:** It uses Android's native Bluetooth LE scanner to listen for advertisement
-  packets from the sensor. It filters for devices advertising the specific service UUID
-  `0000fdcd-0000-1000-8000-00805f9b34fb`.
-* **Data Parsing:** The sensor data is extracted from the service data field of the advertisement
-  packet. The custom data format is as follows:
-    * Byte 1: Device ID (must be `0x0C` for CGD1)
-    * Bytes 10-11: Temperature (16-bit Little Endian signed integer, divided by 10)
-    * Bytes 12-13: Humidity (16-bit Little Endian unsigned integer, divided by 10)
-    * Byte 16: Battery level (unsigned 8-bit integer)
 * **Background Processing:** `WorkManager` and `AlarmManager` for scheduling periodic data fetches,
   ensuring the widget is always up-to-date.
 
@@ -84,24 +75,31 @@ characteristics in this specific firmware version.
 | Data Notify   | `0000000c-0000-1000-8000-00805f9b34fb` | Notify     |
 | Sensor Notify | `00000100-0000-1000-8000-00805f9b34fb` | Notify     |
 
-### 2. Authentication (Magic Replay Method)
+### 2. Authentication (Two-Step Token Protocol)
 
-The device accepts a static, captured authentication packet ("Magic Packet"), effectively allowing a
-Replay Attack to bypass the need for dynamic BindKey encryption.
+The device uses a two-step authentication protocol with a 16-byte random token. Once paired, the
+same token must be used for all future connections.
 
 **Flow:**
 
-1. Connect to the device.
-2. Enable Notifications on **Auth Notify** (...0002).
-3. Write the **Magic Packet** to **Auth Write** (...0001).
+1. Connect to the device and discover services.
+2. Enable Notifications on **Auth Notify** (`...0002`).
+3. Send **Auth Init** to **Auth Write** (`...0001`): `11 01 [Token 16B]`
+4. Wait for ACK on **Auth Notify**: `04 ff 01 00 02` (success, proceed to step 5)
+5. Send **Auth Confirm** to **Auth Write**: `11 02 [Token 16B]`
+6. Wait for final ACK: `04 ff 02 00 00` (authentication complete)
 
-**Magic Packet (Hex):**
-`11 02 b7 5a 1e 4e 73 70 e3 95 23 63 f7 46 ee 7c 90 09`
+**Token Management:**
 
-**Verification:** Wait for a notification on **Auth Notify**.
+- For new devices: Generate a random 16-byte token
+- For paired devices: Use the stored token from previous pairing
+- Token must match what the device expects (first successful pairing establishes the token)
 
-* **Success:** `04 ff 02 00 00` (or similar starting with `04 ff 02`)
-* **Failure:** `04 ff 02 00 01`
+**ACK Response Format:** `04 ff [CmdID] [Len] [Status]`
+
+- Status `00` = Success
+- Status `01` = Failure
+- Status `02` = Continue (for Auth Init, proceed to step 5)
 
 #### 2.1. Time Synchronization
 
@@ -160,6 +158,11 @@ To delete an alarm, overwrite it with `FF` values (marking it as empty/unused).
 * **Response:** `11 06 [Base Index] [Alarm Entry 1 (5B)] ...`
 * **Alarm Entry:** `[Enabled] [HH] [MM] [Days] [Snooze]`
 
+**Note:** Device sends multiple packets if needed (up to 4 alarms per packet). All 16 slots are
+returned, empty slots have `FF FF FF FF FF` values.
+
+* **ACK (after Set/Delete):** `04 ff 05 00 00` (Success)
+
 ### 4. Device Settings
 
 Managed via a single comprehensive payload on **Data Write**.
@@ -172,7 +175,7 @@ Managed via a single comprehensive payload on **Data Write**.
 |-------|-----------------|----------------------------------------------------------------------------------------------------------------|
 | 0     | `0x13`          | Command ID                                                                                                     |
 | 1     | `0x01` / `0x02` | Set / Read Response                                                                                            |
-| 2     | `0-5?`          | Sound Volume                                                                                                   |
+| 2     | `1-5`           | Sound Volume                                                                                                   |
 | 3-4   | `58 02`         | Fixed Header / Version                                                                                         |
 | 5     | Bitmask         | Mode Flags: See the **Mode Flags Breakdown** table below.                                                      |
 | 6     | Integer         | Timezone Offset (Units of 6 minutes)                                                                           |
@@ -182,6 +185,7 @@ Managed via a single comprehensive payload on **Data Write**.
 | 11-12 | HH:MM           | Night End Time                                                                                                 |
 | 13    | `0/1`           | Timezone Sign (1=Positive, 0=Negative)                                                                         |
 | 14    | `0/1`           | Night Mode Enabled                                                                                             |
+| 15    | -               | Reserved (preserved from device response)                                                                      |
 | 16-19 | `Sig 4B`        | Ringtone signature (4 bytes). Identifies the device ringtone — see the "Known Ringtone Signatures" list below. |
 
 #### Mode Flags Breakdown (Byte 5)
@@ -208,9 +212,9 @@ This byte acts as a **bitfield** where individual bits control specific boolean 
 
 #### 4.2. Preview Ringtone
 
-Used to play the current or a specific volume ringtone once for testing.
+Plays a generic "beep" sound for testing volume level (not the user's selected ringtone).
 
-* **Command (Data Write):** `01 04` (Play current) or `02 04 [Vol]` (Play at volume `1-10?`)
+* **Command (Data Write):** `01 04` (Play at current volume) or `02 04 [Vol]` (Play at volume `1-5`)
 * **Response (Data Notify):** `04 ff 04 00 00` (Success).
 
 ### 5. Real-Time Sensor Stream
@@ -233,39 +237,91 @@ Used to play the current or a specific volume ringtone once for testing.
 
 #### Known Ringtone Signatures
 
-The device use these 4 bytes as a ringtone selector.
+The device uses 4-byte signatures to identify ringtones:
 
-- Beep - fd c3 66 a5
-- Digital Ringtone - 09 61 bb 77
-- Digital Ringtone 2 - ba 2c 2c 8c
-- Cuckoo - ea 2d 4c 02
-- Telephone - 79 1b ac b3
-- Exotic Guitar - 1d 01 9f d6
-- Lively Piano - 6e 70 b6 59
-- Story Piano - 8f 00 48 86
-- Forest Piano - 26 52 25 19
+| Ringtone           | Signature (Hex) |
+|--------------------|-----------------|
+| Beep               | `fd c3 66 a5`   |
+| Digital Ringtone   | `09 61 bb 77`   |
+| Digital Ringtone 2 | `ba 2c 2c 8c`   |
+| Cuckoo             | `ea 2d 4c 02`   |
+| Telephone          | `79 1b ac b3`   |
+| Exotic Guitar      | `1d 01 9f d6`   |
+| Lively Piano       | `6e 70 b6 59`   |
+| Story Piano        | `8f 00 48 86`   |
+| Forest Piano       | `26 52 25 19`   |
 
-You can upload custom tunes using your audio and bytes above, but remember to target other ID (
-device can reject if same ID has different hash?).
+#### Custom Ringtone Slots
 
-Allows uploading 8-bit Unsigned PCM, 8000 Hz, Mono audio. Uses **BLE Reliable Write** on **Data
-Write**.
+For uploading custom ringtones, app is using these alternating slot signatures:
 
-1. **Start:** `08 10 [Size LE 2B] 00 [Sig 4B]` (replace `Sig 4B` with the desired ringtone signature
-   from the list above)
-2. **Transfer:** Send in chunks with Reliable Write.
-3. **Header Injection:** Prepend `81 08` to the very first packet.
-4. **Completion:** Send Execute Write Request.
+| Slot     | Signature (Hex) |
+|----------|-----------------|
+| Custom 1 | `de ad de ad`   |
+| Custom 2 | `be ef be ef`   |
+
+**Important:** Always alternate between slots when uploading new custom audio. Doesn't matter how
+you name it. The device may reject
+uploads if the target signature matches the currently active ringtone, but is different from the one
+you are uploading.
+
+#### Upload Protocol
+
+**Audio Format:** 8-bit Unsigned PCM, 8000 Hz, Mono
+
+**Step 1 - Init Command (Data Write):**
+
+```
+08 10 [Size 3B LE] [Signature 4B]
+```
+
+- Size: Audio length in bytes (Little Endian, 3 bytes)
+- Signature: Target ringtone slot signature
+
+**Step 2 - Wait for Init ACK (Data Notify):**
+
+```
+04 ff 10 00 [Status]
+```
+
+- Status `00` or `09` = Success, proceed with upload
+
+**Step 3 - Send Audio Data:**
+
+- Packet size: 128 bytes
+- Packets per block: 4 (512 bytes per block)
+- First packet header: Prepend `81 08` to the audio data
+- Wait for block ACK (`04 ff 08 ...`) after every 4 packets
+
+**Step 4 - Completion:**
+After sending all audio data, the device will apply the new ringtone.
 
 ### 9. Known Command IDs Summary
 
-| Cmd | Sub | Description                             |
-|-----|-----|-----------------------------------------|
-| 13  | 01  | Set Settings (Volume, Brightness, etc.) |
-| 02  | 03  | Set Immediate Brightness                |
-| 01  | 04  | Preview Ringtone (Play Once)            |
-| 07  | 05  | Set Alarm                               |
-| 01  | 06  | Read Alarms                             |
-| 05  | 09  | Time Sync (Timestamp)                   |
-| 08  | 10  | Audio Upload Start                      |
-| 01  | 0D  | Read Firmware Version                   |
+| Cmd | Sub | Characteristic | Description                             |
+|-----|-----|----------------|-----------------------------------------|
+| 11  | 01  | Auth Write     | Auth Init (+ 16B token)                 |
+| 11  | 02  | Auth Write     | Auth Confirm (+ 16B token)              |
+| 05  | 09  | Auth Write     | Time Sync (+ 4B timestamp LE)           |
+| 01  | 0D  | Auth Write     | Read Firmware Version                   |
+| 13  | 01  | Data Write     | Set Settings (Volume, Brightness, etc.) |
+| 01  | 02  | Data Write     | Read Settings                           |
+| 02  | 03  | Data Write     | Set Immediate Brightness                |
+| 01  | 04  | Data Write     | Preview Ringtone (current volume)       |
+| 02  | 04  | Data Write     | Preview Ringtone (+ 1B volume)          |
+| 07  | 05  | Data Write     | Set Alarm                               |
+| 01  | 06  | Data Write     | Read Alarms                             |
+| 08  | 10  | Data Write     | Audio Upload Init                       |
+
+**ACK Format (Notify characteristics):** `04 ff [CmdSub] [Len] [Status]`
+
+### 10. GATT Disconnection Status Codes
+
+When the device disconnects, the GATT status indicates the reason:
+
+| Status | Meaning                     | Description                        |
+|--------|-----------------------------|------------------------------------|
+| 0      | `GATT_SUCCESS`              | Normal disconnect (user requested) |
+| 8      | `GATT_CONN_TIMEOUT`         | Connection timeout                 |
+| 19     | `GATT_CONN_TERMINATE_PEER`  | Device terminated connection       |
+| 22     | `GATT_CONN_TERMINATE_LOCAL` | Link lost / local host terminated  |
