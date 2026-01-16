@@ -4,6 +4,7 @@ package com.mrboombastic.buwudzik
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.mrboombastic.buwudzik.data.SettingsRepository
@@ -38,7 +39,11 @@ class BootReceiver : BroadcastReceiver() {
             val initialWorkRequest = OneTimeWorkRequestBuilder<SensorUpdateWorker>()
                 .setInitialDelay(10, TimeUnit.SECONDS)
                 .build()
-            WorkManager.getInstance(context).enqueue(initialWorkRequest)
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "SensorWidgetRefresh",
+                ExistingWorkPolicy.REPLACE,
+                initialWorkRequest
+            )
 
             AppLogger.d(
                 TAG,

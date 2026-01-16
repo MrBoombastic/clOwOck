@@ -20,10 +20,6 @@
     <string name="language_label">Language</string>
     <string name="language_system">system</string>
     <string name="widget_update_interval_label">Widget update interval</string>
-    <string name="minutes_1">1 minute</string>
-    <string name="minutes_3">3 minutes</string>
-    <string name="minutes_5">5 minutes</string>
-    <string name="minutes_10">10 minutes</string>
     <string name="minutes_15">15 minutes (default)</string>
     <string name="minutes_30">30 minutes</string>
     <string name="minutes_45">45 minutes</string>
@@ -140,6 +136,9 @@
     <string name="widget_placeholder_temp" translatable="false">--°C</string>
     <string name="widget_placeholder_hum" translatable="false">💧 --%</string>
     <string name="widget_placeholder_bat" translatable="false">🔋 --%</string>
+    <string name="widget_small_desc">Compact sensor widget</string>
+    <string name="widget_medium_desc">Sensor widget with details</string>
+    <string name="widget_large_desc">Full sensor widget</string>
     <string name="ringtone_upload_title">Upload ringtone</string>
     <string name="ringtone_upload_button">Upload ringtone</string>
     <string name="current_ringtone_label">Current ringtone</string>

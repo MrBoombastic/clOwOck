@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_background"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="21.5°C"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💧 65%   🔋 95%"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="14sp" />
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+        <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="2 min ago"
+                android:textColor="@color/widget_text_secondary"
+                android:textSize="10sp" />
+
+        <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="Refresh"
+                android:src="@drawable/ic_refresh"
+                android:tint="@color/widget_icon_tint"
+                tools:ignore="UseAppTint" />
+    </LinearLayout>
+</LinearLayout>

@@ -20,8 +20,8 @@ configure<ApplicationExtension> {
         applicationId = "com.mrboombastic.buwudzik"
         minSdk = 34
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.4.3"
+        versionCode = 13
+        versionName = "1.4.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)

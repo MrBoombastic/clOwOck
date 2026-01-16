@@ -20,10 +20,6 @@
     <string name="language_label">Język</string>
     <string name="language_system">systemowy</string>
     <string name="widget_update_interval_label">Częstotliwość aktualizacji widżetu</string>
-    <string name="minutes_1">1 minuta</string>
-    <string name="minutes_3">3 minuty</string>
-    <string name="minutes_5">5 minut</string>
-    <string name="minutes_10">10 minut</string>
     <string name="minutes_15">15 minut (domyślnie)</string>
     <string name="minutes_30">30 minut</string>
     <string name="minutes_45">45 minut</string>

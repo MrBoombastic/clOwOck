@@ -180,10 +180,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     )
 
     val intervals = mapOf(
-        1L to stringResource(R.string.minutes_1),
-        3L to stringResource(R.string.minutes_3),
-        5L to stringResource(R.string.minutes_5),
-        10L to stringResource(R.string.minutes_10),
         15L to stringResource(R.string.minutes_15),
         30L to stringResource(R.string.minutes_30),
         45L to stringResource(R.string.minutes_45),
@@ -323,8 +319,8 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 onValueChange = { minutes ->
                     updateInterval = minutes
                     repository.updateInterval = minutes
-                    // Reschedule updates immediately
-                    MainActivity.scheduleUpdates(context, minutes)
+                    // Reschedule updates immediately with new interval
+                    MainActivity.rescheduleUpdates(context, minutes)
                 })
 
 
