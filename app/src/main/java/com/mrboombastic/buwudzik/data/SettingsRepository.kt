@@ -3,7 +3,11 @@ package com.mrboombastic.buwudzik.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.mrboombastic.buwudzik.widget.WidgetHelper
+import androidx.glance.appwidget.updateAll
+import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class SettingsRepository(private val context: Context) {
     private val prefs: SharedPreferences =
@@ -35,8 +39,11 @@ class SettingsRepository(private val context: Context) {
     /**
      * Updates widgets when relevant settings change (theme, language, selected app)
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun notifyWidgetsIfNeeded() {
-        WidgetHelper.updateAllWidgets(context)
+        GlobalScope.launch {
+            SensorGlanceWidget().updateAll(context)
+        }
     }
 
     var lastVersionCode: Int
@@ -75,9 +82,9 @@ class SettingsRepository(private val context: Context) {
         }
 
     var updateInterval: Long
-        get() = prefs.getLong(KEY_UPDATE_INTERVAL, DEFAULT_INTERVAL)
+        get() = prefs.getLong(KEY_UPDATE_INTERVAL, DEFAULT_INTERVAL).coerceAtLeast(15)
         set(value) {
-            prefs.edit { putLong(KEY_UPDATE_INTERVAL, value) }
+            prefs.edit { putLong(KEY_UPDATE_INTERVAL, value.coerceAtLeast(15)) }
         }
 
     var selectedAppPackage: String?

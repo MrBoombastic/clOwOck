@@ -2,8 +2,6 @@ package com.mrboombastic.buwudzik
 
 
 import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
@@ -81,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -110,7 +109,7 @@ import com.mrboombastic.buwudzik.ui.theme.BuwudzikTheme
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
-import com.mrboombastic.buwudzik.widget.SensorUpdateReceiver
+import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
 import com.mrboombastic.buwudzik.widget.SensorUpdateWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -228,6 +227,12 @@ class MainViewModel(
                 AppLogger.d("MainViewModel", "Received data: $data")
                 val correctedData = sensorRepository.saveSensorData(data)
                 _sensorData.value = correctedData
+                // Update Glance widget with fresh data
+                try {
+                    SensorGlanceWidget().updateAll(applicationContext)
+                } catch (e: Exception) {
+                    AppLogger.d("MainViewModel", "Widget update skipped: ${e.message}")
+                }
             }
         }
     }
@@ -238,6 +243,12 @@ class MainViewModel(
         scanJob = null
         _sensorData.value = null
         startScanning()
+    }
+
+    fun stopScanning() {
+        AppLogger.d("MainViewModel", "Stopping scan (app going to background)...")
+        scanJob?.cancel()
+        scanJob = null
     }
 
     fun connectToDevice(reloadAlarms: Boolean = true) {
@@ -456,54 +467,72 @@ class MainViewModel(
 class MainActivity : AppCompatActivity() {
     private lateinit var scanner: BluetoothScanner
     private lateinit var settingsRepository: SettingsRepository
+    private var mainViewModel: MainViewModel? = null
+
+    override fun onPause() {
+        super.onPause()
+        // Stop BLE scanning when app goes to background
+        mainViewModel?.stopScanning()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Resume scanning when app comes back to foreground
+        mainViewModel?.startScanning()
+    }
 
     companion object {
         private const val TAG = "MainActivity"
 
         fun scheduleUpdates(context: Context, intervalMinutes: Long) {
             val workManager = WorkManager.getInstance(context)
-            val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, SensorUpdateReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+
+            AppLogger.d(TAG, "Scheduling WorkManager for $intervalMinutes min intervals")
+
+            // Use flex time for battery optimization (run anytime within last 5 min of interval)
+            val flexMinutes = minOf(5L, intervalMinutes / 3)
+
+            val workRequest = PeriodicWorkRequestBuilder<SensorUpdateWorker>(
+                intervalMinutes, TimeUnit.MINUTES, flexMinutes, TimeUnit.MINUTES
+            ).build()
+
+            // Use KEEP policy to avoid resetting the schedule on every app launch
+            // This ensures existing scheduled work continues instead of being replaced
+            workManager.enqueueUniquePeriodicWork(
+                "SensorUpdateWork", ExistingPeriodicWorkPolicy.KEEP, workRequest
             )
 
-            // Always cancel both first to ensure no duplicates
-            workManager.cancelUniqueWork("SensorUpdateWork")
-            alarmManager.cancel(pendingIntent)
+            AppLogger.d(
+                TAG,
+                "WorkManager scheduled with ${intervalMinutes}min interval, ${flexMinutes}min flex (keep)"
+            )
+        }
 
-            if (intervalMinutes < 15) {
-                AppLogger.d(TAG, "Scheduling AlarmManager for $intervalMinutes min intervals")
-                val intervalMillis = intervalMinutes * 60 * 1000
-                val triggerAt = System.currentTimeMillis() + intervalMillis
-                // Use setRepeating for simplicity, though imprecise on modern Android.
-                // For <15m updates, this is the standard "best effort" without FG service.
-                alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP, triggerAt, intervalMillis, pendingIntent
-                )
-            } else {
-                AppLogger.d(TAG, "Scheduling WorkManager for $intervalMinutes min intervals")
+        /**
+         * Force reschedule updates with a new interval.
+         * Uses REPLACE policy to immediately apply the new interval.
+         * Call this when user changes the update interval in settings.
+         */
+        fun rescheduleUpdates(context: Context, intervalMinutes: Long) {
+            val workManager = WorkManager.getInstance(context)
 
-                // Use flex time for battery optimization (run anytime within last 5 min of interval)
-                val flexMinutes = minOf(5L, intervalMinutes / 3)
+            AppLogger.d(TAG, "Rescheduling WorkManager for $intervalMinutes min intervals")
 
-                val workRequest = PeriodicWorkRequestBuilder<SensorUpdateWorker>(
-                    intervalMinutes, TimeUnit.MINUTES, flexMinutes, TimeUnit.MINUTES
-                ).setInitialDelay(1, TimeUnit.MINUTES) // Small delay to avoid immediate trigger
-                    .build()
+            val flexMinutes = minOf(5L, intervalMinutes / 3)
 
-                workManager.enqueueUniquePeriodicWork(
-                    "SensorUpdateWork", ExistingPeriodicWorkPolicy.UPDATE, workRequest
-                )
+            val workRequest = PeriodicWorkRequestBuilder<SensorUpdateWorker>(
+                intervalMinutes, TimeUnit.MINUTES, flexMinutes, TimeUnit.MINUTES
+            ).build()
 
-                AppLogger.d(
-                    TAG,
-                    "WorkManager scheduled with ${intervalMinutes}min interval, ${flexMinutes}min flex"
-                )
-            }
+            // Use REPLACE policy to force update with new interval
+            workManager.enqueueUniquePeriodicWork(
+                "SensorUpdateWork", ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest
+            )
+
+            AppLogger.d(
+                TAG,
+                "WorkManager rescheduled with ${intervalMinutes}min interval, ${flexMinutes}min flex (REPLACE policy)"
+            )
         }
     }
 
@@ -559,6 +588,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        mainViewModel = viewModel
 
         setContent {
             BuwudzikTheme {
