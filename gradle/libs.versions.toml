@@ -17,7 +17,7 @@ ktor = "3.3.3"
 slf4j = "2.0.17"
 profileinstaller = "1.4.1"
 zxing = "4.3.0"
-cameraX = "1.5.2"
+cameraX = "1.5.3"
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
