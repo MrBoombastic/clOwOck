@@ -170,7 +170,7 @@ Managed via a single comprehensive payload on **Data Write**.
 | 0     | `0x13`          | Command ID                                                                                                     |
 | 1     | `0x01` / `0x02` | Set / Read Response                                                                                            |
 | 2     | `1-5`           | Sound Volume                                                                                                   |
-| 3-4   | `58 02`         | Fixed Header / Version                                                                                         |
+| 3-4   | `58 02`         | Fixed Header / Version (???)                                                                                   |
 | 5     | Bitmask         | Mode Flags: See the **Mode Flags Breakdown** table below.                                                      |
 | 6     | Integer         | Timezone Offset (Units of 6 minutes)                                                                           |
 | 7     | Seconds         | Backlight Duration (0=Off)                                                                                     |
@@ -256,8 +256,8 @@ For uploading custom ringtones, app is using these alternating slot signatures:
 
 **Important:** Always alternate between slots when uploading new custom audio. Doesn't matter how
 you name it. The device may reject
-uploads if the target signature matches the currently active ringtone, but is different from the one
-you are uploading.
+uploads if the target signature matches the currently active ringtone, but audio itself is different
+from the one you are uploading.
 
 #### Upload Protocol
 
