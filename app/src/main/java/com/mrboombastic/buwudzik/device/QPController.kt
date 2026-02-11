@@ -1491,9 +1491,9 @@ class QPController(private val context: Context) {
      */
     fun close() {
         disconnect()
+        commandChannel.close()
         commandConsumerJob.cancel()
         deviceJob.cancel()
-        commandChannel.close()
         AppLogger.d(TAG, "QPController closed and all jobs canceled")
     }
 
