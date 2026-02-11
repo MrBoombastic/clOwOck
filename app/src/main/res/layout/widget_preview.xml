@@ -38,7 +38,7 @@
             android:text="2 min ago"
             android:textColor="@color/widget_text_secondary"
             android:textSize="10sp"
-            app:drawableEndCompat="@drawable/ic_refresh"
-            app:drawableTint="@color/widget_icon_tint"
-            tools:ignore="HardcodedText,SmallSp,UseCompatTextViewDrawableApis" />
+            android:drawableEnd="@drawable/ic_refresh"
+            android:drawableTint="@color/widget_icon_tint"
+            tools:ignore="HardcodedText,SmallSp" />
 </LinearLayout>
