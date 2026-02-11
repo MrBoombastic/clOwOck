@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Receiver that triggers widget update after device boot.
- * Also re-schedules periodic updates since AlarmManager alarms are cleared on reboot.
+ * Also, re-schedules periodic updates since AlarmManager alarms are cleared on reboot.
  */
 class BootReceiver : BroadcastReceiver() {
 

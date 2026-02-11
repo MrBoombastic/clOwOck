@@ -1,5 +1,6 @@
 package com.mrboombastic.buwudzik.widget
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
@@ -54,6 +55,7 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
         private const val SETTINGS_KEY_LANGUAGE = "language"
         
         // Singleton instance to prevent listener accumulation
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var instance: WidgetStateDataStore? = null
         

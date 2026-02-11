@@ -478,7 +478,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Resume scanning when app comes back to foreground - ONLY if we have permissions
-        if (com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(this)) {
+        if (BluetoothUtils.hasBluetoothPermissions(this)) {
             mainViewModel?.startScanning()
         }
     }
@@ -579,7 +579,7 @@ class MainActivity : AppCompatActivity() {
         AppCompatDelegate.setDefaultNightMode(ThemeUtils.themeToNightMode(settingsRepository.theme))
 
         // Schedule Worker or Alarm
-        if (com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
+        if (BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
             scheduleUpdates(applicationContext, settingsRepository.updateInterval)
         }
 

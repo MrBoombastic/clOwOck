@@ -83,7 +83,7 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Effect to show snackbar when errorMessage changes
-    @Suppress("AssignedValueIsNeverRead") LaunchedEffect(errorMessage) {
+    LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(
                 message = it, duration = SnackbarDuration.Long

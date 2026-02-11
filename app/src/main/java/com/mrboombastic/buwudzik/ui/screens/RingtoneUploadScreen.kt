@@ -148,7 +148,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     }
 
     // Show snackbar for errors
-    @Suppress("AssignedValueIsNeverRead") LaunchedEffect(errorMessage) {
+    LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(
                 message = it, duration = SnackbarDuration.Long

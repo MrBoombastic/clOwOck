@@ -195,7 +195,7 @@ This byte acts as a **bitfield** where individual bits control specific boolean 
 | 4   | `0x10`      | Master Alarm Disable (!) | Enabled         | Disabled      |
 | 5-7 | -           | *(Unused ?)*             | -               | -             |
 
-**Workaround:** Disabling night mode is being done via setting 1-minute night mode (ie.
+**Workaround:** Disabling night mode is being done via setting 1-minute night mode (i.e.
 `00:00 - 00:01`). Yup, it's that stupid, even official app does this.
 
 #### 4.1. Set Immediate Brightness (Preview)
@@ -231,7 +231,7 @@ Plays a generic "beep" sound for testing volume level (not the user's selected r
 
 #### Known Ringtone Signatures
 
-The device uses 4-byte signatures to identify ringtones:
+Official apps are using these 4-byte signatures to identify ringtones:
 
 | Ringtone           | Signature (Hex) |
 |--------------------|-----------------|
@@ -247,7 +247,7 @@ The device uses 4-byte signatures to identify ringtones:
 
 #### Custom Ringtone Slots
 
-For uploading custom ringtones, app is using these alternating slot signatures:
+For uploading custom ringtones, this app is using these alternating slot signatures:
 
 | Slot     | Signature (Hex) |
 |----------|-----------------|

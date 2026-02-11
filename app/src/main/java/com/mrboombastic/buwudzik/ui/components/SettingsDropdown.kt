@@ -29,7 +29,6 @@ fun <T> SettingsDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    @Suppress("AssignedValueIsNeverRead")
     ExposedDropdownMenuBox(
         expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = modifier
     ) {
