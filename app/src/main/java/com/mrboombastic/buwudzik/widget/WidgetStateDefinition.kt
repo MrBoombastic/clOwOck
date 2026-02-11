@@ -79,9 +79,10 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                 val job = launch(Dispatchers.Default) {
                     try {
                         // Use trySend (non-blocking) instead of send (suspending) because:
-                        // 1. We don't want to block the main thread via the listener callback
-                        // 2. For widgets, showing the latest state is more important than every intermediate state
-                        // 3. Job cancellation above ensures we don't pile up stale updates
+                        // 1. For widgets, showing the latest state is more important than every intermediate state
+                        // 2. If the channel is full, send() would suspend and back up this coroutine, whereas
+                        //    trySend() will drop the update; combined with job cancellation above, this prevents
+                        //    piling up stale updates while still delivering the most recent state
                         val result = trySend(
                             WidgetState(
                                 sensorData = sensorRepo.getSensorData(),
