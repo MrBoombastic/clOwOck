@@ -99,6 +99,20 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     var versionName by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    // Helper function to update widgets with proper error handling
+    fun launchWidgetUpdate() {
+        coroutineScope.launch {
+            try {
+                repository.updateAllWidgets()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Rethrow cancellation to maintain structured concurrency
+                throw e
+            } catch (e: Exception) {
+                AppLogger.d("SettingsScreen", "Widget update failed", e)
+            }
+        }
+    }
+
     // Load version name asynchronously to avoid blocking main thread
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -294,13 +308,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     }
                     AppCompatDelegate.setApplicationLocales(appLocale)
                     // Update widgets in a structured coroutine scope
-                    coroutineScope.launch {
-                        try {
-                            repository.notifyWidgetsIfNeeded()
-                        } catch (e: Exception) {
-                            AppLogger.d("SettingsScreen", "Widget update failed: ${e.message}")
-                        }
-                    }
+                    launchWidgetUpdate()
                 })
 
             // Theme
@@ -366,13 +374,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             expandedWidgetAction = false
                             
                             // Update widgets in a structured coroutine scope
-                            coroutineScope.launch {
-                                try {
-                                    repository.notifyWidgetsIfNeeded()
-                                } catch (e: Exception) {
-                                    AppLogger.d("SettingsScreen", "Widget update failed: ${e.message}")
-                                }
-                            }
+                            launchWidgetUpdate()
                         })
 
                     installedApps.forEach { resolveInfo ->
@@ -387,13 +389,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             expandedWidgetAction = false
                             
                             // Update widgets in a structured coroutine scope
-                            coroutineScope.launch {
-                                try {
-                                    repository.notifyWidgetsIfNeeded()
-                                } catch (e: Exception) {
-                                    AppLogger.d("SettingsScreen", "Widget update failed: ${e.message}")
-                                }
-                            }
+                            launchWidgetUpdate()
                         })
                     }
                 }

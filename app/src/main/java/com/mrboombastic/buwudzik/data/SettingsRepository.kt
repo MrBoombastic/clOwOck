@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.glance.appwidget.updateAll
 import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SettingsRepository(private val context: Context) {
     private val prefs: SharedPreferences =
@@ -34,10 +36,11 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Updates widgets when relevant settings change (theme, language, selected app).
-     * This is a suspend function - callers must launch it in an appropriate scope.
+     * Updates all widgets to reflect setting changes.
+     * This is a suspend function that runs on a background dispatcher.
+     * Callers must launch it in an appropriate coroutine scope.
      */
-    suspend fun notifyWidgetsIfNeeded() {
+    suspend fun updateAllWidgets() = withContext(Dispatchers.IO) {
         SensorGlanceWidget().updateAll(context)
     }
 
