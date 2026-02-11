@@ -59,6 +59,13 @@ class BluetoothScanner(private val context: Context) {
             return@callbackFlow
         }
 
+        // Validate MAC address before using it in filter.
+        if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
+            Log.e("BluetoothScanner", "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress")
+            close()
+            return@callbackFlow
+        }
+
         var cachedName: String? = null
 
         val callback = object : ScanCallback() {
@@ -94,17 +101,10 @@ class BluetoothScanner(private val context: Context) {
             }
         }
 
-        // Validate MAC address before using it in filter
-        if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
-            Log.e("BluetoothScanner", "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress")
-            close(IllegalArgumentException("Invalid MAC address format: $targetAddress"))
-            return@callbackFlow
-        }
-        
         val filters = listOf(
             ScanFilter.Builder()
                 .apply {
-                    // Only set device address if provided (already validated above)
+                    // Set device address (validated above)
                     if (targetAddress != null) {
                         setDeviceAddress(targetAddress)
                     }

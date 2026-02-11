@@ -1,6 +1,7 @@
 package com.mrboombastic.buwudzik.ui.screens
 
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.ResolveInfo
@@ -234,13 +235,19 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     value = macAddress,
                     onValueChange = {
                         macAddress = it
-                        // Don't save empty MAC - use default if cleared
-                        val macToSave = it.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
-                        repository.targetMacAddress = macToSave
+                        val trimmed = it.trim()
+                        // Validate MAC address format before saving
+                        if (trimmed.isNotEmpty() && BluetoothAdapter.checkBluetoothAddress(trimmed)) {
+                            repository.targetMacAddress = trimmed
+                        } else if (trimmed.isEmpty()) {
+                            // Use default if cleared
+                            repository.targetMacAddress = SettingsRepository.DEFAULT_MAC
+                        }
+                        // Don't save invalid MAC addresses to repository
                     },
                     label = { Text(stringResource(R.string.target_mac_label)) },
                     modifier = Modifier.weight(1f),
-                    isError = macAddress.trim().isEmpty(),
+                    isError = macAddress.trim().isNotEmpty() && !BluetoothAdapter.checkBluetoothAddress(macAddress.trim()),
                 )
 
                 FilledTonalIconButton(
