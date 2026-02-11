@@ -1,6 +1,7 @@
 package com.mrboombastic.buwudzik.device
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
@@ -58,6 +59,13 @@ class BluetoothScanner(private val context: Context) {
             return@callbackFlow
         }
 
+        // Validate MAC address before using it in filter.
+        if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
+            Log.e("BluetoothScanner", "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress")
+            close()
+            return@callbackFlow
+        }
+
         var cachedName: String? = null
 
         val callback = object : ScanCallback() {
@@ -96,7 +104,10 @@ class BluetoothScanner(private val context: Context) {
         val filters = listOf(
             ScanFilter.Builder()
                 .apply {
-                    if (targetAddress != null) setDeviceAddress(targetAddress)
+                    // Set device address (validated above)
+                    if (targetAddress != null) {
+                        setDeviceAddress(targetAddress)
+                    }
                 }
                 .setServiceData(serviceUUID, null)
                 .build()

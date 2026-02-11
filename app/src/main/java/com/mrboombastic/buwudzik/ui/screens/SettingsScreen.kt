@@ -1,6 +1,7 @@
 package com.mrboombastic.buwudzik.ui.screens
 
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.ResolveInfo
@@ -82,6 +83,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val initialScanMode = remember { repository.scanMode }
 
     var macAddress by remember { mutableStateOf(repository.targetMacAddress) }
+    var isMacAddressValid by remember { mutableStateOf(true) }
     var scanMode by remember { mutableIntStateOf(repository.scanMode) }
     var language by remember { mutableStateOf(repository.language) }
     var updateInterval by remember { mutableLongStateOf(repository.updateInterval) }
@@ -234,13 +236,22 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     value = macAddress,
                     onValueChange = {
                         macAddress = it
-                        // Don't save empty MAC - use default if cleared
-                        val macToSave = it.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
-                        repository.targetMacAddress = macToSave
+                        val trimmed = it.trim()
+                        // Validate MAC address format
+                        isMacAddressValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
+                        
+                        // Save to repository only if valid
+                        if (trimmed.isNotEmpty() && isMacAddressValid) {
+                            repository.targetMacAddress = trimmed
+                        } else {
+                            // Use default if cleared or invalid
+                            repository.targetMacAddress = SettingsRepository.DEFAULT_MAC
+                        }
+                        // Invalid non-empty MAC addresses are not saved to prevent crashes
                     },
                     label = { Text(stringResource(R.string.target_mac_label)) },
                     modifier = Modifier.weight(1f),
-                    isError = macAddress.trim().isEmpty(),
+                    isError = !isMacAddressValid,
                 )
 
                 FilledTonalIconButton(
