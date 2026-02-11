@@ -71,7 +71,7 @@ class SensorRepository(private val context: Context) {
     }
 
     fun setUpdateError(hasError: Boolean) {
-        prefs.edit { putBoolean(KEY_HAS_ERROR, hasError) }
+        prefs.edit(commit = true) { putBoolean(KEY_HAS_ERROR, hasError) }
     }
 
     fun isLoading(): Boolean {
@@ -79,6 +79,6 @@ class SensorRepository(private val context: Context) {
     }
 
     fun setLoading(loading: Boolean) {
-        prefs.edit { putBoolean(KEY_IS_LOADING, loading) }
+        prefs.edit(commit = true) { putBoolean(KEY_IS_LOADING, loading) }
     }
 }
