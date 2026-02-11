@@ -259,7 +259,7 @@ class SensorGlanceWidget : GlanceAppWidget() {
                 ) {
                     Image(
                         provider = ImageProvider(R.drawable.ic_refresh),
-                        contentDescription = "Refresh",
+                        contentDescription = LocalContext.current.getString(R.string.widget_refresh_description),
                         colorFilter = ColorFilter.tint(refreshTint),
                         modifier = GlanceModifier.size((footerSizeVal * 1.3f).dp)
                     )
