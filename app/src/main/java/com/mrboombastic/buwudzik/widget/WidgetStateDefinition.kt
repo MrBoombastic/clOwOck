@@ -1,13 +1,15 @@
 package com.mrboombastic.buwudzik.widget
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
 import androidx.glance.state.GlanceStateDefinition
 import com.mrboombastic.buwudzik.data.SensorRepository
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.SensorData
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.callbackFlow
 import java.io.File
 
 /**
@@ -23,25 +25,56 @@ data class WidgetState(
 )
 
 /**
- * Custom DataStore that reads widget state from repositories.
- * This allows Glance to reactively observe state changes.
+ * Custom DataStore that reads widget state from repositories and reactively observes changes.
+ * This implementation uses callbackFlow to listen for SharedPreferences changes, allowing
+ * the widget to automatically update when sensor data or settings change without requiring
+ * explicit updateAll() calls.
  */
 class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState> {
 
     override val data: Flow<WidgetState>
-        get() = flow {
+        get() = callbackFlow {
             val sensorRepo = SensorRepository(context)
             val settingsRepo = SettingsRepository(context)
-
-            emit(
-                WidgetState(
-                    sensorData = sensorRepo.getSensorData(),
-                    lastUpdate = sensorRepo.getLastUpdateTimestamp(),
-                    hasError = sensorRepo.hasUpdateError(),
-                    isLoading = sensorRepo.isLoading(),
-                    language = settingsRepo.language
+            
+            // Get SharedPreferences instances
+            val sensorPrefs = context.getSharedPreferences("sensor_prefs", Context.MODE_PRIVATE)
+            val settingsPrefs = context.getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+            
+            // Function to read and emit current state
+            fun emitCurrentState() {
+                trySend(
+                    WidgetState(
+                        sensorData = sensorRepo.getSensorData(),
+                        lastUpdate = sensorRepo.getLastUpdateTimestamp(),
+                        hasError = sensorRepo.hasUpdateError(),
+                        isLoading = sensorRepo.isLoading(),
+                        language = settingsRepo.language
+                    )
                 )
-            )
+            }
+            
+            // Emit initial state
+            emitCurrentState()
+            
+            // Create listeners (keep as local variables to maintain strong references)
+            val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+                emitCurrentState()
+            }
+            
+            val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+                emitCurrentState()
+            }
+            
+            // Register listeners
+            sensorPrefs.registerOnSharedPreferenceChangeListener(sensorListener)
+            settingsPrefs.registerOnSharedPreferenceChangeListener(settingsListener)
+            
+            // Cleanup when flow is cancelled
+            awaitClose {
+                sensorPrefs.unregisterOnSharedPreferenceChangeListener(sensorListener)
+                settingsPrefs.unregisterOnSharedPreferenceChangeListener(settingsListener)
+            }
         }
 
     override suspend fun updateData(transform: suspend (t: WidgetState) -> WidgetState): WidgetState {
@@ -62,7 +95,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
 
 /**
  * GlanceStateDefinition that provides the WidgetStateDataStore.
- * This is what Glance uses to observe state changes and trigger recomposition.
+ * Glance uses this to reactively observe state changes and automatically trigger recomposition
+ * when SharedPreferences change.
  */
 object WidgetStateDefinition : GlanceStateDefinition<WidgetState> {
 
