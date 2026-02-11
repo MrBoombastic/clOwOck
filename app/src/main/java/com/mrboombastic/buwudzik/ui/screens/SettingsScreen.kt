@@ -67,6 +67,7 @@ import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -100,6 +101,20 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     var showUpdateDialog by remember { mutableStateOf(false) }
     var versionName by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Helper function to update widgets with proper error handling
+    fun launchWidgetUpdate() {
+        coroutineScope.launch {
+            try {
+                repository.updateAllWidgets()
+            } catch (e: CancellationException) {
+                // Rethrow cancellation to maintain structured concurrency
+                throw e
+            } catch (e: Exception) {
+                AppLogger.d("SettingsScreen", "Widget update failed", e)
+            }
+        }
+    }
 
     // Load version name asynchronously to avoid blocking main thread
     LaunchedEffect(Unit) {
@@ -304,6 +319,8 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                         LocaleListCompat.forLanguageTags(code)
                     }
                     AppCompatDelegate.setApplicationLocales(appLocale)
+                    // Update widgets in a structured coroutine scope
+                    launchWidgetUpdate()
                 })
 
             // Theme
@@ -367,6 +384,9 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = null
 
                             expandedWidgetAction = false
+                            
+                            // Update widgets in a structured coroutine scope
+                            launchWidgetUpdate()
                         })
 
                     installedApps.forEach { resolveInfo ->
@@ -379,6 +399,9 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = pkg
 
                             expandedWidgetAction = false
+                            
+                            // Update widgets in a structured coroutine scope
+                            launchWidgetUpdate()
                         })
                     }
                 }

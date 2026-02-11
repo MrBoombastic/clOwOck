@@ -5,9 +5,8 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.glance.appwidget.updateAll
 import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SettingsRepository(private val context: Context) {
     private val prefs: SharedPreferences =
@@ -37,13 +36,12 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Updates widgets when relevant settings change (theme, language, selected app)
+     * Updates all widgets to reflect setting changes.
+     * This is a suspend function that runs on a background dispatcher.
+     * Callers must launch it in an appropriate coroutine scope.
      */
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun notifyWidgetsIfNeeded() {
-        GlobalScope.launch {
-            SensorGlanceWidget().updateAll(context)
-        }
+    suspend fun updateAllWidgets() = withContext(Dispatchers.IO) {
+        SensorGlanceWidget().updateAll(context)
     }
 
     var lastVersionCode: Int
@@ -78,7 +76,6 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getString(KEY_LANGUAGE, DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
         set(value) {
             prefs.edit { putString(KEY_LANGUAGE, value) }
-            notifyWidgetsIfNeeded()
         }
 
     var updateInterval: Long
@@ -91,7 +88,6 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getString(KEY_SELECTED_APP, null)
         set(value) {
             prefs.edit { putString(KEY_SELECTED_APP, value) }
-            notifyWidgetsIfNeeded()
         }
 
     var theme: String
