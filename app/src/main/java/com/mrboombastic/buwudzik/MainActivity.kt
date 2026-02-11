@@ -478,6 +478,10 @@ class MainViewModel(
         startScanning()
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        qpController.close()
+    }
 }
 
 
