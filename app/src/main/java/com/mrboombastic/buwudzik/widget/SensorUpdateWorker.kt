@@ -59,6 +59,12 @@ class SensorUpdateWorker(
             return Result.failure()
         }
 
+        if (!com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
+            Log.w(TAG, "Missing Bluetooth permissions for background scan.")
+            updateWidget(hasError = true)
+            return Result.success()
+        }
+
         if (!bluetoothManager.adapter.isEnabled) {
             Log.w(TAG, "Bluetooth is disabled. Showing error indicator.")
             updateWidget(hasError = true)

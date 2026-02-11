@@ -25,7 +25,7 @@ data class SensorData(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class BluetoothScanner(context: Context) {
+class BluetoothScanner(private val context: Context) {
 
     private val bluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -44,6 +44,13 @@ class BluetoothScanner(context: Context) {
             "BluetoothScanner",
             "Starting BLE Scan. Target: ${targetAddress ?: "All Devices"}. Mode: $scanMode."
         )
+
+        if (!com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(context)) {
+            Log.e("BluetoothScanner", "Missing Bluetooth permissions")
+            close()
+            return@callbackFlow
+        }
+
         val leScanner = scanner
         if (leScanner == null) {
             Log.e("BluetoothScanner", "BluetoothLeScanner is null")

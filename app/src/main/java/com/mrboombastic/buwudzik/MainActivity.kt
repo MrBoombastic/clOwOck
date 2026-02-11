@@ -477,8 +477,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Resume scanning when app comes back to foreground
-        mainViewModel?.startScanning()
+        // Resume scanning when app comes back to foreground - ONLY if we have permissions
+        if (com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(this)) {
+            mainViewModel?.startScanning()
+        }
     }
 
     companion object {
@@ -577,7 +579,9 @@ class MainActivity : AppCompatActivity() {
         AppCompatDelegate.setDefaultNightMode(ThemeUtils.themeToNightMode(settingsRepository.theme))
 
         // Schedule Worker or Alarm
-        scheduleUpdates(applicationContext, settingsRepository.updateInterval)
+        if (com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
+            scheduleUpdates(applicationContext, settingsRepository.updateInterval)
+        }
 
         val viewModel: MainViewModel by viewModels {
             object : ViewModelProvider.Factory {
