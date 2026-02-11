@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -51,6 +50,7 @@ import com.mrboombastic.buwudzik.device.TempUnit
 import com.mrboombastic.buwudzik.device.TimeFormat
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
+import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
 import kotlinx.coroutines.Job
@@ -92,7 +92,7 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }, topBar = {
+    Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
         TopAppBar(
             title = { Text(stringResource(R.string.device_settings_title)) },
             navigationIcon = {

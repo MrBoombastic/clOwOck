@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -32,14 +31,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,6 +58,7 @@ import com.mrboombastic.buwudzik.MainViewModel
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.device.Alarm
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
+import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import kotlinx.coroutines.launch
@@ -76,27 +76,17 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
     val alarms by viewModel.alarms.collectAsState()
     val deviceConnected by viewModel.deviceConnected.collectAsState()
     val deviceSettings by viewModel.deviceSettings.collectAsState()
-    var statusMessage by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
     var isUpdating by remember { mutableStateOf(false) }
     var selectedAlarm by remember { mutableStateOf<Alarm?>(null) }
 
     // Pre-fetch string resources for use in callbacks
-    val updatingAlarmMsg = stringResource(R.string.updating_alarm_msg)
+    stringResource(R.string.updating_alarm_msg)
     val alarmUpdatedMsg = stringResource(R.string.alarm_updated_msg)
-    val deletingAlarmMsg = stringResource(R.string.deleting_alarm_msg)
+    stringResource(R.string.deleting_alarm_msg)
     val alarmDeletedMsg = stringResource(R.string.alarm_deleted_msg)
     val errorPrefixMsg = stringResource(R.string.error_prefix)
-    val savingSettingsMsg = stringResource(R.string.updating_label)
-
-    // Auto-clear messages
-    LaunchedEffect(statusMessage, errorMessage) {
-        if (statusMessage.isNotEmpty() || errorMessage.isNotEmpty()) {
-            kotlinx.coroutines.delay(2000)
-            statusMessage = ""
-            errorMessage = ""
-        }
-    }
+    stringResource(R.string.updating_label)
 
     // Edit alarm dialog
     selectedAlarm?.let { alarm ->
@@ -106,17 +96,24 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
             onSave = { updatedAlarm ->
                 coroutineScope.launch {
                     isUpdating = true
-                    errorMessage = ""
-                    statusMessage = String.format(updatingAlarmMsg, updatedAlarm.id + 1)
 
                     viewModel.updateAlarm(updatedAlarm) { result ->
                         if (result.isSuccess) {
-                            statusMessage = String.format(alarmUpdatedMsg, updatedAlarm.id + 1)
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    String.format(alarmUpdatedMsg, updatedAlarm.id + 1)
+                                )
+                            }
                             selectedAlarm = null
                         } else {
-                            errorMessage = String.format(
-                                errorPrefixMsg, result.exceptionOrNull()?.message ?: "Unknown"
-                            )
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    String.format(
+                                        errorPrefixMsg,
+                                        result.exceptionOrNull()?.message ?: "Unknown"
+                                    ), duration = SnackbarDuration.Long
+                                )
+                            }
                         }
                         isUpdating = false
                     }
@@ -125,17 +122,24 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
             onDelete = {
                 coroutineScope.launch {
                     isUpdating = true
-                    errorMessage = ""
-                    statusMessage = String.format(deletingAlarmMsg, alarm.id + 1)
 
                     viewModel.deleteAlarm(alarm.id) { result ->
                         if (result.isSuccess) {
-                            statusMessage = String.format(alarmDeletedMsg, alarm.id + 1)
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    String.format(alarmDeletedMsg, alarm.id + 1)
+                                )
+                            }
                             selectedAlarm = null
                         } else {
-                            errorMessage = String.format(
-                                errorPrefixMsg, result.exceptionOrNull()?.message ?: "Unknown"
-                            )
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    String.format(
+                                        errorPrefixMsg,
+                                        result.exceptionOrNull()?.message ?: "Unknown"
+                                    ), duration = SnackbarDuration.Long
+                                )
+                            }
                         }
                         isUpdating = false
                     }
@@ -148,6 +152,16 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
             title = { Text(stringResource(R.string.alarm_management_title)) },
             navigationIcon = {
                 BackNavigationButton(navController)
+            },
+            actions = {
+                if (isUpdating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .size(24.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             })
     }, floatingActionButton = {
         if (deviceConnected && hasPermissions) {
@@ -159,8 +173,7 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
                         val usedIds = alarms.map { it.id }.toSet()
                         val newId = (0..15).firstOrNull { !usedIds.contains(it) } ?: alarms.size
 
-                        @Suppress("AssignedValueIsNeverRead")
-                        if (newId < 16) {
+                        @Suppress("AssignedValueIsNeverRead") if (newId < 16) {
                             selectedAlarm = Alarm(
                                 id = newId,
                                 enabled = true,
@@ -184,50 +197,7 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
                 )
             }
         }
-    }, snackbarHost = {
-        // Status messages as snackbar overlay - doesn't affect layout
-        if (isUpdating || statusMessage.isNotEmpty() || errorMessage.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Surface(
-                    color = when {
-                        errorMessage.isNotEmpty() -> MaterialTheme.colorScheme.errorContainer
-                        else -> MaterialTheme.colorScheme.primaryContainer
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    tonalElevation = 6.dp,
-                    shadowElevation = 2.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (isUpdating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp), strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                        }
-                        Text(
-                            text = when {
-                                errorMessage.isNotEmpty() -> errorMessage
-                                statusMessage.isNotEmpty() -> statusMessage
-                                isUpdating -> stringResource(R.string.updating_label)
-                                else -> ""
-                            }, style = MaterialTheme.typography.bodyMedium, color = when {
-                                errorMessage.isNotEmpty() -> MaterialTheme.colorScheme.onErrorContainer
-                                else -> MaterialTheme.colorScheme.onPrimaryContainer
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }) { padding ->
+    }, snackbarHost = { CustomSnackbarHost(snackbarHostState) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -262,101 +232,63 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(16.dp)
                         )
-                    } else {
-                        // Master Alarm Switch
-                        deviceSettings?.let { settings ->
-                            Card(
+                        return@Column
+                    }
+                    // Master Alarm Switch
+                    deviceSettings?.let { settings ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.master_alarm_label),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Switch(
-                                        checked = !settings.masterAlarmDisabled,
-                                        onCheckedChange = { enabled ->
-                                            val newSettings =
-                                                settings.copy(masterAlarmDisabled = !enabled)
-                                            coroutineScope.launch {
-                                                isUpdating = true
-                                                statusMessage = savingSettingsMsg
-                                                viewModel.updateDeviceSettings(newSettings) { result ->
-                                                    isUpdating = false
-                                                    if (result.isFailure) {
-                                                        errorMessage = String.format(
-                                                            errorPrefixMsg,
-                                                            result.exceptionOrNull()?.message
-                                                                ?: "Unknown"
+                                Text(
+                                    text = stringResource(R.string.master_alarm_label),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Switch(
+                                    checked = !settings.masterAlarmDisabled,
+                                    onCheckedChange = { enabled ->
+                                        val newSettings =
+                                            settings.copy(masterAlarmDisabled = !enabled)
+                                        coroutineScope.launch {
+                                            isUpdating = true
+
+                                            viewModel.updateDeviceSettings(newSettings) { result ->
+                                                isUpdating = false
+                                                if (result.isFailure) {
+                                                    coroutineScope.launch {
+                                                        snackbarHostState.showSnackbar(
+                                                            String.format(
+                                                                errorPrefixMsg,
+                                                                result.exceptionOrNull()?.message
+                                                                    ?: "Unknown"
+                                                            ), duration = SnackbarDuration.Long
                                                         )
                                                     }
                                                 }
                                             }
-                                        },
-                                        enabled = !isUpdating
-                                    )
-                                }
+                                        }
+                                    },
+                                    enabled = !isUpdating
+                                )
                             }
                         }
+                    }
 
-                        if (deviceSettings?.masterAlarmDisabled == false) {
-                            if (alarms.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.no_alarms_msg),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    items(alarms) { alarm ->
-                                        @Suppress("AssignedValueIsNeverRead") AlarmCard(
-                                            alarm = alarm,
-                                            enabled = !isUpdating,
-                                            onToggle = { enabled ->
-                                                coroutineScope.launch {
-                                                    isUpdating = true
-                                                    errorMessage = ""
-                                                    statusMessage = String.format(
-                                                        updatingAlarmMsg, alarm.id + 1
-                                                    )
-                                                    val updatedAlarm = alarm.copy(enabled = enabled)
-                                                    viewModel.updateAlarm(updatedAlarm) { result ->
-                                                        if (result.isSuccess) {
-                                                            statusMessage = String.format(
-                                                                alarmUpdatedMsg, alarm.id + 1
-                                                            )
-                                                        } else {
-                                                            errorMessage = String.format(
-                                                                errorPrefixMsg,
-                                                                result.exceptionOrNull()?.message
-                                                                    ?: "Unknown"
-                                                            )
-                                                        }
-                                                        isUpdating = false
-                                                    }
-                                                }
-                                            },
-                                            onEdit = { selectedAlarm = alarm })
-                                    }
-                                }
-                            }
-                        } else if (deviceSettings != null) {
+                    if (deviceSettings?.masterAlarmDisabled != false) {
+                        if (deviceSettings != null) {
                             // Message shown when alarms are globally disabled
                             Spacer(modifier = Modifier.height(32.dp))
                             Text(
@@ -364,6 +296,55 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                        return@Column
+                    }
+                    if (alarms.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.no_alarms_msg),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        return@Column
+                    }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(alarms) { alarm ->
+                            @Suppress("AssignedValueIsNeverRead") AlarmCard(
+                                alarm = alarm,
+                                enabled = !isUpdating,
+                                onToggle = { enabled ->
+                                    coroutineScope.launch {
+                                        isUpdating = true
+
+                                        val updatedAlarm = alarm.copy(enabled = enabled)
+                                        viewModel.updateAlarm(updatedAlarm) { result ->
+                                            if (result.isSuccess) {
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        String.format(
+                                                            alarmUpdatedMsg, alarm.id + 1
+                                                        )
+                                                    )
+                                                }
+                                            } else {
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        String.format(
+                                                            errorPrefixMsg,
+                                                            result.exceptionOrNull()?.message
+                                                                ?: "Unknown"
+                                                        ), duration = SnackbarDuration.Long
+                                                    )
+                                                }
+                                            }
+                                            isUpdating = false
+                                        }
+                                    }
+                                },
+                                onEdit = { selectedAlarm = alarm })
                         }
                     }
                 }
@@ -469,10 +450,9 @@ fun AlarmEditDialog(
             initialHour = selectedHour, initialMinute = selectedMinute, is24Hour = true
         )
 
-        @Suppress("AssignedValueIsNeverRead")
-        SimpleTimePickerDialog(
+        @Suppress("AssignedValueIsNeverRead") SimpleTimePickerDialog(
             onDismiss = { showTimePicker = false },
-            title= stringResource(R.string.select_time_title),
+            title = stringResource(R.string.select_time_title),
             onConfirm = {
                 selectedHour = timePickerState.hour
                 selectedMinute = timePickerState.minute
@@ -618,5 +598,3 @@ fun AlarmEditDialog(
             }
         })
 }
-
-
