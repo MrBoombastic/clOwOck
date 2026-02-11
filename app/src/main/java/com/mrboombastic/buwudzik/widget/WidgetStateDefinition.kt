@@ -9,11 +9,13 @@ import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.SensorData
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Widget state data class that holds all the data needed to render the widget.
@@ -61,10 +63,18 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             val sensorPrefs = context.getSharedPreferences(SENSOR_PREFS_NAME, Context.MODE_PRIVATE)
             val settingsPrefs = context.getSharedPreferences(SETTINGS_PREFS_NAME, Context.MODE_PRIVATE)
             
+            // Track the current state update job to cancel it if a new one arrives
+            val currentJob = AtomicReference<Job?>(null)
+            
             // Function to read and emit current state
             // Launched on Default dispatcher to avoid blocking the main thread
+            // Cancels any previous in-flight job to prevent concurrent repository reads
             fun emitCurrentState() {
-                launch(Dispatchers.Default) {
+                // Cancel any previous in-flight job
+                currentJob.getAndSet(null)?.cancel()
+                
+                // Launch new job and store it
+                val job = launch(Dispatchers.Default) {
                     try {
                         val result = trySend(
                             WidgetState(
@@ -84,6 +94,7 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                         AppLogger.e(TAG, "Error reading widget state from repositories", e)
                     }
                 }
+                currentJob.set(job)
             }
             
             // Emit initial state
@@ -94,14 +105,14 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             // SharedPreferences listeners are invoked on the main thread, but we launch
             // repository reads on Dispatchers.Default to avoid blocking
             val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                // Only react to sensor-related preference changes
-                if (key in SENSOR_KEYS) {
+                // Only react to sensor-related preference changes (null check for safety)
+                if (key != null && key in SENSOR_KEYS) {
                     emitCurrentState()
                 }
             }
             
             val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                // Only react to widget-relevant settings changes (language affects widget display)
+                // Only react to widget-relevant settings changes (null check for safety)
                 if (key == SETTINGS_KEY_LANGUAGE) {
                     emitCurrentState()
                 }
