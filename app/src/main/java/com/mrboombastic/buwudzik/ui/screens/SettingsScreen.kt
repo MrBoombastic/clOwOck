@@ -83,6 +83,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val initialScanMode = remember { repository.scanMode }
 
     var macAddress by remember { mutableStateOf(repository.targetMacAddress) }
+    var isMacAddressValid by remember { mutableStateOf(true) }
     var scanMode by remember { mutableIntStateOf(repository.scanMode) }
     var language by remember { mutableStateOf(repository.language) }
     var updateInterval by remember { mutableLongStateOf(repository.updateInterval) }
@@ -236,18 +237,22 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     onValueChange = {
                         macAddress = it
                         val trimmed = it.trim()
-                        // Validate MAC address format before saving
-                        if (trimmed.isNotEmpty() && BluetoothAdapter.checkBluetoothAddress(trimmed)) {
+                        // Validate MAC address format
+                        val isValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
+                        isMacAddressValid = isValid
+                        
+                        // Save to repository only if valid
+                        if (trimmed.isNotEmpty() && isValid) {
                             repository.targetMacAddress = trimmed
                         } else if (trimmed.isEmpty()) {
                             // Use default if cleared
                             repository.targetMacAddress = SettingsRepository.DEFAULT_MAC
                         }
-                        // Don't save invalid MAC addresses to repository
+                        // Invalid non-empty MAC addresses are not saved to prevent crashes
                     },
                     label = { Text(stringResource(R.string.target_mac_label)) },
                     modifier = Modifier.weight(1f),
-                    isError = macAddress.trim().isNotEmpty() && !BluetoothAdapter.checkBluetoothAddress(macAddress.trim()),
+                    isError = !isMacAddressValid,
                 )
 
                 FilledTonalIconButton(
