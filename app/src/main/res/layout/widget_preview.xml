@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -38,7 +37,7 @@
             android:text="2 min ago"
             android:textColor="@color/widget_text_secondary"
             android:textSize="10sp"
-            app:drawableEnd="@drawable/ic_refresh"
-            app:drawableTint="@color/widget_icon_tint"
-            tools:ignore="HardcodedText,SmallSp" />
+            android:drawableEnd="@drawable/ic_refresh"
+            android:drawableTint="@color/widget_icon_tint"
+            tools:ignore="HardcodedText,SmallSp,UseCompatTextViewDrawableXml" />
 </LinearLayout>

@@ -77,7 +77,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
@@ -779,7 +778,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavController) {
 
     LaunchedEffect(Unit) {
         val allGranted = permissionsToRequest.all {
-            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
         }
         AppLogger.d("MainActivity", "Initial permission check. All granted: $allGranted")
         if (allGranted) {

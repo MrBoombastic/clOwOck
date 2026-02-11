@@ -193,4 +193,5 @@
     <string name="share_device_button">Share device</string>
     <string name="import_device_button">Import device</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
+    <string name="widget_refresh_description">Refresh sensor data</string>
 </resources>
