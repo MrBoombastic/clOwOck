@@ -43,7 +43,7 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Function to read and emit current state
             fun emitCurrentState() {
-                trySend(
+                val result = trySend(
                     WidgetState(
                         sensorData = sensorRepo.getSensorData(),
                         lastUpdate = sensorRepo.getLastUpdateTimestamp(),
@@ -52,18 +52,29 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                         language = settingsRepo.language
                     )
                 )
+                // Log if send failed (channel full or closed)
+                if (!result.isSuccess) {
+                    android.util.Log.w("WidgetStateDataStore", "Failed to emit state update: ${result.exceptionOrNull()?.message}")
+                }
             }
             
             // Emit initial state
             emitCurrentState()
             
-            // Create listeners (keep as local variables to maintain strong references)
-            val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-                emitCurrentState()
+            // Create listeners (kept as local variables to maintain strong references)
+            // Only emit updates for preference keys that affect widget state
+            val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                // Only react to sensor-related preference changes
+                if (key in setOf("temp", "humidity", "battery", "rssi", "name", "mac_address", "timestamp", "has_error", "is_loading")) {
+                    emitCurrentState()
+                }
             }
             
-            val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-                emitCurrentState()
+            val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                // Only react to widget-relevant settings changes (language affects widget display)
+                if (key == "language") {
+                    emitCurrentState()
+                }
             }
             
             // Register listeners
