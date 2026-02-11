@@ -96,7 +96,7 @@ class BluetoothScanner(private val context: Context) {
 
         // Validate MAC address before using it in filter
         if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
-            Log.e("BluetoothScanner", "Invalid MAC address format: $targetAddress")
+            Log.e("BluetoothScanner", "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress")
             close()
             return@callbackFlow
         }
