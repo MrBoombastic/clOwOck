@@ -105,7 +105,9 @@ class BluetoothScanner(private val context: Context) {
             ScanFilter.Builder()
                 .apply {
                     // Only set device address if it's valid to avoid IllegalArgumentException
-                    if (isValidMac) setDeviceAddress(targetAddress)
+                    if (isValidMac && targetAddress != null) {
+                        setDeviceAddress(targetAddress)
+                    }
                 }
                 .setServiceData(serviceUUID, null)
                 .build()
