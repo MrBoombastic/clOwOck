@@ -104,9 +104,7 @@
     <string name="device_timeout_message">Upłynął limit czasu urządzenia. Podejdź bliżej i spróbuj ponownie.</string>
     <string name="save_failed_message">Nie udało się zapisać: %1$s</string>
     <string name="alarm_management_title">Zarządzanie budzikami</string>
-    <string name="updating_alarm_msg">Aktualizowanie budzika %1$d…</string>
     <string name="alarm_updated_msg">Zaktualizowano budzik %1$d</string>
-    <string name="deleting_alarm_msg">Usuwanie budzika %1$d…</string>
     <string name="alarm_deleted_msg">Usunięto budzik %1$d</string>
     <string name="enable_bluetooth_msg">Proszę włączyć Bluetooth</string>
     <string name="bluetooth_perms_msg">Wymagane uprawnienia do Bluetooth</string>

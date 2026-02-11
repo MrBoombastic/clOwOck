@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.content.res.Resources
 import android.icu.util.TimeZone
 import androidx.annotation.RequiresPermission
 import com.mrboombastic.buwudzik.data.TokenStorage
@@ -41,40 +42,40 @@ import kotlin.time.Duration.Companion.milliseconds
  * Reason for BLE disconnection
  */
 sealed class DisconnectionReason {
-    abstract fun getMessage(context: Context): String
-    open fun getHint(context: Context): String? = null
+    abstract fun getMessage(context: Resources): String
+    open fun getHint(context: Resources): String? = null
 
     data object DeviceTerminated : DisconnectionReason() {
-        override fun getMessage(context: Context) =
+        override fun getMessage(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_device_terminated)
 
-        override fun getHint(context: Context) =
+        override fun getHint(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.hint_unpair_instructions)
     }
 
     data object ConnectionTimeout : DisconnectionReason() {
-        override fun getMessage(context: Context) =
+        override fun getMessage(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_timeout)
 
-        override fun getHint(context: Context) =
+        override fun getHint(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.hint_check_nearby)
     }
 
     data object LinkLost : DisconnectionReason() {
-        override fun getMessage(context: Context) =
+        override fun getMessage(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_link_lost)
     }
 
     data object UserRequested : DisconnectionReason() {
-        override fun getMessage(context: Context) =
+        override fun getMessage(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_user_requested)
     }
 
     data class Unknown(val status: Int, val hintResId: Int? = null) : DisconnectionReason() {
-        override fun getMessage(context: Context) =
+        override fun getMessage(context: Resources) =
             context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_unknown, status)
 
-        override fun getHint(context: Context) = hintResId?.let { context.getString(it) }
+        override fun getHint(context: Resources) = hintResId?.let { context.getString(it) }
     }
 
     companion object {
@@ -1494,6 +1495,7 @@ class QPController(private val context: Context) {
     /**
      * Cleanup all resources and cancel all jobs.
      * Should be called when QPController is no longer needed.
+     * Note: Currently not used, but maybe we need too?
      */
     fun close() {
         disconnect()

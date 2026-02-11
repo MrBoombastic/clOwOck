@@ -53,7 +53,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -71,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -96,6 +96,7 @@ import com.mrboombastic.buwudzik.device.BluetoothScanner
 import com.mrboombastic.buwudzik.device.DeviceSettings
 import com.mrboombastic.buwudzik.device.QPController
 import com.mrboombastic.buwudzik.device.SensorData
+import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.screens.AlarmManagementScreen
 import com.mrboombastic.buwudzik.ui.screens.DeviceImportScreen
 import com.mrboombastic.buwudzik.ui.screens.DeviceSettingsScreen
@@ -386,6 +387,8 @@ class MainViewModel(
     fun reloadAlarms() {
         viewModelScope.launch {
             try {
+                // Delay to ensure previous write (like setAlarm) is fully processed by the device
+                delay(300)
                 AppLogger.d(TAG, "Reloading alarms...")
                 val deviceAlarms = qpController.readAlarms()
                 val alarmsWithTitles = deviceAlarms.map { alarm ->
@@ -614,7 +617,8 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val context = LocalContext.current
+                    LocalContext.current
+                    val resources = LocalResources.current
                     val startDestination =
                         if (settingsRepository.isSetupCompleted) "home" else "setup"
 
@@ -632,8 +636,8 @@ class MainActivity : AppCompatActivity() {
                                 popUpTo("home") { inclusive = true }
                             }
 
-                            val reasonMessage = reason.getMessage(context)
-                            val reasonHint = reason.getHint(context)
+                            val reasonMessage = reason.getMessage(resources)
+                            val reasonHint = reason.getHint(resources)
 
                             val fullMessage = if (reasonHint != null) {
                                 "$reasonMessage $reasonHint"
@@ -653,6 +657,7 @@ class MainActivity : AppCompatActivity() {
 
                     // Handle connection errors (diagnostic hints)
                     val connectionError by viewModel.connectionError.collectAsState()
+                    val okText = stringResource(android.R.string.ok)
                     LaunchedEffect(connectionError) {
                         connectionError?.let { error ->
                             // Avoid showing generic "Disconnected" message if we already have a specific DisconnectionEvent
@@ -662,7 +667,7 @@ class MainActivity : AppCompatActivity() {
                                 snackbarHostState.showSnackbar(
                                     message = error,
                                     duration = SnackbarDuration.Long,
-                                    actionLabel = context.getString(android.R.string.ok)
+                                    actionLabel = okText
                                 )
                             }
                             viewModel.clearConnectionError()
@@ -670,7 +675,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter") Scaffold(
-                        snackbarHost = { SnackbarHost(snackbarHostState) }) { _ ->
+                        snackbarHost = { CustomSnackbarHost(snackbarHostState) }) { _ ->
                         NavHost(
                             navController = navController,
                             startDestination = startDestination,

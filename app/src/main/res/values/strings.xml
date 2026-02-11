@@ -108,9 +108,7 @@
     <string name="device_timeout_message">Device timed out. Please move closer and try again.</string>
     <string name="save_failed_message">Failed to save: %1$s</string>
     <string name="alarm_management_title">Alarm management</string>
-    <string name="updating_alarm_msg">Updating alarm %1$d…</string>
     <string name="alarm_updated_msg" tools:ignore="PluralsCandidate">Alarm %1$d updated</string>
-    <string name="deleting_alarm_msg">Deleting alarm %1$d…</string>
     <string name="alarm_deleted_msg" tools:ignore="PluralsCandidate">Alarm %1$d deleted</string>
     <string name="enable_bluetooth_msg">Please enable Bluetooth</string>
     <string name="bluetooth_perms_msg">Bluetooth permissions required</string>
