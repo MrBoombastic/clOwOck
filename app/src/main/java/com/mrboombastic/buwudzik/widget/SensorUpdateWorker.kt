@@ -67,11 +67,13 @@ class SensorUpdateWorker(
 
         val scanner = BluetoothScanner(applicationContext)
         val targetMac = settingsRepository.targetMacAddress
+        // Use LOW_LATENCY for manual refreshes, BALANCED for periodic background updates
+        val scanMode =
+            if (forceRefresh) ScanSettings.SCAN_MODE_LOW_LATENCY else ScanSettings.SCAN_MODE_BALANCED
 
-        // Use LOW_LATENCY mode for faster widget updates in background
         val result = withTimeoutOrNull(SCAN_TIMEOUT_MS) {
             try {
-                scanner.scan(targetMac, ScanSettings.SCAN_MODE_BALANCED).first()
+                scanner.scan(targetMac, scanMode).first()
             } catch (e: Exception) {
                 Log.e(TAG, "Error during scan", e)
                 null

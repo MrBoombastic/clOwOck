@@ -86,8 +86,13 @@ class BluetoothScanner(context: Context) {
             }
         }
 
-        val filters = emptyList<ScanFilter>().plus(
-            ScanFilter.Builder().setServiceData(serviceUUID, null).build()
+        val filters = listOf(
+            ScanFilter.Builder()
+                .apply {
+                    if (targetAddress != null) setDeviceAddress(targetAddress)
+                }
+                .setServiceData(serviceUUID, null)
+                .build()
         )
 
         val settings = ScanSettings.Builder().setScanMode(scanMode).build()
