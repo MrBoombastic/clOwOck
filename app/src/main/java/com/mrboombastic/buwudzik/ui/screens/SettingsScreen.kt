@@ -238,14 +238,13 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                         macAddress = it
                         val trimmed = it.trim()
                         // Validate MAC address format
-                        val isValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
-                        isMacAddressValid = isValid
+                        isMacAddressValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
                         
                         // Save to repository only if valid
-                        if (trimmed.isNotEmpty() && isValid) {
+                        if (trimmed.isNotEmpty() && isMacAddressValid) {
                             repository.targetMacAddress = trimmed
-                        } else if (trimmed.isEmpty()) {
-                            // Use default if cleared
+                        } else {
+                            // Use default if cleared or invalid
                             repository.targetMacAddress = SettingsRepository.DEFAULT_MAC
                         }
                         // Invalid non-empty MAC addresses are not saved to prevent crashes
