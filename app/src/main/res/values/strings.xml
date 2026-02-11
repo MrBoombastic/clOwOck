@@ -61,7 +61,6 @@
     <string name="bluetooth_required_title">Bluetooth enabled is required</string>
     <string name="bluetooth_required_desc">This app requires Bluetooth to connect to your devices. Please turn it on to continue.</string>
     <string name="turn_on_bluetooth">Turn on</string>
-    <string name="device_disconnected">Device disconnected</string>
     <string name="setup_title">Device setup</string>
     <string name="setup_subtitle">Select your device</string>
     <string name="setup_scanning">Scanning for devices…</string>
@@ -109,9 +108,7 @@
     <string name="device_timeout_message">Device timed out. Please move closer and try again.</string>
     <string name="save_failed_message">Failed to save: %1$s</string>
     <string name="alarm_management_title">Alarm management</string>
-    <string name="updating_alarm_msg">Updating alarm %1$d…</string>
     <string name="alarm_updated_msg" tools:ignore="PluralsCandidate">Alarm %1$d updated</string>
-    <string name="deleting_alarm_msg">Deleting alarm %1$d…</string>
     <string name="alarm_deleted_msg" tools:ignore="PluralsCandidate">Alarm %1$d deleted</string>
     <string name="enable_bluetooth_msg">Please enable Bluetooth</string>
     <string name="bluetooth_perms_msg">Bluetooth permissions required</string>
@@ -186,7 +183,7 @@
     <string name="share_device_title">Share Device</string>
     <string name="import_device_title">Import Device</string>
     <string name="share_qr_instruction">Scan this QR code on another device to import settings.</string>
-    <string name="import_qr_instruction">Point camera at QR code</string>
+    <string name="import_qr_instruction">Point camera at QR code.</string>
     <string name="import_success">Device imported successfully!</string>
     <string name="import_error">Invalid QR code</string>
     <string name="no_device_to_share">No device paired to share</string>
@@ -194,4 +191,14 @@
     <string name="import_device_button">Import device</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
     <string name="widget_refresh_description">Refresh sensor data</string>
+    <string name="auth_hint">You may need to unpair the device in settings, then pair it again.</string>
+    <string name="invalid_mac_format">Invalid MAC address format (XX:XX:XX:XX:XX:XX)!</string>
+    <string name="disconnect_reason_device_terminated">Device terminated connection.</string>
+    <string name="disconnect_reason_timeout">Connection timeout.</string>
+    <string name="disconnect_reason_link_lost">Link lost.</string>
+    <string name="disconnect_reason_user_requested">User requested disconnect.</string>
+    <string name="disconnect_reason_unknown">Disconnected (status: %1$d).</string>
+    <string name="hint_unpair_instructions">You may need to unpair the device in app.</string>
+    <string name="hint_check_nearby">Make sure the device is nearby.</string>
+    <string name="hint_restart_bluetooth">Try restarting Bluetooth or unpairing the device.</string>
 </resources>

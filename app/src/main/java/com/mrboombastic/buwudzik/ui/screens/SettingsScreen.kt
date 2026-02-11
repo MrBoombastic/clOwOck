@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.ResolveInfo
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
@@ -220,14 +219,15 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
         topBar = {
             TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = {
                 BackNavigationButton(navController) {
-                    // Ensure MAC is not empty before going back
                     val finalMac = macAddress.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
-                    if (finalMac != repository.targetMacAddress) {
+                    val isValid = BluetoothAdapter.checkBluetoothAddress(finalMac)
+
+                    if (isValid && finalMac != repository.targetMacAddress) {
                         repository.targetMacAddress = finalMac
                     }
 
                     // Restart scanning if MAC or scan mode changed
-                    if (finalMac != initialMacAddress || scanMode != initialScanMode) {
+                    if (isValid && (finalMac != initialMacAddress || scanMode != initialScanMode)) {
                         viewModel.restartScanning()
                     }
                     navController.popBackStack()
@@ -250,23 +250,32 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 OutlinedTextField(
                     value = macAddress,
                     onValueChange = {
-                        macAddress = it
-                        val trimmed = it.trim()
-                        // Validate MAC address format
+                        val uppercased = it.uppercase()
+                        macAddress = uppercased
+                        val trimmed = uppercased.trim()
+
+                        // Validate MAC address format (case-insensitive)
+                        // Note: BluetoothAdapter.checkBluetoothAddress usually requires uppercase in older Android versions
                         isMacAddressValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
-                        
-                        // Save to repository only if valid
-                        if (trimmed.isNotEmpty() && isMacAddressValid) {
+
+                        // Save to repository only if it's a valid and complete MAC address (17 chars)
+                        // or if it's cleared (will revert to default in BackNavigationButton)
+                        if (trimmed.length == 17 && isMacAddressValid) {
                             repository.targetMacAddress = trimmed
-                        } else {
-                            // Use default if cleared or invalid
-                            repository.targetMacAddress = SettingsRepository.DEFAULT_MAC
+                            AppLogger.d("SettingsScreen", "MAC Address updated to: $trimmed")
                         }
-                        // Invalid non-empty MAC addresses are not saved to prevent crashes
                     },
                     label = { Text(stringResource(R.string.target_mac_label)) },
                     modifier = Modifier.weight(1f),
                     isError = !isMacAddressValid,
+                    supportingText = {
+                        if (!isMacAddressValid) {
+                            Text(
+                                text = stringResource(R.string.invalid_mac_format),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 )
 
                 FilledTonalIconButton(
@@ -448,7 +457,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                                 }
                             }
                         } catch (e: Exception) {
-                            Log.e("SettingsScreen", "Error checking for updates", e)
+                            AppLogger.e("SettingsScreen", "Error checking for updates", e)
                             withContext(Dispatchers.Main) {
                                 isCheckingUpdates = false
                                 Toast.makeText(
@@ -564,7 +573,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                                     ).show()
                                 }
                             } catch (e: Exception) {
-                                Log.e("SettingsScreen", "Error setting time", e)
+                                AppLogger.e("SettingsScreen", "Error setting time", e)
                                 Toast.makeText(
                                     appContext,
                                     errorTemplate.format(e.message ?: "Unknown"),

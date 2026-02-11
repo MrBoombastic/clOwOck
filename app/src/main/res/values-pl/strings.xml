@@ -53,14 +53,13 @@
     <string name="update_download_channel_desc">Powiadomienia o postępie pobierania aktualizacji</string>
     <string name="update_downloading_title">Pobieranie aktualizacji</string>
     <string name="update_download_complete">Pobieranie zakończone</string>
-    <string name="update_download_complete_desc">Aktualizacja została pobrana. Kliknij aby zainstalować.</string>
+    <string name="update_download_complete_desc">Aktualizacja została pobrana. Kliknij, aby zainstalować.</string>
     <string name="update_download_error">Błąd pobierania</string>
     <string name="update_download_error_desc">Nie udało się pobrać aktualizacji</string>
     <string name="bluetooth_disabled">Bluetooth jest wyłączony</string>
     <string name="bluetooth_required_title">Wymagany włączony Bluetooth</string>
-    <string name="bluetooth_required_desc">Ta aplikacja wymaga Bluetooth do połączenia z urządzeniami. Proszę włącz go, aby kontynuować.</string>
+    <string name="bluetooth_required_desc">Ta aplikacja wymaga Bluetooth do połączenia z urządzeniami. Włącz go, aby kontynuować.</string>
     <string name="turn_on_bluetooth">Włącz</string>
-    <string name="device_disconnected">Urządzenie rozłączone</string>
     <string name="setup_title">Konfiguracja urządzenia</string>
     <string name="setup_subtitle">Wybierz swoje urządzenie</string>
     <string name="setup_scanning">Skanowanie urządzeń…</string>
@@ -105,9 +104,7 @@
     <string name="device_timeout_message">Upłynął limit czasu urządzenia. Podejdź bliżej i spróbuj ponownie.</string>
     <string name="save_failed_message">Nie udało się zapisać: %1$s</string>
     <string name="alarm_management_title">Zarządzanie budzikami</string>
-    <string name="updating_alarm_msg">Aktualizowanie budzika %1$d…</string>
     <string name="alarm_updated_msg">Zaktualizowano budzik %1$d</string>
-    <string name="deleting_alarm_msg">Usuwanie budzika %1$d…</string>
     <string name="alarm_deleted_msg">Usunięto budzik %1$d</string>
     <string name="enable_bluetooth_msg">Proszę włączyć Bluetooth</string>
     <string name="bluetooth_perms_msg">Wymagane uprawnienia do Bluetooth</string>
@@ -137,7 +134,7 @@
     <string name="custom_ringtone_header">Własny dzwonek</string>
     <string name="select_audio_file">Wybierz plik audio</string>
     <string name="file_selected">Plik wybrany</string>
-    <string name="audio_format_hint">Audio zostanie przekonwertowane do 8kHz mono.</string>
+    <string name="audio_format_hint">Audio zostanie przekonwertowane do 8 kHz mono.</string>
     <string name="current_label">Aktualny</string>
     <string name="converting_audio">Konwertowanie audio…</string>
     <string name="uploading_progress">Przesyłanie: %1$d%%</string>
@@ -174,7 +171,7 @@
     <string name="share_device_title">Udostępnij urządzenie</string>
     <string name="import_device_title">Importuj urządzenie</string>
     <string name="share_qr_instruction">Zeskanuj ten kod QR na innym urządzeniu, aby zaimportować ustawienia.</string>
-    <string name="import_qr_instruction">Skieruj aparat na kod QR</string>
+    <string name="import_qr_instruction">Skieruj aparat na kod QR.</string>
     <string name="import_success">Urządzenie zaimportowane pomyślnie!</string>
     <string name="import_error">Nieprawidłowy kod QR</string>
     <string name="no_device_to_share">Brak sparowanego urządzenia do udostępnienia</string>
@@ -190,4 +187,14 @@
     <string name="content_desc_fast_forward">Przeskocz wprzód</string>
     <string name="error_no_audio_selected">Nie wybrano audio</string>
     <string name="widget_refresh_description">Odśwież dane z czujników</string>
+    <string name="auth_hint">Może być konieczne zapomnienie urządzenia w ustawieniach, a następnie ponowne sparowanie.</string>
+    <string name="invalid_mac_format">Nieprawidłowy format adresu MAC (XX:XX:XX:XX:XX:XX)!</string>
+    <string name="disconnect_reason_device_terminated">Urządzenie zakończyło połączenie.</string>
+    <string name="disconnect_reason_timeout">Limit czasu połączenia.</string>
+    <string name="disconnect_reason_link_lost">Utracono połączenie.</string>
+    <string name="disconnect_reason_user_requested">Użytkownik się rozłączył.</string>
+    <string name="disconnect_reason_unknown">Rozłączono (status: %1$d).</string>
+    <string name="hint_unpair_instructions">Może być konieczne zapomnienie urządzenia w aplikacji.</string>
+    <string name="hint_check_nearby">Upewnij się, że urządzenie jest w pobliżu.</string>
+    <string name="hint_restart_bluetooth">Spróbuj zrestartować Bluetooth lub rozparować urządzenie.</string>
 </resources>

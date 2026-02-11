@@ -69,6 +69,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mrboombastic.buwudzik.R
+import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -79,6 +80,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 private const val MAX_OUTPUT_SIZE = 98_000 // 98KB limit for device
+private const val TAG = "AudioTrimmer"
+
 
 /**
  * Extract waveform amplitudes from audio file for visualization.
@@ -211,7 +214,7 @@ suspend fun extractWaveform(
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("AudioTrimmer", "Error extracting waveform", e)
+            AppLogger.e(TAG, "Error extracting waveform", e)
         }
 
         amplitudes
@@ -239,7 +242,7 @@ suspend fun getAudioInfo(context: Context, uri: Uri): AudioInfo = withContext(Di
         }
         extractor.release()
     } catch (e: Exception) {
-        android.util.Log.e("AudioTrimmer", "Error getting info", e)
+        AppLogger.e(TAG, "Error getting info", e)
     }
     AudioInfo(0L, 1)
 }
@@ -394,7 +397,7 @@ fun AudioTrimmerDialog(
                 playbackPosition = 0f
                 isPreviewLoading = false
             } catch (e: Exception) {
-                android.util.Log.e("AudioTrimmer", "Error playing preview", e)
+                AppLogger.e(TAG, "Error playing preview", e)
                 isPlaying = false
                 isPreviewLoading = false
             }

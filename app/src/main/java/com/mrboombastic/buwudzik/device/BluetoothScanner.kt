@@ -9,7 +9,6 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
-import android.util.Log
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -47,21 +46,24 @@ class BluetoothScanner(private val context: Context) {
         )
 
         if (!com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(context)) {
-            Log.e("BluetoothScanner", "Missing Bluetooth permissions")
+            AppLogger.e("BluetoothScanner", "Missing Bluetooth permissions")
             close()
             return@callbackFlow
         }
 
         val leScanner = scanner
         if (leScanner == null) {
-            Log.e("BluetoothScanner", "BluetoothLeScanner is null")
+            AppLogger.e("BluetoothScanner", "BluetoothLeScanner is null")
             close()
             return@callbackFlow
         }
 
         // Validate MAC address before using it in filter.
         if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
-            Log.e("BluetoothScanner", "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress")
+            AppLogger.e(
+                "BluetoothScanner",
+                "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress"
+            )
             close()
             return@callbackFlow
         }
@@ -92,19 +94,19 @@ class BluetoothScanner(private val context: Context) {
                     if (sensorData != null) trySend(sensorData)
 
                 } catch (e: Exception) {
-                    Log.e("BluetoothScanner", "Error parsing data", e)
+                    AppLogger.e("BluetoothScanner", "Error parsing data", e)
                 }
             }
 
             override fun onScanFailed(errorCode: Int) {
-                Log.e("BluetoothScanner", "Scan failed: $errorCode")
+                AppLogger.e("BluetoothScanner", "Scan failed: $errorCode")
             }
         }
 
         val filters = listOf(
             ScanFilter.Builder()
                 .apply {
-                    // Set device address (validated above)
+                    // Set device address
                     if (targetAddress != null) {
                         setDeviceAddress(targetAddress)
                     }

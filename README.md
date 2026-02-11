@@ -81,7 +81,10 @@ same token must be used for all future connections.
 3. Send **Auth Init** to **Auth Write** (`...0001`): `11 01 [Token 16B]`
 4. Wait for ACK on **Auth Notify**: `04 ff 01 00 02` (success, proceed to step 5)
 5. Send **Auth Confirm** to **Auth Write**: `11 02 [Token 16B]`
-6. Wait for final ACK: `04 ff 02 00 00` (authentication complete)
+6. Wait for final ACK: `04 ff 02 00 00`
+
+Device will send you an ACK even when the token is bad. Try to sync time or do other "privileged"
+action and check if the device will close connection with you.
 
 **Token Management:**
 

@@ -1,12 +1,17 @@
 package com.mrboombastic.buwudzik.data
 
+import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.glance.appwidget.updateAll
+import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private const val TAG = "SettingsRepository"
+
 
 class SettingsRepository(private val context: Context) {
     private val prefs: SharedPreferences =
@@ -62,8 +67,14 @@ class SettingsRepository(private val context: Context) {
             return mac.trim().ifEmpty { DEFAULT_MAC }
         }
         set(value) {
-            val macToSave = value.trim().ifEmpty { DEFAULT_MAC }
-            prefs.edit { putString(KEY_TARGET_MAC, macToSave.uppercase()) }
+            // Normalize the MAC address before validation
+            val macToSave = value.trim().uppercase(java.util.Locale.ROOT).ifEmpty { DEFAULT_MAC }
+            if (BluetoothAdapter.checkBluetoothAddress(macToSave)) {
+                prefs.edit { putString(KEY_TARGET_MAC, macToSave) }
+            } else {
+                // Log warning and ignore invalid input
+                AppLogger.w(TAG, "Attempted to save invalid MAC: $macToSave")
+            }
         }
 
     var scanMode: Int

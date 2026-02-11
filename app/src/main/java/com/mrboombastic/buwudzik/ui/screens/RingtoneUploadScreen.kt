@@ -33,7 +33,6 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -63,6 +62,7 @@ import com.mrboombastic.buwudzik.audio.AudioTrimmerDialog
 import com.mrboombastic.buwudzik.audio.ChannelMode
 import com.mrboombastic.buwudzik.device.QPController
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
+import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -276,7 +276,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
             })
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }, topBar = {
+    Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
         TopAppBar(
             title = { Text(stringResource(R.string.ringtone_upload_title)) },
             navigationIcon = {

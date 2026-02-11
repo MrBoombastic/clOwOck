@@ -3,7 +3,6 @@ package com.mrboombastic.buwudzik.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.core.content.edit
 import com.mrboombastic.buwudzik.utils.AppLogger
 import java.security.SecureRandom
@@ -34,7 +33,7 @@ class TokenStorage(context: Context) {
         return try {
             hexToBytes(tokenHex)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse stored token for $macAddress", e)
+            AppLogger.e(TAG, "Failed to parse stored token for $macAddress", e)
             null
         }
     }
