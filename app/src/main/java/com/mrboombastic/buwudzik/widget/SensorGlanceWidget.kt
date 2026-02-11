@@ -1,7 +1,6 @@
 package com.mrboombastic.buwudzik.widget
 
 import android.content.Context
-import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -40,6 +39,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.mrboombastic.buwudzik.MainActivity
 import com.mrboombastic.buwudzik.R
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class SensorGlanceWidget : GlanceAppWidget() {
@@ -64,8 +65,8 @@ class SensorGlanceWidget : GlanceAppWidget() {
                 val humidityText =
                     state.sensorData?.let { "💧%.0f%%".format(locale, it.humidity) } ?: ""
                 val batteryText = state.sensorData?.let { "🔋${it.battery}%" } ?: ""
-                val relativeTimeText = if (state.lastUpdate > 0) {
-                    formatRelativeTime(state.lastUpdate)
+                val lastUpdateText = if (state.lastUpdate > 0) {
+                    formatAbsoluteTime(state.lastUpdate, locale)
                 } else ""
                 val hasData = state.sensorData != null
 
@@ -74,7 +75,7 @@ class SensorGlanceWidget : GlanceAppWidget() {
                     tempText = tempText,
                     humidityText = humidityText,
                     batteryText = batteryText,
-                    relativeTimeText = relativeTimeText,
+                    lastUpdateText = lastUpdateText,
                     hasError = state.hasError,
                     isLoading = state.isLoading,
                     hasData = hasData,
@@ -89,7 +90,7 @@ class SensorGlanceWidget : GlanceAppWidget() {
         tempText: String,
         humidityText: String,
         batteryText: String,
-        relativeTimeText: String,
+        lastUpdateText: String,
         hasError: Boolean,
         isLoading: Boolean,
         hasData: Boolean,
@@ -224,15 +225,15 @@ class SensorGlanceWidget : GlanceAppWidget() {
                                 )
                             )
                             Text(
-                                text = relativeTimeText.ifEmpty { LocalContext.current.getString(R.string.update_error) },
+                                text = lastUpdateText.ifEmpty { LocalContext.current.getString(R.string.update_error) },
                                 style = TextStyle(
                                     color = errorColor, fontSize = footerSizeVal.sp
                                 )
                             )
                         }
 
-                        relativeTimeText.isNotEmpty() -> Text(
-                            text = relativeTimeText, style = TextStyle(
+                        lastUpdateText.isNotEmpty() -> Text(
+                            text = lastUpdateText, style = TextStyle(
                                 color = secondaryText, fontSize = footerSizeVal.sp
                             )
                         )
@@ -270,15 +271,11 @@ class SensorGlanceWidget : GlanceAppWidget() {
 
     companion object {
         /**
-         * Format a timestamp as localized relative time using Android's DateUtils.
+         * Format a timestamp as absolute time using SimpleDateFormat and user's locale.
          */
-        fun formatRelativeTime(timestampMs: Long): String {
-            return DateUtils.getRelativeTimeSpanString(
-                timestampMs,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS,
-                DateUtils.FORMAT_ABBREV_RELATIVE
-            ).toString()
+        fun formatAbsoluteTime(timestampMs: Long, locale: Locale): String {
+            val sdf = SimpleDateFormat("dd.MM HH:mm", locale)
+            return sdf.format(Date(timestampMs))
         }
     }
 }
