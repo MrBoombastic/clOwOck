@@ -12,6 +12,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
@@ -153,7 +154,8 @@ class SensorGlanceWidget : GlanceAppWidget() {
                         )
                         Spacer(modifier = GlanceModifier.height(2.dp))
                         Text(
-                            text = "Tap to open", style = TextStyle(
+                            text = LocalContext.current.getString(R.string.widget_tap_to_open),
+                            style = TextStyle(
                                 color = dimText, fontSize = subSizeVal.sp
                             )
                         )
@@ -207,7 +209,8 @@ class SensorGlanceWidget : GlanceAppWidget() {
                 ) {
                     when {
                         isLoading -> Text(
-                            text = "Updating…", style = TextStyle(
+                            text = LocalContext.current.getString(R.string.updating_label),
+                            style = TextStyle(
                                 color = loadingColor, fontSize = footerSizeVal.sp
                             )
                         )
@@ -221,7 +224,8 @@ class SensorGlanceWidget : GlanceAppWidget() {
                                 )
                             )
                             Text(
-                                text = relativeTimeText.ifEmpty { "Error" }, style = TextStyle(
+                                text = relativeTimeText.ifEmpty { LocalContext.current.getString(R.string.update_error) },
+                                style = TextStyle(
                                     color = errorColor, fontSize = footerSizeVal.sp
                                 )
                             )

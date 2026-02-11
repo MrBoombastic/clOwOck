@@ -2,6 +2,7 @@ package com.mrboombastic.buwudzik.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.mrboombastic.buwudzik.device.SensorData
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 
@@ -70,7 +71,7 @@ class SensorRepository(private val context: Context) {
     }
 
     fun setUpdateError(hasError: Boolean) {
-        prefs.edit().putBoolean(KEY_HAS_ERROR, hasError).commit()
+        prefs.edit { putBoolean(KEY_HAS_ERROR, hasError) }
     }
 
     fun isLoading(): Boolean {
@@ -78,6 +79,6 @@ class SensorRepository(private val context: Context) {
     }
 
     fun setLoading(loading: Boolean) {
-        prefs.edit().putBoolean(KEY_IS_LOADING, loading).commit()
+        prefs.edit { putBoolean(KEY_IS_LOADING, loading) }
     }
 }

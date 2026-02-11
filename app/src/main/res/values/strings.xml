@@ -8,7 +8,6 @@
     <string name="settings_desc">Settings</string>
     <string name="settings_title">Settings</string>
     <string name="back_desc">Back</string>
-    <string name="refresh">Refresh</string>
     <string name="target_mac_label">Target MAC address</string>
     <string name="scan_devices_button">Scan devices</string>
     <string name="scan_mode_label">Scan mode</string>
@@ -78,6 +77,7 @@
     <string name="save">Save</string>
     <string name="error_prefix">Error: %1$s</string>
     <string name="updating_label">Updating…</string>
+    <string name="widget_tap_to_open">Tap to open</string>
     <string name="connect_to_device">Connect to device</string>
     <string name="connecting_to_device">Connecting to device…</string>
     <string name="disconnect">Disconnect</string>
@@ -133,12 +133,6 @@
     <string name="day_sat">Sat</string>
     <string name="day_sun">Sun</string>
     <string name="day_once">once</string>
-    <string name="widget_placeholder_temp" translatable="false">--°C</string>
-    <string name="widget_placeholder_hum" translatable="false">💧 --%</string>
-    <string name="widget_placeholder_bat" translatable="false">🔋 --%</string>
-    <string name="widget_small_desc">Compact sensor widget</string>
-    <string name="widget_medium_desc">Sensor widget with details</string>
-    <string name="widget_large_desc">Full sensor widget</string>
     <string name="ringtone_upload_title">Upload ringtone</string>
     <string name="ringtone_upload_button">Upload ringtone</string>
     <string name="current_ringtone_label">Current ringtone</string>
@@ -161,7 +155,6 @@
     <string name="trim_and_upload">Trim and upload</string>
     <string name="start_label">Start</string>
     <string name="drag_to_adjust_hint">Drag to move selection.</string>
-    <string name="time_placeholder" translatable="false">--:--</string>
     <string name="custom_ringtone_name">Custom</string>
     <string name="downloading_ringtone">Downloading ringtone…</string>
     <string name="channel_mode_label">Audio channel</string>

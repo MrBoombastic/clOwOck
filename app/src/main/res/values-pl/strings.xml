@@ -8,7 +8,6 @@
     <string name="settings_desc">Ustawienia</string>
     <string name="settings_title">Ustawienia</string>
     <string name="back_desc">Wstecz</string>
-    <string name="refresh">Odśwież</string>
     <string name="target_mac_label">Docelowy adres MAC</string>
     <string name="scan_devices_button">Skanuj urządzenie</string>
     <string name="scan_mode_label">Tryb skanowania</string>
@@ -76,6 +75,7 @@
     <string name="save">Zapisz</string>
     <string name="error_prefix">Błąd: %1$s</string>
     <string name="updating_label">Aktualizowanie…</string>
+    <string name="widget_tap_to_open">Stuknij, aby otworzyć</string>
     <string name="connect_to_device">Połącz się z urządzeniem</string>
     <string name="connecting_to_device">Łączenie z urządzeniem…</string>
     <string name="disconnect">Rozłącz</string>
