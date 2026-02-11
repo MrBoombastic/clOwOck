@@ -26,7 +26,7 @@ fun CustomSnackbarHost(
         modifier = modifier
     ) { data ->
         AnimatedVisibility(
-            visible = true,
+            visible = hostState.currentSnackbarData != null,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(
