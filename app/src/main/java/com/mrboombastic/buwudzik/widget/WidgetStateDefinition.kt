@@ -81,10 +81,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Function to read and emit current state
             // Launched on Default dispatcher to avoid blocking the main thread
-            // Cancels any previous in-flight job to prevent concurrent repository reads
+            // Creates new job, then atomically swaps and cancels the old job
             fun emitCurrentState() {
-                // Atomically swap old job with new one and cancel the old job
-                // This prevents the race condition where multiple jobs could be created
                 val job = launch(Dispatchers.Default) {
                     try {
                         // Use trySend (non-blocking) instead of send (suspending) because:
