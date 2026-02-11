@@ -32,14 +32,31 @@ data class WidgetState(
  */
 class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState> {
 
+    companion object {
+        private const val TAG = "WidgetStateDataStore"
+        
+        // SharedPreferences file names (must match those in repositories)
+        private const val SENSOR_PREFS_NAME = "sensor_prefs"
+        private const val SETTINGS_PREFS_NAME = "settings_prefs"
+        
+        // Sensor preference keys that affect widget state
+        private val SENSOR_KEYS = setOf(
+            "temp", "humidity", "battery", "rssi", "name", 
+            "mac_address", "timestamp", "has_error", "is_loading"
+        )
+        
+        // Settings preference key that affects widget display
+        private const val SETTINGS_KEY_LANGUAGE = "language"
+    }
+
     override val data: Flow<WidgetState>
         get() = callbackFlow {
             val sensorRepo = SensorRepository(context)
             val settingsRepo = SettingsRepository(context)
             
             // Get SharedPreferences instances
-            val sensorPrefs = context.getSharedPreferences("sensor_prefs", Context.MODE_PRIVATE)
-            val settingsPrefs = context.getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+            val sensorPrefs = context.getSharedPreferences(SENSOR_PREFS_NAME, Context.MODE_PRIVATE)
+            val settingsPrefs = context.getSharedPreferences(SETTINGS_PREFS_NAME, Context.MODE_PRIVATE)
             
             // Function to read and emit current state
             fun emitCurrentState() {
@@ -54,7 +71,7 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                 )
                 // Log if send failed (channel full or closed)
                 if (!result.isSuccess) {
-                    android.util.Log.w("WidgetStateDataStore", "Failed to emit state update: ${result.exceptionOrNull()?.message}")
+                    android.util.Log.w(TAG, "Failed to emit state update: ${result.exceptionOrNull()?.message}")
                 }
             }
             
@@ -65,14 +82,14 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             // Only emit updates for preference keys that affect widget state
             val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                 // Only react to sensor-related preference changes
-                if (key in setOf("temp", "humidity", "battery", "rssi", "name", "mac_address", "timestamp", "has_error", "is_loading")) {
+                if (key in SENSOR_KEYS) {
                     emitCurrentState()
                 }
             }
             
             val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                 // Only react to widget-relevant settings changes (language affects widget display)
-                if (key == "language") {
+                if (key == SETTINGS_KEY_LANGUAGE) {
                     emitCurrentState()
                 }
             }
