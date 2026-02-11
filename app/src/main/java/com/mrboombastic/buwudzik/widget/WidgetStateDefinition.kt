@@ -34,9 +34,6 @@ data class WidgetState(
  * This implementation uses callbackFlow to listen for SharedPreferences changes, allowing
  * the widget to automatically update when sensor data or settings change without requiring
  * explicit updateAll() calls.
- * 
- * Note: Listeners are stored as instance-level properties to maintain strong references,
- * preventing garbage collection while the flow is active.
  */
 class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState> {
 
@@ -66,10 +63,6 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             }
         }
     }
-    
-    // Store listeners as instance properties to prevent GC (strong references)
-    private var sensorListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
-    private var settingsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override val data: Flow<WidgetState>
         get() = callbackFlow {
@@ -124,38 +117,36 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             // Emit initial state
             emitCurrentState()
             
-            // Create and store listeners as instance properties (strong references prevent GC)
-            // Only emit updates for preference keys that affect widget state
-            // SharedPreferences listeners are invoked on the main thread, but we launch
-            // repository reads on Dispatchers.Default to avoid blocking
-            sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                // Only react to sensor-related preference changes (null check for safety)
-                if (key != null && key in SENSOR_KEYS) {
-                    emitCurrentState()
+            // Create listeners scoped to this flow collection
+            // Store in a data class to maintain strong references (prevent GC)
+            // SharedPreferences keeps only weak references, so we need strong refs
+            val listeners = object {
+                val sensor = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                    // Only react to sensor-related preference changes (null check for safety)
+                    if (key != null && key in SENSOR_KEYS) {
+                        emitCurrentState()
+                    }
                 }
-            }
-            
-            settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                // Only react to widget-relevant settings changes (null check for safety)
-                if (key == SETTINGS_KEY_LANGUAGE) {
-                    emitCurrentState()
+                
+                val settings = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                    // Only react to widget-relevant settings changes (null check for safety)
+                    if (key == SETTINGS_KEY_LANGUAGE) {
+                        emitCurrentState()
+                    }
                 }
             }
             
             // Register listeners
-            sensorPrefs.registerOnSharedPreferenceChangeListener(sensorListener)
-            settingsPrefs.registerOnSharedPreferenceChangeListener(settingsListener)
+            sensorPrefs.registerOnSharedPreferenceChangeListener(listeners.sensor)
+            settingsPrefs.registerOnSharedPreferenceChangeListener(listeners.settings)
             
             // Cleanup when flow is cancelled
             awaitClose {
                 // Unregister listeners first to prevent new jobs from being created
-                sensorPrefs.unregisterOnSharedPreferenceChangeListener(sensorListener)
-                settingsPrefs.unregisterOnSharedPreferenceChangeListener(settingsListener)
+                sensorPrefs.unregisterOnSharedPreferenceChangeListener(listeners.sensor)
+                settingsPrefs.unregisterOnSharedPreferenceChangeListener(listeners.settings)
                 // Then cancel any in-flight job
                 currentJob.getAndSet(null)?.cancel()
-                // Clear listener references
-                sensorListener = null
-                settingsListener = null
             }
         }
 
