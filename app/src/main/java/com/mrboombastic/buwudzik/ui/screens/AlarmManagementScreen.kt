@@ -81,12 +81,9 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
     var selectedAlarm by remember { mutableStateOf<Alarm?>(null) }
 
     // Pre-fetch string resources for use in callbacks
-    stringResource(R.string.updating_alarm_msg)
     val alarmUpdatedMsg = stringResource(R.string.alarm_updated_msg)
-    stringResource(R.string.deleting_alarm_msg)
     val alarmDeletedMsg = stringResource(R.string.alarm_deleted_msg)
     val errorPrefixMsg = stringResource(R.string.error_prefix)
-    stringResource(R.string.updating_label)
 
     // Edit alarm dialog
     selectedAlarm?.let { alarm ->
