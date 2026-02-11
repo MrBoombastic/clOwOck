@@ -148,9 +148,12 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Cleanup when flow is cancelled
             awaitClose {
-                currentJob.getAndSet(null)?.cancel()
+                // Unregister listeners first to prevent new jobs from being created
                 sensorPrefs.unregisterOnSharedPreferenceChangeListener(sensorListener)
                 settingsPrefs.unregisterOnSharedPreferenceChangeListener(settingsListener)
+                // Then cancel any in-flight job
+                currentJob.getAndSet(null)?.cancel()
+                // Clear listener references
                 sensorListener = null
                 settingsListener = null
             }
