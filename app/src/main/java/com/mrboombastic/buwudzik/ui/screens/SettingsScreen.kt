@@ -293,6 +293,10 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                         LocaleListCompat.forLanguageTags(code)
                     }
                     AppCompatDelegate.setApplicationLocales(appLocale)
+                    // Update widgets in a structured coroutine scope
+                    coroutineScope.launch {
+                        repository.notifyWidgetsIfNeeded()
+                    }
                 })
 
             // Theme
@@ -356,6 +360,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = null
 
                             expandedWidgetAction = false
+                            
+                            // Update widgets in a structured coroutine scope
+                            coroutineScope.launch {
+                                repository.notifyWidgetsIfNeeded()
+                            }
                         })
 
                     installedApps.forEach { resolveInfo ->
@@ -368,6 +377,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = pkg
 
                             expandedWidgetAction = false
+                            
+                            // Update widgets in a structured coroutine scope
+                            coroutineScope.launch {
+                                repository.notifyWidgetsIfNeeded()
+                            }
                         })
                     }
                 }
