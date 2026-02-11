@@ -53,14 +53,13 @@
     <string name="update_download_channel_desc">Powiadomienia o postępie pobierania aktualizacji</string>
     <string name="update_downloading_title">Pobieranie aktualizacji</string>
     <string name="update_download_complete">Pobieranie zakończone</string>
-    <string name="update_download_complete_desc">Aktualizacja została pobrana. Kliknij aby zainstalować.</string>
+    <string name="update_download_complete_desc">Aktualizacja została pobrana. Kliknij, aby zainstalować.</string>
     <string name="update_download_error">Błąd pobierania</string>
     <string name="update_download_error_desc">Nie udało się pobrać aktualizacji</string>
     <string name="bluetooth_disabled">Bluetooth jest wyłączony</string>
     <string name="bluetooth_required_title">Wymagany włączony Bluetooth</string>
-    <string name="bluetooth_required_desc">Ta aplikacja wymaga Bluetooth do połączenia z urządzeniami. Proszę włącz go, aby kontynuować.</string>
+    <string name="bluetooth_required_desc">Ta aplikacja wymaga Bluetooth do połączenia z urządzeniami. Włącz go, aby kontynuować.</string>
     <string name="turn_on_bluetooth">Włącz</string>
-    <string name="device_disconnected">Urządzenie rozłączone</string>
     <string name="setup_title">Konfiguracja urządzenia</string>
     <string name="setup_subtitle">Wybierz swoje urządzenie</string>
     <string name="setup_scanning">Skanowanie urządzeń…</string>
@@ -137,7 +136,7 @@
     <string name="custom_ringtone_header">Własny dzwonek</string>
     <string name="select_audio_file">Wybierz plik audio</string>
     <string name="file_selected">Plik wybrany</string>
-    <string name="audio_format_hint">Audio zostanie przekonwertowane do 8kHz mono.</string>
+    <string name="audio_format_hint">Audio zostanie przekonwertowane do 8 kHz mono.</string>
     <string name="current_label">Aktualny</string>
     <string name="converting_audio">Konwertowanie audio…</string>
     <string name="uploading_progress">Przesyłanie: %1$d%%</string>

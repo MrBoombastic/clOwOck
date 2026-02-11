@@ -61,7 +61,6 @@
     <string name="bluetooth_required_title">Bluetooth enabled is required</string>
     <string name="bluetooth_required_desc">This app requires Bluetooth to connect to your devices. Please turn it on to continue.</string>
     <string name="turn_on_bluetooth">Turn on</string>
-    <string name="device_disconnected">Device disconnected</string>
     <string name="setup_title">Device setup</string>
     <string name="setup_subtitle">Select your device</string>
     <string name="setup_scanning">Scanning for devices…</string>
