@@ -95,17 +95,17 @@ class BluetoothScanner(private val context: Context) {
         }
 
         // Validate MAC address before using it in filter
-        val isValidMac = targetAddress != null && BluetoothAdapter.checkBluetoothAddress(targetAddress)
-        
-        if (targetAddress != null && !isValidMac) {
-            Log.w("BluetoothScanner", "Invalid MAC address format: $targetAddress. Falling back to service-data-only filtering.")
+        if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
+            Log.e("BluetoothScanner", "Invalid MAC address format: $targetAddress")
+            close()
+            return@callbackFlow
         }
         
         val filters = listOf(
             ScanFilter.Builder()
                 .apply {
-                    // Only set device address if it's valid to avoid IllegalArgumentException
-                    if (isValidMac && targetAddress != null) {
+                    // Only set device address if provided (already validated above)
+                    if (targetAddress != null) {
                         setDeviceAddress(targetAddress)
                     }
                 }
