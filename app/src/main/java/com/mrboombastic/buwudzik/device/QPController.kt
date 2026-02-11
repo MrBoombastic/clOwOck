@@ -184,15 +184,22 @@ fun createTimeZone(offset:Int,isPositive: Boolean): TimeZone {
 @SuppressLint("MissingPermission")
 class QPController(private val context: Context) {
 
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.Default + job)
+    // Separate job for command consumer that won't be canceled on disconnect
+    private val commandConsumerJob = SupervisorJob()
+    private val commandConsumerScope = CoroutineScope(Dispatchers.Default + commandConsumerJob)
+    
+    // Job for device-specific operations that can be canceled on disconnect
+    private val deviceJob = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.Default + deviceJob)
+    
     private val gattMutex = Mutex()
     private val commandChannel = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val _isBusy = MutableStateFlow(false)
     val isBusy = _isBusy.asStateFlow()
 
     init {
-        scope.launch {
+        // Launch command consumer on separate scope that won't be canceled
+        commandConsumerScope.launch {
             for (command in commandChannel) {
                 if (!isAuthenticated) {
                     AppLogger.w(TAG, "Device not authenticated, skipping queued command")
@@ -1469,7 +1476,7 @@ class QPController(private val context: Context) {
     }
 
     fun disconnect() {
-        job.cancelChildren()
+        deviceJob.cancelChildren()
         gatt?.disconnect()
         gatt?.close()
         gatt = null
