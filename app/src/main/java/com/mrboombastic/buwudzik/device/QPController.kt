@@ -1169,8 +1169,13 @@ class QPController(private val context: Context) {
             }
         }
 
-    fun enqueueCommand(action: suspend () -> Unit) {
-        commandChannel.trySend(action)
+    fun enqueueCommand(action: suspend () -> Unit): Boolean {
+        val result = commandChannel.trySend(action)
+        if (result.isFailure) {
+            AppLogger.w(TAG, "Failed to enqueue command: channel closed or full")
+            return false
+        }
+        return true
     }
 
     suspend fun setDaytimeBrightnessImmediate(percentage: Int): Boolean =
@@ -1476,12 +1481,13 @@ class QPController(private val context: Context) {
     }
 
     fun disconnect() {
+        // Set state flags first to prevent command consumer from processing commands during teardown
+        isAuthenticated = false
+        isConnected = false
         deviceJob.cancelChildren()
         gatt?.disconnect()
         gatt?.close()
         gatt = null
-        isConnected = false
-        isAuthenticated = false
         AppLogger.d(TAG, "Disconnected and closed GATT")
     }
 
