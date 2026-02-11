@@ -662,7 +662,7 @@ class MainActivity : AppCompatActivity() {
                                 snackbarHostState.showSnackbar(
                                     message = error,
                                     duration = SnackbarDuration.Long,
-                                    actionLabel = "OK"
+                                    actionLabel = context.getString(android.R.string.ok)
                                 )
                             }
                             viewModel.clearConnectionError()
