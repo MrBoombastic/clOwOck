@@ -39,7 +39,6 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.mrboombastic.buwudzik.MainActivity
 import com.mrboombastic.buwudzik.R
-import java.util.Date
 import java.util.Locale
 
 class SensorGlanceWidget : GlanceAppWidget() {
@@ -64,11 +63,6 @@ class SensorGlanceWidget : GlanceAppWidget() {
                 val humidityText =
                     state.sensorData?.let { "💧%.0f%%".format(locale, it.humidity) } ?: ""
                 val batteryText = state.sensorData?.let { "🔋${it.battery}%" } ?: ""
-                val timeText = if (state.lastUpdate > 0) {
-                    java.text.DateFormat.getDateTimeInstance(
-                        java.text.DateFormat.SHORT, java.text.DateFormat.SHORT, locale
-                    ).format(Date(state.lastUpdate))
-                } else ""
                 val relativeTimeText = if (state.lastUpdate > 0) {
                     formatRelativeTime(state.lastUpdate)
                 } else ""
@@ -79,7 +73,6 @@ class SensorGlanceWidget : GlanceAppWidget() {
                     tempText = tempText,
                     humidityText = humidityText,
                     batteryText = batteryText,
-                    timeText = timeText,
                     relativeTimeText = relativeTimeText,
                     hasError = state.hasError,
                     isLoading = state.isLoading,
@@ -95,7 +88,6 @@ class SensorGlanceWidget : GlanceAppWidget() {
         tempText: String,
         humidityText: String,
         batteryText: String,
-        timeText: String,
         relativeTimeText: String,
         hasError: Boolean,
         isLoading: Boolean,
@@ -229,13 +221,13 @@ class SensorGlanceWidget : GlanceAppWidget() {
                                 )
                             )
                             Text(
-                                text = timeText.ifEmpty { "Error" }, style = TextStyle(
+                                text = relativeTimeText.ifEmpty { "Error" }, style = TextStyle(
                                     color = errorColor, fontSize = footerSizeVal.sp
                                 )
                             )
                         }
 
-                        timeText.isNotEmpty() -> Text(
+                        relativeTimeText.isNotEmpty() -> Text(
                             text = relativeTimeText, style = TextStyle(
                                 color = secondaryText, fontSize = footerSizeVal.sp
                             )
