@@ -67,9 +67,10 @@ class SettingsRepository(private val context: Context) {
             return mac.trim().ifEmpty { DEFAULT_MAC }
         }
         set(value) {
-            val macToSave = value.trim().ifEmpty { DEFAULT_MAC }
+            // Normalize the MAC address before validation
+            val macToSave = value.trim().uppercase(java.util.Locale.ROOT).ifEmpty { DEFAULT_MAC }
             if (BluetoothAdapter.checkBluetoothAddress(macToSave)) {
-                prefs.edit { putString(KEY_TARGET_MAC, macToSave.uppercase()) }
+                prefs.edit { putString(KEY_TARGET_MAC, macToSave) }
             } else {
                 // Log warning and ignore invalid input
                 AppLogger.w(TAG, "Attempted to save invalid MAC: $macToSave")
