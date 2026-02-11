@@ -31,6 +31,7 @@
             android:fullBackupContent="@xml/backup_rules"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
+            android:supportsRtl="true"
             android:enableOnBackInvokedCallback="true"
             android:theme="@style/Theme.BUwUdzik">
         <activity
@@ -45,21 +46,16 @@
         </activity>
 
         <receiver
-                android:name=".widget.SensorWidget"
+                android:name=".widget.SensorGlanceReceiver"
                 android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.mrboombastic.buwudzik.ACTION_FORCE_UPDATE" />
             </intent-filter>
 
             <meta-data
                     android:name="android.appwidget.provider"
                     android:resource="@xml/sensor_widget_info" />
         </receiver>
-
-        <receiver
-                android:name=".widget.SensorUpdateReceiver"
-                android:exported="false" />
 
         <receiver
                 android:name=".BootReceiver"

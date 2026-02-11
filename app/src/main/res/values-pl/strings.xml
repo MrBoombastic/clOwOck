@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">bUwUdzik</string>
+    <string name="widget_description">Wyświetla temperaturę, wilgotność i stan baterii z Twojego urządzenia.</string>
     <string name="scanning_status">Skanowanie wspieranych urządzeń…</string>
     <string name="battery_label">Bateria: %1$d%%</string>
     <string name="rssi_label">Moc sygnału: %1$d dBm (%2$d%%)</string>
@@ -8,7 +9,6 @@
     <string name="settings_desc">Ustawienia</string>
     <string name="settings_title">Ustawienia</string>
     <string name="back_desc">Wstecz</string>
-    <string name="refresh">Odśwież</string>
     <string name="target_mac_label">Docelowy adres MAC</string>
     <string name="scan_devices_button">Skanuj urządzenie</string>
     <string name="scan_mode_label">Tryb skanowania</string>
@@ -20,10 +20,6 @@
     <string name="language_label">Język</string>
     <string name="language_system">systemowy</string>
     <string name="widget_update_interval_label">Częstotliwość aktualizacji widżetu</string>
-    <string name="minutes_1">1 minuta</string>
-    <string name="minutes_3">3 minuty</string>
-    <string name="minutes_5">5 minut</string>
-    <string name="minutes_10">10 minut</string>
     <string name="minutes_15">15 minut (domyślnie)</string>
     <string name="minutes_30">30 minut</string>
     <string name="minutes_45">45 minut</string>
@@ -80,6 +76,7 @@
     <string name="save">Zapisz</string>
     <string name="error_prefix">Błąd: %1$s</string>
     <string name="updating_label">Aktualizowanie…</string>
+    <string name="widget_tap_to_open">Stuknij, aby otworzyć</string>
     <string name="connect_to_device">Połącz się z urządzeniem</string>
     <string name="connecting_to_device">Łączenie z urządzeniem…</string>
     <string name="disconnect">Rozłącz</string>
@@ -192,4 +189,5 @@
     <string name="content_desc_rewind">Przewiń</string>
     <string name="content_desc_fast_forward">Przeskocz wprzód</string>
     <string name="error_no_audio_selected">Nie wybrano audio</string>
+    <string name="widget_refresh_description">Odśwież dane z czujników</string>
 </resources>

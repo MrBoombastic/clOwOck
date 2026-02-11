@@ -3,7 +3,10 @@ package com.mrboombastic.buwudzik.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.mrboombastic.buwudzik.widget.WidgetHelper
+import androidx.glance.appwidget.updateAll
+import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SettingsRepository(private val context: Context) {
     private val prefs: SharedPreferences =
@@ -33,10 +36,12 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Updates widgets when relevant settings change (theme, language, selected app)
+     * Updates all widgets to reflect setting changes.
+     * This is a suspend function that runs on a background dispatcher.
+     * Callers must launch it in an appropriate coroutine scope.
      */
-    private fun notifyWidgetsIfNeeded() {
-        WidgetHelper.updateAllWidgets(context)
+    suspend fun updateAllWidgets() = withContext(Dispatchers.IO) {
+        SensorGlanceWidget().updateAll(context)
     }
 
     var lastVersionCode: Int
@@ -71,20 +76,18 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getString(KEY_LANGUAGE, DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
         set(value) {
             prefs.edit { putString(KEY_LANGUAGE, value) }
-            notifyWidgetsIfNeeded()
         }
 
     var updateInterval: Long
-        get() = prefs.getLong(KEY_UPDATE_INTERVAL, DEFAULT_INTERVAL)
+        get() = prefs.getLong(KEY_UPDATE_INTERVAL, DEFAULT_INTERVAL).coerceAtLeast(15)
         set(value) {
-            prefs.edit { putLong(KEY_UPDATE_INTERVAL, value) }
+            prefs.edit { putLong(KEY_UPDATE_INTERVAL, value.coerceAtLeast(15)) }
         }
 
     var selectedAppPackage: String?
         get() = prefs.getString(KEY_SELECTED_APP, null)
         set(value) {
             prefs.edit { putString(KEY_SELECTED_APP, value) }
-            notifyWidgetsIfNeeded()
         }
 
     var theme: String

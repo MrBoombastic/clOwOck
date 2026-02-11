@@ -5,9 +5,6 @@
     <color name="widget_text_primary">#FF1C1B1F</color>
     <color name="widget_text_secondary">#FF49454F</color>
     <color name="widget_icon_tint">#FF49454F</color>
-    <color name="widget_humidity">#FF0061A4</color>
-    <color name="widget_button_bg">#FFE8DEF8</color>
-    <color name="widget_button_bg_pressed">#FFD0BCFF</color>
     <color name="bg_dark_splash">#0E1214</color>
 </resources>
 

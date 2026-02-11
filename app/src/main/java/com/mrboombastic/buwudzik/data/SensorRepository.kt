@@ -2,6 +2,7 @@ package com.mrboombastic.buwudzik.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.mrboombastic.buwudzik.device.SensorData
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 
@@ -18,6 +19,8 @@ class SensorRepository(private val context: Context) {
         private const val KEY_NAME = "name"
         private const val KEY_MAC_ADDRESS = "mac_address"
         private const val KEY_TIMESTAMP = "timestamp"
+        private const val KEY_HAS_ERROR = "has_error"
+        private const val KEY_IS_LOADING = "is_loading"
     }
 
     /**
@@ -40,7 +43,8 @@ class SensorRepository(private val context: Context) {
             putString(KEY_NAME, correctedData.name)
             putString(KEY_MAC_ADDRESS, correctedData.macAddress)
             putLong(KEY_TIMESTAMP, System.currentTimeMillis())
-            apply()
+            putBoolean(KEY_HAS_ERROR, false)  // Clear error on successful data
+            commit()
         }
 
         return correctedData
@@ -60,5 +64,21 @@ class SensorRepository(private val context: Context) {
 
     fun getLastUpdateTimestamp(): Long {
         return prefs.getLong(KEY_TIMESTAMP, 0)
+    }
+
+    fun hasUpdateError(): Boolean {
+        return prefs.getBoolean(KEY_HAS_ERROR, false)
+    }
+
+    fun setUpdateError(hasError: Boolean) {
+        prefs.edit(commit = true) { putBoolean(KEY_HAS_ERROR, hasError) }
+    }
+
+    fun isLoading(): Boolean {
+        return prefs.getBoolean(KEY_IS_LOADING, false)
+    }
+
+    fun setLoading(loading: Boolean) {
+        prefs.edit(commit = true) { putBoolean(KEY_IS_LOADING, loading) }
     }
 }

@@ -42,7 +42,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.SettingsRepository
@@ -90,7 +89,7 @@ fun DeviceSetupScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         hasPermissions = permissionsToRequest.all {
-            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
         }
 
         if (!hasPermissions) {

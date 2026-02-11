@@ -1,6 +1,7 @@
 package com.mrboombastic.buwudzik.device
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
@@ -25,7 +26,7 @@ data class SensorData(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class BluetoothScanner(context: Context) {
+class BluetoothScanner(private val context: Context) {
 
     private val bluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -44,9 +45,23 @@ class BluetoothScanner(context: Context) {
             "BluetoothScanner",
             "Starting BLE Scan. Target: ${targetAddress ?: "All Devices"}. Mode: $scanMode."
         )
+
+        if (!com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(context)) {
+            Log.e("BluetoothScanner", "Missing Bluetooth permissions")
+            close()
+            return@callbackFlow
+        }
+
         val leScanner = scanner
         if (leScanner == null) {
             Log.e("BluetoothScanner", "BluetoothLeScanner is null")
+            close()
+            return@callbackFlow
+        }
+
+        // Validate MAC address before using it in filter.
+        if (targetAddress != null && !BluetoothAdapter.checkBluetoothAddress(targetAddress)) {
+            Log.e("BluetoothScanner", "Bluetooth scanning aborted due to invalid MAC address format: $targetAddress")
             close()
             return@callbackFlow
         }
@@ -86,8 +101,16 @@ class BluetoothScanner(context: Context) {
             }
         }
 
-        val filters = emptyList<ScanFilter>().plus(
-            ScanFilter.Builder().setServiceData(serviceUUID, null).build()
+        val filters = listOf(
+            ScanFilter.Builder()
+                .apply {
+                    // Set device address (validated above)
+                    if (targetAddress != null) {
+                        setDeviceAddress(targetAddress)
+                    }
+                }
+                .setServiceData(serviceUUID, null)
+                .build()
         )
 
         val settings = ScanSettings.Builder().setScanMode(scanMode).build()

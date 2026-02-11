@@ -1,5 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">clOwOck</string>
+    <string name="widget_description">Displays temperature, humidity, and battery status from your device.</string>
     <string name="scanning_status" tools:ignore="Typos">Scanning for supported devices…</string>
     <string name="battery_label">Battery: %1$d%%</string>
     <string name="rssi_label">RSSI: %1$d dBm (%2$d%%)</string>
@@ -8,7 +9,6 @@
     <string name="settings_desc">Settings</string>
     <string name="settings_title">Settings</string>
     <string name="back_desc">Back</string>
-    <string name="refresh">Refresh</string>
     <string name="target_mac_label">Target MAC address</string>
     <string name="scan_devices_button">Scan devices</string>
     <string name="scan_mode_label">Scan mode</string>
@@ -20,10 +20,6 @@
     <string name="language_label">Language</string>
     <string name="language_system">system</string>
     <string name="widget_update_interval_label">Widget update interval</string>
-    <string name="minutes_1">1 minute</string>
-    <string name="minutes_3">3 minutes</string>
-    <string name="minutes_5">5 minutes</string>
-    <string name="minutes_10">10 minutes</string>
     <string name="minutes_15">15 minutes (default)</string>
     <string name="minutes_30">30 minutes</string>
     <string name="minutes_45">45 minutes</string>
@@ -82,6 +78,7 @@
     <string name="save">Save</string>
     <string name="error_prefix">Error: %1$s</string>
     <string name="updating_label">Updating…</string>
+    <string name="widget_tap_to_open">Tap to open</string>
     <string name="connect_to_device">Connect to device</string>
     <string name="connecting_to_device">Connecting to device…</string>
     <string name="disconnect">Disconnect</string>
@@ -137,9 +134,6 @@
     <string name="day_sat">Sat</string>
     <string name="day_sun">Sun</string>
     <string name="day_once">once</string>
-    <string name="widget_placeholder_temp" translatable="false">--°C</string>
-    <string name="widget_placeholder_hum" translatable="false">💧 --%</string>
-    <string name="widget_placeholder_bat" translatable="false">🔋 --%</string>
     <string name="ringtone_upload_title">Upload ringtone</string>
     <string name="ringtone_upload_button">Upload ringtone</string>
     <string name="current_ringtone_label">Current ringtone</string>
@@ -162,7 +156,6 @@
     <string name="trim_and_upload">Trim and upload</string>
     <string name="start_label">Start</string>
     <string name="drag_to_adjust_hint">Drag to move selection.</string>
-    <string name="time_placeholder" translatable="false">--:--</string>
     <string name="custom_ringtone_name">Custom</string>
     <string name="downloading_ringtone">Downloading ringtone…</string>
     <string name="channel_mode_label">Audio channel</string>
@@ -200,4 +193,5 @@
     <string name="share_device_button">Share device</string>
     <string name="import_device_button">Import device</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
+    <string name="widget_refresh_description">Refresh sensor data</string>
 </resources>

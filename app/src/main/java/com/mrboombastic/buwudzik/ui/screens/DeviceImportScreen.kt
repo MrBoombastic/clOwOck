@@ -36,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.google.zxing.BarcodeFormat
@@ -82,8 +81,8 @@ fun DeviceImportScreen(
         }
 
     LaunchedEffect(Unit) {
-        hasCameraPermission = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.CAMERA
+        hasCameraPermission = context.checkSelfPermission(
+            Manifest.permission.CAMERA
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
         if (!hasCameraPermission) {
@@ -205,13 +204,12 @@ private fun QrScannerView(
                     surfaceProvider = previewView.surfaceProvider
                 }
 
-                @Suppress("AssignedValueIsNeverRead")
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888).build()
                     .also { analysis ->
                         analysis.setAnalyzer(
-                            ContextCompat.getMainExecutor(ctx)
+                            ctx.mainExecutor
                         ) { imageProxy ->
                             if (!scanned) {
                                 processImageProxy(imageProxy) {
@@ -228,7 +226,7 @@ private fun QrScannerView(
                 provider.bindToLifecycle(
                     lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalysis
                 )
-            }, ContextCompat.getMainExecutor(ctx))
+            }, ctx.mainExecutor)
 
             previewView
         })

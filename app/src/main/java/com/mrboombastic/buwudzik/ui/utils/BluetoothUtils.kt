@@ -4,7 +4,6 @@ import android.Manifest
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 
 /**
  * Bluetooth-related utility functions to avoid code duplication
@@ -32,7 +31,7 @@ object BluetoothUtils {
      */
     fun hasBluetoothPermissions(context: Context): Boolean {
         return BLUETOOTH_PERMISSIONS.all {
-            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
         }
     }
 

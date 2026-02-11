@@ -1,6 +1,7 @@
 package com.mrboombastic.buwudzik.ui.screens
 
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.ResolveInfo
@@ -66,6 +67,7 @@ import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -82,6 +84,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val initialScanMode = remember { repository.scanMode }
 
     var macAddress by remember { mutableStateOf(repository.targetMacAddress) }
+    var isMacAddressValid by remember { mutableStateOf(true) }
     var scanMode by remember { mutableIntStateOf(repository.scanMode) }
     var language by remember { mutableStateOf(repository.language) }
     var updateInterval by remember { mutableLongStateOf(repository.updateInterval) }
@@ -98,6 +101,20 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     var showUpdateDialog by remember { mutableStateOf(false) }
     var versionName by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Helper function to update widgets with proper error handling
+    fun launchWidgetUpdate() {
+        coroutineScope.launch {
+            try {
+                repository.updateAllWidgets()
+            } catch (e: CancellationException) {
+                // Rethrow cancellation to maintain structured concurrency
+                throw e
+            } catch (e: Exception) {
+                AppLogger.d("SettingsScreen", "Widget update failed", e)
+            }
+        }
+    }
 
     // Load version name asynchronously to avoid blocking main thread
     LaunchedEffect(Unit) {
@@ -180,10 +197,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     )
 
     val intervals = mapOf(
-        1L to stringResource(R.string.minutes_1),
-        3L to stringResource(R.string.minutes_3),
-        5L to stringResource(R.string.minutes_5),
-        10L to stringResource(R.string.minutes_10),
         15L to stringResource(R.string.minutes_15),
         30L to stringResource(R.string.minutes_30),
         45L to stringResource(R.string.minutes_45),
@@ -238,13 +251,22 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     value = macAddress,
                     onValueChange = {
                         macAddress = it
-                        // Don't save empty MAC - use default if cleared
-                        val macToSave = it.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
-                        repository.targetMacAddress = macToSave
+                        val trimmed = it.trim()
+                        // Validate MAC address format
+                        isMacAddressValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
+                        
+                        // Save to repository only if valid
+                        if (trimmed.isNotEmpty() && isMacAddressValid) {
+                            repository.targetMacAddress = trimmed
+                        } else {
+                            // Use default if cleared or invalid
+                            repository.targetMacAddress = SettingsRepository.DEFAULT_MAC
+                        }
+                        // Invalid non-empty MAC addresses are not saved to prevent crashes
                     },
                     label = { Text(stringResource(R.string.target_mac_label)) },
                     modifier = Modifier.weight(1f),
-                    isError = macAddress.trim().isEmpty(),
+                    isError = !isMacAddressValid,
                 )
 
                 FilledTonalIconButton(
@@ -297,6 +319,8 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                         LocaleListCompat.forLanguageTags(code)
                     }
                     AppCompatDelegate.setApplicationLocales(appLocale)
+                    // Update widgets in a structured coroutine scope
+                    launchWidgetUpdate()
                 })
 
             // Theme
@@ -323,8 +347,8 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 onValueChange = { minutes ->
                     updateInterval = minutes
                     repository.updateInterval = minutes
-                    // Reschedule updates immediately
-                    MainActivity.scheduleUpdates(context, minutes)
+                    // Reschedule updates immediately with new interval
+                    MainActivity.rescheduleUpdates(context, minutes)
                 })
 
 
@@ -360,6 +384,9 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = null
 
                             expandedWidgetAction = false
+                            
+                            // Update widgets in a structured coroutine scope
+                            launchWidgetUpdate()
                         })
 
                     installedApps.forEach { resolveInfo ->
@@ -372,6 +399,9 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = pkg
 
                             expandedWidgetAction = false
+                            
+                            // Update widgets in a structured coroutine scope
+                            launchWidgetUpdate()
                         })
                     }
                 }
