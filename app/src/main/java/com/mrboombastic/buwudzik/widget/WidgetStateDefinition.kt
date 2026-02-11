@@ -118,17 +118,17 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             emitCurrentState()
             
             // Create listeners scoped to this flow collection
-            // Store in a data class to maintain strong references (prevent GC)
+            // Store in an object to maintain strong references (prevent GC)
             // SharedPreferences keeps only weak references, so we need strong refs
-            val listeners = object {
-                val sensor = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            val listenerRefs = object {
+                val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     // Only react to sensor-related preference changes (null check for safety)
                     if (key != null && key in SENSOR_KEYS) {
                         emitCurrentState()
                     }
                 }
                 
-                val settings = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     // Only react to widget-relevant settings changes (null check for safety)
                     if (key == SETTINGS_KEY_LANGUAGE) {
                         emitCurrentState()
@@ -137,14 +137,14 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             }
             
             // Register listeners
-            sensorPrefs.registerOnSharedPreferenceChangeListener(listeners.sensor)
-            settingsPrefs.registerOnSharedPreferenceChangeListener(listeners.settings)
+            sensorPrefs.registerOnSharedPreferenceChangeListener(listenerRefs.sensorListener)
+            settingsPrefs.registerOnSharedPreferenceChangeListener(listenerRefs.settingsListener)
             
             // Cleanup when flow is cancelled
             awaitClose {
                 // Unregister listeners first to prevent new jobs from being created
-                sensorPrefs.unregisterOnSharedPreferenceChangeListener(listeners.sensor)
-                settingsPrefs.unregisterOnSharedPreferenceChangeListener(listeners.settings)
+                sensorPrefs.unregisterOnSharedPreferenceChangeListener(listenerRefs.sensorListener)
+                settingsPrefs.unregisterOnSharedPreferenceChangeListener(listenerRefs.settingsListener)
                 // Then cancel any in-flight job
                 currentJob.getAndSet(null)?.cancel()
             }
