@@ -34,6 +34,9 @@ data class WidgetState(
  * This implementation uses callbackFlow to listen for SharedPreferences changes, allowing
  * the widget to automatically update when sensor data or settings change without requiring
  * explicit updateAll() calls.
+ * 
+ * Note: Listeners are stored as instance-level properties to maintain strong references,
+ * preventing garbage collection while the flow is active.
  */
 class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState> {
 
@@ -52,10 +55,25 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
         
         // Settings preference key that affects widget display
         private const val SETTINGS_KEY_LANGUAGE = "language"
+        
+        // Singleton instance to prevent listener accumulation
+        @Volatile
+        private var instance: WidgetStateDataStore? = null
+        
+        fun getInstance(context: Context): WidgetStateDataStore {
+            return instance ?: synchronized(this) {
+                instance ?: WidgetStateDataStore(context.applicationContext).also { instance = it }
+            }
+        }
     }
+    
+    // Store listeners as instance properties to prevent GC (strong references)
+    private var sensorListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private var settingsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override val data: Flow<WidgetState>
         get() = callbackFlow {
+            // Create repositories once per flow lifecycle (not on every emission)
             val sensorRepo = SensorRepository(context)
             val settingsRepo = SettingsRepository(context)
             
@@ -65,17 +83,15 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Track the current state update job to cancel it if a new one arrives
             // Note: SharedPreferences listeners always fire on the main thread (per Android docs),
-            // so AtomicReference provides sufficient thread safety here
+            // so we use AtomicReference for thread-safe job swapping
             val currentJob = AtomicReference<Job?>(null)
             
             // Function to read and emit current state
             // Launched on Default dispatcher to avoid blocking the main thread
             // Cancels any previous in-flight job to prevent concurrent repository reads
             fun emitCurrentState() {
-                // Cancel any previous in-flight job
-                currentJob.getAndSet(null)?.cancel()
-                
-                // Launch new job and store it
+                // Atomically swap old job with new one and cancel the old job
+                // This prevents the race condition where multiple jobs could be created
                 val job = launch(Dispatchers.Default) {
                     try {
                         // Use trySend (non-blocking) instead of send (suspending) because:
@@ -101,24 +117,25 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                         AppLogger.e(TAG, "Error reading widget state from repositories", e)
                     }
                 }
-                currentJob.set(job)
+                // Atomically replace old job with new one and cancel old
+                currentJob.getAndSet(job)?.cancel()
             }
             
             // Emit initial state
             emitCurrentState()
             
-            // Create listeners (kept as local variables to maintain strong references)
+            // Create and store listeners as instance properties (strong references prevent GC)
             // Only emit updates for preference keys that affect widget state
             // SharedPreferences listeners are invoked on the main thread, but we launch
             // repository reads on Dispatchers.Default to avoid blocking
-            val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                 // Only react to sensor-related preference changes (null check for safety)
                 if (key != null && key in SENSOR_KEYS) {
                     emitCurrentState()
                 }
             }
             
-            val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                 // Only react to widget-relevant settings changes (null check for safety)
                 if (key == SETTINGS_KEY_LANGUAGE) {
                     emitCurrentState()
@@ -131,8 +148,11 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Cleanup when flow is cancelled
             awaitClose {
+                currentJob.getAndSet(null)?.cancel()
                 sensorPrefs.unregisterOnSharedPreferenceChangeListener(sensorListener)
                 settingsPrefs.unregisterOnSharedPreferenceChangeListener(settingsListener)
+                sensorListener = null
+                settingsListener = null
             }
         }
 
@@ -156,11 +176,13 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
  * GlanceStateDefinition that provides the WidgetStateDataStore.
  * Glance uses this to reactively observe state changes and automatically trigger recomposition
  * when SharedPreferences change.
+ * 
+ * Uses singleton pattern to prevent multiple DataStore instances and listener accumulation.
  */
 object WidgetStateDefinition : GlanceStateDefinition<WidgetState> {
 
     override suspend fun getDataStore(context: Context, fileKey: String): DataStore<WidgetState> {
-        return WidgetStateDataStore(context)
+        return WidgetStateDataStore.getInstance(context)
     }
 
     override fun getLocation(context: Context, fileKey: String): File {
