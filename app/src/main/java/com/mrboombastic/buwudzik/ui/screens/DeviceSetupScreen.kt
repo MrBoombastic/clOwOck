@@ -5,7 +5,6 @@ import android.Manifest
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -343,7 +342,7 @@ private suspend fun performDeviceScan(
         // Normal cancellation when leaving composition - not an error
         AppLogger.d("DeviceSetupScreen", "Scan cancelled (navigation or composition change)")
     } catch (e: Exception) {
-        Log.e("DeviceSetupScreen", "Scan error", e)
+        AppLogger.e("DeviceSetupScreen", "Scan error", e)
     }
 }
 

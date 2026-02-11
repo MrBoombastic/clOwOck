@@ -3,7 +3,6 @@ package com.mrboombastic.buwudzik.widget
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanSettings
 import android.content.Context
-import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -54,19 +53,19 @@ class SensorUpdateWorker(
         val bluetoothManager =
             applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         if (bluetoothManager?.adapter == null) {
-            Log.e(TAG, "Bluetooth adapter not available.")
+            AppLogger.e(TAG, "Bluetooth adapter not available.")
             updateWidget(hasError = true)
             return Result.failure()
         }
 
         if (!com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
-            Log.w(TAG, "Missing Bluetooth permissions for background scan.")
+            AppLogger.w(TAG, "Missing Bluetooth permissions for background scan.")
             updateWidget(hasError = true)
             return Result.success()
         }
 
         if (!bluetoothManager.adapter.isEnabled) {
-            Log.w(TAG, "Bluetooth is disabled. Showing error indicator.")
+            AppLogger.w(TAG, "Bluetooth is disabled. Showing error indicator.")
             updateWidget(hasError = true)
             return Result.success()  // Don't fail, just show error
         }
@@ -81,7 +80,7 @@ class SensorUpdateWorker(
             try {
                 scanner.scan(targetMac, scanMode).first()
             } catch (e: Exception) {
-                Log.e(TAG, "Error during scan", e)
+                AppLogger.e(TAG, "Error during scan", e)
                 null
             }
         }
@@ -95,7 +94,7 @@ class SensorUpdateWorker(
             updateWidget(hasError = false)  // Success - clear any error indicator
             Result.success()
         } else {
-            Log.w(TAG, "No sensor data received within timeout (device may be out of range).")
+            AppLogger.w(TAG, "No sensor data received within timeout (device may be out of range).")
 
             // Check again if data arrived from foreground while we were scanning
             val freshLastUpdate = repository.getLastUpdateTimestamp()
@@ -113,7 +112,7 @@ class SensorUpdateWorker(
                 )
                 Result.retry()
             } else {
-                Log.w(TAG, "Max retry attempts reached. Device appears unreachable.")
+                AppLogger.w(TAG, "Max retry attempts reached. Device appears unreachable.")
                 updateWidget(hasError = true)  // Show error indicator after all retries failed
                 Result.success()  // Return success to keep periodic work scheduled
             }
@@ -131,7 +130,7 @@ class SensorUpdateWorker(
             AppLogger.d(TAG, "Updating Glance widget, hasError=$hasError")
             SensorGlanceWidget().updateAll(applicationContext)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update widget", e)
+            AppLogger.e(TAG, "Failed to update widget", e)
         }
     }
 }

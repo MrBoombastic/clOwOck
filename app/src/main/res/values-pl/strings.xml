@@ -190,5 +190,6 @@
     <string name="content_desc_fast_forward">Przeskocz wprzód</string>
     <string name="error_no_audio_selected">Nie wybrano audio</string>
     <string name="widget_refresh_description">Odśwież dane z czujników</string>
-    <string name="auth_hint">Może być konieczne odparowanie i zapomnienie urządzenia w ustawieniach, a następnie ponowne sparowanie.</string>
+    <string name="auth_hint">Może być konieczne zapomnienie urządzenia w ustawieniach, a następnie ponowne sparowanie.</string>
+    <string name="invalid_mac_format">Nieprawidłowy format adresu MAC (XX:XX:XX:XX:XX:XX)!</string>
 </resources>

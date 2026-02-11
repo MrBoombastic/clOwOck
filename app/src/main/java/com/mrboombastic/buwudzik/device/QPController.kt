@@ -11,7 +11,6 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.icu.util.TimeZone
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.utils.AppLogger
@@ -41,12 +40,18 @@ import kotlin.time.Duration.Companion.milliseconds
 /**
  * Reason for BLE disconnection
  */
-sealed class DisconnectionReason(val message: String) {
-    data object DeviceTerminated : DisconnectionReason("Device terminated connection")
-    data object ConnectionTimeout : DisconnectionReason("Connection timeout")
+sealed class DisconnectionReason(val message: String, val authHint: String? = null) {
+    data object DeviceTerminated : DisconnectionReason(
+        "Device terminated connection",
+        "You may need to unpair/forget the device in Bluetooth settings."
+    )
+
+    data object ConnectionTimeout :
+        DisconnectionReason("Connection timeout", "Make sure the device is nearby.")
     data object LinkLost : DisconnectionReason("Link lost")
     data object UserRequested : DisconnectionReason("User requested disconnect")
-    data class Unknown(val status: Int) : DisconnectionReason("Disconnected (status: $status)")
+    data class Unknown(val status: Int, val hint: String? = null) :
+        DisconnectionReason("Disconnected (status: $status)", hint)
 
     companion object {
         fun fromGattStatus(status: Int): DisconnectionReason = when (status) {
@@ -54,6 +59,10 @@ sealed class DisconnectionReason(val message: String) {
             8 -> ConnectionTimeout // GATT_CONN_TIMEOUT
             19 -> DeviceTerminated // GATT_CONN_TERMINATE_PEER_USER
             22 -> LinkLost // GATT_CONN_TERMINATE_LOCAL_HOST
+            133 -> Unknown(
+                status,
+                "Try restarting Bluetooth or unpairing the device."
+            ) // GATT_ERROR
             else -> Unknown(status)
         }
     }
@@ -162,14 +171,14 @@ class QPController(private val context: Context) {
         scope.launch {
             for (command in commandChannel) {
                 if (!isAuthenticated) {
-                    Log.w(TAG, "Device not authenticated, skipping queued command")
+                    AppLogger.w(TAG, "Device not authenticated, skipping queued command")
                     continue
                 }
                 _isBusy.value = true
                 try {
                     command()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error executing queued command", e)
+                    AppLogger.e(TAG, "Error executing queued command", e)
                 } finally {
                     _isBusy.value = false
                 }
@@ -373,7 +382,10 @@ class QPController(private val context: Context) {
                 authInitAckReceived = true
                 // Don't write here - wait for onCharacteristicWrite callback
             } else if (cmdId == 0x02) {
-                AppLogger.d(TAG, "Authentication successful! Device is now authenticated.")
+                AppLogger.d(
+                    TAG,
+                    "Authentication seems successful, but syncing time will tell the truth"
+                )
                 isAuthenticated = true
                 pendingAuthWriteChar = null
                 // Store token only after successful authentication
@@ -449,7 +461,7 @@ class QPController(private val context: Context) {
                 connectContinuation?.resume(true)
                 connectContinuation = null
             } else {
-                Log.e(TAG, "Service discovery failed: $status")
+                AppLogger.e(TAG, "Service discovery failed: $status")
                 connectContinuation?.resumeWithException(Exception("Service discovery failed"))
                 connectContinuation = null
             }
@@ -472,7 +484,7 @@ class QPController(private val context: Context) {
                             firmwareVersionReadContinuation?.resume(version)
                             firmwareVersionReadContinuation = null
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to parse firmware version", e)
+                            AppLogger.e(TAG, "Failed to parse firmware version", e)
                             firmwareVersionReadContinuation?.resumeWithException(e)
                             firmwareVersionReadContinuation = null
                         }
@@ -590,7 +602,7 @@ class QPController(private val context: Context) {
                             deviceSettingsReadContinuation?.resume(settings)
                             deviceSettingsReadContinuation = null
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to parse device settings", e)
+                            AppLogger.e(TAG, "Failed to parse device settings", e)
                             deviceSettingsReadContinuation?.resumeWithException(e)
                             deviceSettingsReadContinuation = null
                         }
@@ -613,7 +625,7 @@ class QPController(private val context: Context) {
                         onSensorData?.invoke(temperature, humidity)
                         onLastUpdated?.invoke(System.currentTimeMillis())
                     } else {
-                        Log.w(TAG, "Invalid sensor data packet: ${value.toHexString()}")
+                        AppLogger.w(TAG, "Invalid sensor data packet: ${value.toHexString()}")
                     }
                 }
 
@@ -628,7 +640,7 @@ class QPController(private val context: Context) {
             writeCompleteDeferred = null
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                Log.e(TAG, "Write failed for ${characteristic?.uuid} with status $status")
+                AppLogger.e(TAG, "Write failed for ${characteristic?.uuid} with status $status")
                 deferred?.complete(false)
                 return
             }
@@ -658,7 +670,7 @@ class QPController(private val context: Context) {
                 TAG, "onDescriptorWrite status=$status for ${descriptor?.characteristic?.uuid}"
             )
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                Log.e(TAG, "Enable notification failed: $status")
+                AppLogger.e(TAG, "Enable notification failed: $status")
                 when (descriptor?.characteristic?.uuid) {
                     UUID_AUTH_NOTIFY -> {
                         pendingAckContinuations.remove(0x02)
@@ -727,7 +739,7 @@ class QPController(private val context: Context) {
                 AppLogger.d(TAG, "Read RSSI: $rssi")
                 onRssiUpdate?.invoke(rssi)
             } else {
-                Log.w(TAG, "Failed to read RSSI, status: $status")
+                AppLogger.w(TAG, "Failed to read RSSI, status: $status")
             }
         }
     }
@@ -740,20 +752,18 @@ class QPController(private val context: Context) {
         currentToken = prepareTokenForDevice(macAddress)
         AppLogger.d(TAG, "Token prepared for $macAddress: ${currentToken?.toHexString()}")
 
-        if (!isConnected) {
-            connect(device)
-        }
+        connect(device)
 
         if (!isAuthenticated) {
             try {
                 withTimeout(30000) {
                     authenticate()
                 }
+                delay(500) // Brief pause after auth to ensure stability
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Authentication failed or timed out", e)
-                return false
+                throw e // Propagate detailed error
             }
-            delay(500) // Brief pause after auth to ensure stability
         }
 
         try {
@@ -762,13 +772,14 @@ class QPController(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "Time synchronization failed or timed out", e)
-            return false // failure during time sync is fatal
+            throw e // Stricter handling: failure during time sync is fatal
         }
 
         try {
             enableSensorNotifications()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to enable sensor notifications", e)
+            throw e // Propagate sensor notification failure
         }
 
         return true
@@ -776,7 +787,7 @@ class QPController(private val context: Context) {
 
     fun readRssi() {
         if (gatt?.readRemoteRssi() == false) {
-            Log.w(TAG, "Failed to start RSSI read")
+            AppLogger.w(TAG, "Failed to start RSSI read")
         }
     }
 
@@ -1019,7 +1030,7 @@ class QPController(private val context: Context) {
             )
             if (result == BluetoothGatt.GATT_SUCCESS) return true // wait, writeCharacteristic returns Int status in new API
 
-            Log.w(
+            AppLogger.w(
                 TAG,
                 "writeCharacteristic failed (attempt ${attempt + 1}/$retryCount) with status $result, retrying..."
             )
@@ -1508,11 +1519,11 @@ class QPController(private val context: Context) {
     ): Boolean {
         // Don't use gattMutex here - it causes blocking issues
         val currentGatt = gatt ?: run {
-            Log.e(TAG, "GATT not connected")
+            AppLogger.e(TAG, "GATT not connected")
             return false
         }
         if (!isAuthenticated) {
-            Log.e(TAG, "Not authenticated")
+            AppLogger.e(TAG, "Not authenticated")
             return false
         }
 
@@ -1522,7 +1533,7 @@ class QPController(private val context: Context) {
         val dataNotifyChar = dataService?.getCharacteristic(UUID_DATA_NOTIFY)
 
         if (dataWriteChar == null || dataNotifyChar == null) {
-            Log.e(TAG, "Data characteristics not found")
+            AppLogger.e(TAG, "Data characteristics not found")
             return false
         }
 
@@ -1561,7 +1572,7 @@ class QPController(private val context: Context) {
         // Write init packet and wait for callback (like original writeChar with withResponse=true)
         val initSuccess = writeCharAndWait(dataWriteChar, initPayload)
         if (!initSuccess) {
-            Log.e(TAG, "Failed to send init command")
+            AppLogger.e(TAG, "Failed to send init command")
             return false
         }
 
@@ -1572,7 +1583,7 @@ class QPController(private val context: Context) {
         }
 
         if (!uploadInitAckReceived) {
-            Log.e(TAG, "No Init response received")
+            AppLogger.e(TAG, "No Init response received")
             return false
         }
 
@@ -1627,7 +1638,7 @@ class QPController(private val context: Context) {
                     uploadAckReceived = false
                     val writeSuccess = writeCharAndWait(dataWriteChar, packet)
                     if (!writeSuccess) {
-                        Log.w(TAG, "Write failed for block $blockNum last packet")
+                        AppLogger.w(TAG, "Write failed for block $blockNum last packet")
                     }
 
                     // Wait for block ACK from device (04 ff 08 XX)
@@ -1637,13 +1648,13 @@ class QPController(private val context: Context) {
                     }
 
                     if (!uploadAckReceived) {
-                        Log.w(TAG, "No ACK for block $blockNum, packet $pktIdx")
+                        AppLogger.w(TAG, "No ACK for block $blockNum, packet $pktIdx")
                     }
                 } else {
                     // Regular packet - write with callback, then small delay
                     val writeSuccess = writeCharAndWait(dataWriteChar, packet)
                     if (!writeSuccess) {
-                        Log.w(TAG, "Write failed for block $blockNum, packet $pktIdx")
+                        AppLogger.w(TAG, "Write failed for block $blockNum, packet $pktIdx")
                     }
                     delay(20)
                 }
@@ -1699,7 +1710,7 @@ class QPController(private val context: Context) {
                 deferred.await()
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Write callback timeout: ${e.message}")
+            AppLogger.w(TAG, "Write callback timeout: ${e.message}")
             false
         } finally {
             writeCompleteDeferred = null

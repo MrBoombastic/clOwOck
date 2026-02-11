@@ -7,7 +7,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.core.content.FileProvider
 import com.mrboombastic.buwudzik.utils.AppLogger
 import io.ktor.client.HttpClient
@@ -88,7 +87,7 @@ class UpdateChecker(private val context: Context) {
                 downloadUrl = downloadUrl
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking for updates", e)
+            AppLogger.e(TAG, "Error checking for updates", e)
             throw e
         }
     }
@@ -144,7 +143,7 @@ class UpdateChecker(private val context: Context) {
             launchInstaller(file)
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading or installing update", e)
+            AppLogger.e(TAG, "Error downloading or installing update", e)
             showErrorNotification(notificationManager)
             false
         }
@@ -242,7 +241,7 @@ class UpdateChecker(private val context: Context) {
                 if (latestPart < currentPart) return false
             }
         } catch (e: Exception) {
-            Log.e(
+            AppLogger.e(
                 TAG,
                 "Failed to parse version names: latest=$latestVersion, current=$currentVersion",
                 e

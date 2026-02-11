@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -122,6 +121,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+private const val TAG = "MainActivity"
+
 class MainViewModel(
     private val scanner: BluetoothScanner,
     private val settingsRepository: SettingsRepository,
@@ -161,6 +162,13 @@ class MainViewModel(
         qpController.clearDisconnectionEvent()
     }
 
+    private val _connectionError = MutableStateFlow<String?>(null)
+    val connectionError: StateFlow<String?> = _connectionError.asStateFlow()
+
+    fun clearConnectionError() {
+        _connectionError.value = null
+    }
+
     /**
      * Check pairing status and update state
      */
@@ -188,7 +196,7 @@ class MainViewModel(
         rssiPollJob = null
         _deviceConnected.value = false
         _deviceConnecting.value = false
-        AppLogger.d("MainViewModel", "Handled unexpected disconnect, starting scan")
+        AppLogger.d(TAG, "Handled unexpected disconnect, starting scan")
         startScanning()
     }
 
@@ -214,30 +222,30 @@ class MainViewModel(
 
     fun startScanning() {
         if (scanJob?.isActive == true) {
-            AppLogger.v("MainViewModel", "Scan already active, ignoring start request.")
+            AppLogger.v(TAG, "Scan already active, ignoring start request.")
             return
         }
 
         val targetMac = settingsRepository.targetMacAddress
         val scanMode = settingsRepository.scanMode
-        AppLogger.d("MainViewModel", "Starting scanning flow for $targetMac with mode $scanMode...")
+        AppLogger.d(TAG, "Starting scanning flow for $targetMac with mode $scanMode...")
         scanJob = viewModelScope.launch(Dispatchers.IO) {
             scanner.scan(targetMac, scanMode).collect { data ->
-                AppLogger.d("MainViewModel", "Received data: $data")
+                AppLogger.d(TAG, "Received data: $data")
                 val correctedData = sensorRepository.saveSensorData(data)
                 _sensorData.value = correctedData
                 // Update Glance widget with fresh data
                 try {
                     SensorGlanceWidget().updateAll(applicationContext)
                 } catch (e: Exception) {
-                    AppLogger.d("MainViewModel", "Widget update skipped: ${e.message}")
+                    AppLogger.d(TAG, "Widget update skipped: ${e.message}")
                 }
             }
         }
     }
 
     fun restartScanning() {
-        AppLogger.d("MainViewModel", "Restarting scan...")
+        AppLogger.d(TAG, "Restarting scan...")
         scanJob?.cancel()
         scanJob = null
         _sensorData.value = null
@@ -245,7 +253,7 @@ class MainViewModel(
     }
 
     fun stopScanning() {
-        AppLogger.d("MainViewModel", "Stopping scan (app going to background)...")
+        AppLogger.d(TAG, "Stopping scan (app going to background)...")
         scanJob?.cancel()
         scanJob = null
     }
@@ -255,7 +263,7 @@ class MainViewModel(
 
         val targetMac = settingsRepository.targetMacAddress
         if (targetMac.isEmpty()) {
-            AppLogger.e("MainViewModel", "No target MAC address configured")
+            AppLogger.e(TAG, "No target MAC address configured")
             return
         }
 
@@ -277,6 +285,7 @@ class MainViewModel(
                 val success = qpController.connectAndAuthenticate(device)
                 if (success) {
                     _deviceConnected.value = true
+                    _connectionError.value = null
                     checkPairingStatus()
 
                     // Setup real-time updates
@@ -314,7 +323,7 @@ class MainViewModel(
 
                     if (reloadAlarms) {
                         AppLogger.d(
-                            "MainViewModel", "Clock connected, reading alarms and settings..."
+                            TAG, "Clock connected, reading alarms and settings..."
                         )
                         launch {
                             try {
@@ -324,10 +333,10 @@ class MainViewModel(
                                 }
                                 _alarms.value = alarmsWithTitles
                                 AppLogger.d(
-                                    "MainViewModel", "Loaded ${alarmsWithTitles.size} alarms"
+                                    TAG, "Loaded ${alarmsWithTitles.size} alarms"
                                 )
                             } catch (e: Exception) {
-                                AppLogger.e("MainViewModel", "Error loading alarms", e)
+                                AppLogger.e(TAG, "Error loading alarms", e)
                             }
 
                             delay(200) // Small gap to avoid BLE race conditions
@@ -335,9 +344,9 @@ class MainViewModel(
                             try {
                                 val settings = qpController.readDeviceSettings()
                                 _deviceSettings.value = settings
-                                AppLogger.d("MainViewModel", "Loaded device settings: $settings")
+                                AppLogger.d(TAG, "Loaded device settings: $settings")
                             } catch (e: Exception) {
-                                AppLogger.e("MainViewModel", "Error loading settings", e)
+                                AppLogger.e(TAG, "Error loading settings", e)
                             }
 
                             delay(200)
@@ -346,23 +355,26 @@ class MainViewModel(
                                 val version = qpController.readFirmwareVersion()
                                 _deviceSettings.value =
                                     _deviceSettings.value?.copy(firmwareVersion = version)
-                                AppLogger.d("MainViewModel", "Loaded firmware version: $version")
+                                AppLogger.d(TAG, "Loaded firmware version: $version")
                             } catch (e: Exception) {
-                                AppLogger.e("MainViewModel", "Error loading firmware version", e)
+                                AppLogger.e(TAG, "Error loading firmware version", e)
                             }
                         }
                     }
                 } else {
-                    AppLogger.e("MainViewModel", "Failed to connect to clock")
+                    AppLogger.e(TAG, "Failed to connect to clock")
                     startScanning() // Restart scanning if connection fails
                 }
             } catch (e: Exception) {
                 AppLogger.e(
-                    "MainViewModel",
+                    TAG,
                     "Error connecting to clock ($targetMac): ${e.message}",
                     e
                 )
                 _deviceConnected.value = false
+                _connectionError.value = e.message ?: "Connection failed"
+                // Clear disconnection event to prevent double snackbar
+                clearDisconnectionEvent()
                 startScanning() // Restart scanning on error
             } finally {
                 if (reloadAlarms) {
@@ -375,15 +387,15 @@ class MainViewModel(
     fun reloadAlarms() {
         viewModelScope.launch {
             try {
-                AppLogger.d("MainViewModel", "Reloading alarms...")
+                AppLogger.d(TAG, "Reloading alarms...")
                 val deviceAlarms = qpController.readAlarms()
                 val alarmsWithTitles = deviceAlarms.map { alarm ->
                     alarm.copy(title = alarmTitleRepository.getTitle(alarm.id))
                 }
                 _alarms.value = alarmsWithTitles
-                AppLogger.d("MainViewModel", "Reloaded ${alarmsWithTitles.size} alarms")
+                AppLogger.d(TAG, "Reloaded ${alarmsWithTitles.size} alarms")
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error reloading alarms", e)
+                AppLogger.e(TAG, "Error reloading alarms", e)
             }
         }
     }
@@ -404,7 +416,7 @@ class MainViewModel(
                 reloadAlarms()
                 onResult(Result.success(Unit))
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error updating alarm", e)
+                AppLogger.e(TAG, "Error updating alarm", e)
                 onResult(Result.failure(e))
             }
         }
@@ -419,7 +431,7 @@ class MainViewModel(
                 reloadAlarms()
                 onResult(Result.success(Unit))
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error deleting alarm", e)
+                AppLogger.e(TAG, "Error deleting alarm", e)
                 onResult(Result.failure(e))
             }
         }
@@ -433,7 +445,7 @@ class MainViewModel(
                 _deviceSettings.value = settings.copy(firmwareVersion = currentVersion)
                 onResult(Result.success(Unit))
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error updating settings", e)
+                AppLogger.e(TAG, "Error updating settings", e)
                 onResult(Result.failure(e))
             }
         }
@@ -442,13 +454,13 @@ class MainViewModel(
     fun reloadDeviceSettings() {
         viewModelScope.launch {
             try {
-                AppLogger.d("MainViewModel", "Reloading device settings...")
+                AppLogger.d(TAG, "Reloading device settings...")
                 val settings = qpController.readDeviceSettings()
                 val currentVersion = _deviceSettings.value?.firmwareVersion ?: ""
                 _deviceSettings.value = settings.copy(firmwareVersion = currentVersion)
-                AppLogger.d("MainViewModel", "Reloaded device settings")
+                AppLogger.d(TAG, "Reloaded device settings")
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error reloading device settings", e)
+                AppLogger.e(TAG, "Error reloading device settings", e)
             }
         }
     }
@@ -460,7 +472,7 @@ class MainViewModel(
         connectionJob = null
         qpController.disconnect()
         _deviceConnected.value = false
-        AppLogger.d("MainViewModel", "Disconnected from clock, restarting scan.")
+        AppLogger.d(TAG, "Disconnected from clock, restarting scan.")
         startScanning()
     }
 
@@ -548,7 +560,7 @@ class MainActivity : AppCompatActivity() {
             val currentVersionCode = packageInfo.longVersionCode.toInt()
 
             if (settingsRepository.lastVersionCode != currentVersionCode) {
-                Log.i(
+                AppLogger.i(
                     "MainActivity",
                     "App updated from ${settingsRepository.lastVersionCode} to $currentVersionCode. Clearing cache..."
                 )
@@ -557,7 +569,7 @@ class MainActivity : AppCompatActivity() {
                 settingsRepository.lastVersionCode = currentVersionCode
             }
         } catch (e: Exception) {
-            Log.e("MainActivity", "Failed to check version or clear cache", e)
+            AppLogger.e("MainActivity", "Failed to check version or clear cache", e)
         }
     }
 
@@ -620,13 +632,38 @@ class MainActivity : AppCompatActivity() {
                             navController.navigate("home") {
                                 popUpTo("home") { inclusive = true }
                             }
+
+                            val fullMessage = if (reason.authHint != null) {
+                                "${reason.message}\n${reason.authHint}"
+                            } else {
+                                "$disconnectedMessage: ${reason.message}"
+                            }
+                            
                             // Show snackbar with reason
                             snackbarHostState.showSnackbar(
-                                message = "$disconnectedMessage: ${reason.message}",
+                                message = fullMessage,
                                 duration = SnackbarDuration.Long
                             )
                             // Clear the event
                             viewModel.clearDisconnectionEvent()
+                        }
+                    }
+
+                    // Handle connection errors (diagnostic hints)
+                    val connectionError by viewModel.connectionError.collectAsState()
+                    LaunchedEffect(connectionError) {
+                        connectionError?.let { error ->
+                            // Avoid showing generic "Disconnected" message if we already have a specific DisconnectionEvent
+                            val isGenericDisconnect =
+                                error.trim() == "Disconnected" || error.startsWith("Disconnected (status")
+                            if (!isGenericDisconnect) {
+                                snackbarHostState.showSnackbar(
+                                    message = error,
+                                    duration = SnackbarDuration.Long,
+                                    actionLabel = "OK"
+                                )
+                            }
+                            viewModel.clearConnectionError()
                         }
                     }
 
