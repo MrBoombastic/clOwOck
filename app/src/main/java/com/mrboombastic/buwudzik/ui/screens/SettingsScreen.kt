@@ -66,6 +66,7 @@ import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -104,7 +105,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
         coroutineScope.launch {
             try {
                 repository.updateAllWidgets()
-            } catch (e: kotlinx.coroutines.CancellationException) {
+            } catch (e: CancellationException) {
                 // Rethrow cancellation to maintain structured concurrency
                 throw e
             } catch (e: Exception) {
