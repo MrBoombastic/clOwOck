@@ -295,7 +295,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     AppCompatDelegate.setApplicationLocales(appLocale)
                     // Update widgets in a structured coroutine scope
                     coroutineScope.launch {
-                        repository.notifyWidgetsIfNeeded()
+                        try {
+                            repository.notifyWidgetsIfNeeded()
+                        } catch (e: Exception) {
+                            AppLogger.d("SettingsScreen", "Widget update failed: ${e.message}")
+                        }
                     }
                 })
 
@@ -363,7 +367,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             
                             // Update widgets in a structured coroutine scope
                             coroutineScope.launch {
-                                repository.notifyWidgetsIfNeeded()
+                                try {
+                                    repository.notifyWidgetsIfNeeded()
+                                } catch (e: Exception) {
+                                    AppLogger.d("SettingsScreen", "Widget update failed: ${e.message}")
+                                }
                             }
                         })
 
@@ -380,7 +388,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             
                             // Update widgets in a structured coroutine scope
                             coroutineScope.launch {
-                                repository.notifyWidgetsIfNeeded()
+                                try {
+                                    repository.notifyWidgetsIfNeeded()
+                                } catch (e: Exception) {
+                                    AppLogger.d("SettingsScreen", "Widget update failed: ${e.message}")
+                                }
                             }
                         })
                     }
