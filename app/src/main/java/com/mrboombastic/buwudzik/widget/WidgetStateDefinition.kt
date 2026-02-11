@@ -64,6 +64,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             val settingsPrefs = context.getSharedPreferences(SETTINGS_PREFS_NAME, Context.MODE_PRIVATE)
             
             // Track the current state update job to cancel it if a new one arrives
+            // Note: SharedPreferences listeners always fire on the main thread (per Android docs),
+            // so AtomicReference provides sufficient thread safety here
             val currentJob = AtomicReference<Job?>(null)
             
             // Function to read and emit current state
@@ -76,6 +78,10 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                 // Launch new job and store it
                 val job = launch(Dispatchers.Default) {
                     try {
+                        // Use trySend (non-blocking) instead of send (suspending) because:
+                        // 1. We don't want to block the main thread via the listener callback
+                        // 2. For widgets, showing the latest state is more important than every intermediate state
+                        // 3. Job cancellation above ensures we don't pile up stale updates
                         val result = trySend(
                             WidgetState(
                                 sensorData = sensorRepo.getSensorData(),
