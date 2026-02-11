@@ -98,7 +98,7 @@ class BluetoothScanner(private val context: Context) {
         val isValidMac = targetAddress != null && BluetoothAdapter.checkBluetoothAddress(targetAddress)
         
         if (targetAddress != null && !isValidMac) {
-            Log.w("BluetoothScanner", "Invalid MAC address: $targetAddress. Falling back to service-data-only filtering.")
+            Log.w("BluetoothScanner", "Invalid MAC address format: $targetAddress. Falling back to service-data-only filtering.")
         }
         
         val filters = listOf(
