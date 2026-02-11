@@ -22,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+private const val EXIT_ANIMATION_DURATION_MS = 500L
+
 @Composable
 fun CustomSnackbarHost(
     hostState: SnackbarHostState,
@@ -30,21 +32,16 @@ fun CustomSnackbarHost(
     // Retain the last snackbar data even after currentSnackbarData becomes null
     var lastSnackbarData by remember { mutableStateOf<SnackbarData?>(null) }
     
+    // Determine if we should show the snackbar
+    val isVisible = hostState.currentSnackbarData != null
+    
     // Update lastSnackbarData whenever a new snackbar appears
     LaunchedEffect(hostState.currentSnackbarData) {
         if (hostState.currentSnackbarData != null) {
             lastSnackbarData = hostState.currentSnackbarData
-        }
-    }
-    
-    // Determine if we should show the snackbar
-    val isVisible = hostState.currentSnackbarData != null
-    
-    // Clear retained data after exit animation completes
-    LaunchedEffect(isVisible) {
-        if (!isVisible && lastSnackbarData != null) {
-            // Wait for exit animation to complete before clearing
-            kotlinx.coroutines.delay(500) // Approximate animation duration
+        } else if (lastSnackbarData != null) {
+            // Wait for exit animation to complete before clearing retained data
+            kotlinx.coroutines.delay(EXIT_ANIMATION_DURATION_MS)
             lastSnackbarData = null
         }
     }
