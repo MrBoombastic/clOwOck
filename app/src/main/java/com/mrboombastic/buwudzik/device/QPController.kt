@@ -40,18 +40,42 @@ import kotlin.time.Duration.Companion.milliseconds
 /**
  * Reason for BLE disconnection
  */
-sealed class DisconnectionReason(val message: String, val authHint: String? = null) {
-    data object DeviceTerminated : DisconnectionReason(
-        "Device terminated connection",
-        "You may need to unpair/forget the device in Bluetooth settings."
-    )
+sealed class DisconnectionReason {
+    abstract fun getMessage(context: Context): String
+    open fun getHint(context: Context): String? = null
 
-    data object ConnectionTimeout :
-        DisconnectionReason("Connection timeout", "Make sure the device is nearby.")
-    data object LinkLost : DisconnectionReason("Link lost")
-    data object UserRequested : DisconnectionReason("User requested disconnect")
-    data class Unknown(val status: Int, val hint: String? = null) :
-        DisconnectionReason("Disconnected (status: $status)", hint)
+    data object DeviceTerminated : DisconnectionReason() {
+        override fun getMessage(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_device_terminated)
+
+        override fun getHint(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.hint_unpair_instructions)
+    }
+
+    data object ConnectionTimeout : DisconnectionReason() {
+        override fun getMessage(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_timeout)
+
+        override fun getHint(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.hint_check_nearby)
+    }
+
+    data object LinkLost : DisconnectionReason() {
+        override fun getMessage(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_link_lost)
+    }
+
+    data object UserRequested : DisconnectionReason() {
+        override fun getMessage(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_user_requested)
+    }
+
+    data class Unknown(val status: Int, val hintResId: Int? = null) : DisconnectionReason() {
+        override fun getMessage(context: Context) =
+            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_unknown, status)
+
+        override fun getHint(context: Context) = hintResId?.let { context.getString(it) }
+    }
 
     companion object {
         fun fromGattStatus(status: Int): DisconnectionReason = when (status) {
@@ -61,7 +85,7 @@ sealed class DisconnectionReason(val message: String, val authHint: String? = nu
             22 -> LinkLost // GATT_CONN_TERMINATE_LOCAL_HOST
             133 -> Unknown(
                 status,
-                "Try restarting Bluetooth or unpairing the device."
+                com.mrboombastic.buwudzik.R.string.hint_restart_bluetooth
             ) // GATT_ERROR
             else -> Unknown(status)
         }

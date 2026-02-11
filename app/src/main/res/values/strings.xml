@@ -196,4 +196,12 @@
     <string name="widget_refresh_description">Refresh sensor data</string>
     <string name="auth_hint">You may need to unpair the device in settings, then pair it again.</string>
     <string name="invalid_mac_format">Invalid MAC address format (XX:XX:XX:XX:XX:XX)!</string>
+    <string name="disconnect_reason_device_terminated">Device terminated connection.</string>
+    <string name="disconnect_reason_timeout">Connection timeout.</string>
+    <string name="disconnect_reason_link_lost">Link lost.</string>
+    <string name="disconnect_reason_user_requested">User requested disconnect.</string>
+    <string name="disconnect_reason_unknown">Disconnected (status: %1$d).</string>
+    <string name="hint_unpair_instructions">You may need to unpair the device in app.</string>
+    <string name="hint_check_nearby">Make sure the device is nearby.</string>
+    <string name="hint_restart_bluetooth">Try restarting Bluetooth or unpairing the device.</string>
 </resources>

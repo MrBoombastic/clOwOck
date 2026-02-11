@@ -373,8 +373,7 @@ class MainViewModel(
                 )
                 _deviceConnected.value = false
                 _connectionError.value = e.message ?: "Connection failed"
-                // Clear disconnection event to prevent double snackbar
-                clearDisconnectionEvent()
+                // Do NOT clear disconnection event here, let the UI handle it via LaunchedEffect
                 startScanning() // Restart scanning on error
             } finally {
                 if (reloadAlarms) {
@@ -615,13 +614,13 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+                    val context = LocalContext.current
                     val startDestination =
                         if (settingsRepository.isSetupCompleted) "home" else "setup"
 
                     // Handle disconnection events
                     val disconnectionEvent by viewModel.disconnectionEvent.collectAsState()
                     val snackbarHostState = remember { SnackbarHostState() }
-                    val disconnectedMessage = stringResource(R.string.device_disconnected)
 
                     LaunchedEffect(disconnectionEvent) {
                         disconnectionEvent?.let { reason ->
@@ -633,10 +632,13 @@ class MainActivity : AppCompatActivity() {
                                 popUpTo("home") { inclusive = true }
                             }
 
-                            val fullMessage = if (reason.authHint != null) {
-                                "${reason.message}\n${reason.authHint}"
+                            val reasonMessage = reason.getMessage(context)
+                            val reasonHint = reason.getHint(context)
+
+                            val fullMessage = if (reasonHint != null) {
+                                "$reasonMessage $reasonHint"
                             } else {
-                                "$disconnectedMessage: ${reason.message}"
+                                reasonMessage
                             }
                             
                             // Show snackbar with reason
