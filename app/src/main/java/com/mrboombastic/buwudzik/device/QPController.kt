@@ -1485,6 +1485,18 @@ class QPController(private val context: Context) {
         AppLogger.d(TAG, "Disconnected and closed GATT")
     }
 
+    /**
+     * Cleanup all resources and cancel all jobs.
+     * Should be called when QPController is no longer needed.
+     */
+    fun close() {
+        disconnect()
+        commandConsumerJob.cancel()
+        deviceJob.cancel()
+        commandChannel.close()
+        AppLogger.d(TAG, "QPController closed and all jobs canceled")
+    }
+
     private fun ByteArray.toHexString(): String {
         return joinToString(" ") { "%02x".format(it) }
     }
