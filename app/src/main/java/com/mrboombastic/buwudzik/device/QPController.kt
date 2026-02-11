@@ -184,15 +184,22 @@ fun createTimeZone(offset:Int,isPositive: Boolean): TimeZone {
 @SuppressLint("MissingPermission")
 class QPController(private val context: Context) {
 
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.Default + job)
+    // Separate job for command consumer that won't be canceled on disconnect
+    private val commandConsumerJob = SupervisorJob()
+    private val commandConsumerScope = CoroutineScope(Dispatchers.Default + commandConsumerJob)
+    
+    // Job for device-specific operations that can be canceled on disconnect
+    private val deviceJob = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.Default + deviceJob)
+    
     private val gattMutex = Mutex()
     private val commandChannel = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val _isBusy = MutableStateFlow(false)
     val isBusy = _isBusy.asStateFlow()
 
     init {
-        scope.launch {
+        // Launch command consumer on separate scope that won't be canceled
+        commandConsumerScope.launch {
             for (command in commandChannel) {
                 if (!isAuthenticated) {
                     AppLogger.w(TAG, "Device not authenticated, skipping queued command")
@@ -1162,8 +1169,13 @@ class QPController(private val context: Context) {
             }
         }
 
-    fun enqueueCommand(action: suspend () -> Unit) {
-        commandChannel.trySend(action)
+    fun enqueueCommand(action: suspend () -> Unit): Boolean {
+        val result = commandChannel.trySend(action)
+        if (result.isFailure) {
+            AppLogger.w(TAG, "Failed to enqueue command: channel closed or full")
+            return false
+        }
+        return true
     }
 
     suspend fun setDaytimeBrightnessImmediate(percentage: Int): Boolean =
@@ -1469,13 +1481,26 @@ class QPController(private val context: Context) {
     }
 
     fun disconnect() {
-        job.cancelChildren()
+        // Set state flags first to prevent command consumer from processing commands during teardown
+        isAuthenticated = false
+        isConnected = false
+        deviceJob.cancelChildren()
         gatt?.disconnect()
         gatt?.close()
         gatt = null
-        isConnected = false
-        isAuthenticated = false
         AppLogger.d(TAG, "Disconnected and closed GATT")
+    }
+
+    /**
+     * Cleanup all resources and cancel all jobs.
+     * Should be called when QPController is no longer needed.
+     */
+    fun close() {
+        disconnect()
+        commandChannel.close()
+        commandConsumerJob.cancel()
+        deviceJob.cancel()
+        AppLogger.d(TAG, "QPController closed and all jobs canceled")
     }
 
     private fun ByteArray.toHexString(): String {
