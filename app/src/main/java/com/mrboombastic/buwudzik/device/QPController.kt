@@ -20,7 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -151,7 +151,8 @@ fun createTimeZone(offset:Int,isPositive: Boolean): TimeZone {
 @SuppressLint("MissingPermission")
 class QPController(private val context: Context) {
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.Default + job)
     private val gattMutex = Mutex()
     private val commandChannel = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val _isBusy = MutableStateFlow(false)
@@ -333,61 +334,70 @@ class QPController(private val context: Context) {
         _disconnectionEvent.value = null
     }
 
-    private fun handleAckNotification(value: ByteArray) {
-        if (value.size >= 4 && value[0] == 0x04.toByte() && value[1] == 0xff.toByte()) {
-            val cmdId = value[2].toInt() and 0xFF
-            val status = value[3].toInt() and 0xFF
+    private fun handleAckNotification(value: ByteArray, characteristicUuid: UUID) {
+        if (value.size < 4 || value[0] != 0x04.toByte() || value[1] != 0xff.toByte()) {
+            AppLogger.d(TAG, "[$characteristicUuid] Unhandled notification: ${value.toHexString()}")
+            return
+        }
+        val cmdId = value[2].toInt() and 0xFF
+        val status = value[3].toInt() and 0xFF
 
-            val cmdName = when (cmdId) {
-                0x01 -> "Auth Init"
-                0x02 -> "Auth Confirm"
-                0x03 -> "Brightness Preview"
-                0x04 -> "Preview Ringtone"
-                0x05 -> "Alarm"
-                0x08 -> "Audio Block"
-                0x09 -> "Time Sync"
-                0x10 -> "Audio Init"
-                else -> "Cmd $cmdId"
-            }
-            AppLogger.d(
-                TAG,
-                "Received ACK for command '$cmdName' (ID: ${cmdId.toHexString()}). Status: ${status.toHexString()}"
-            )
+        val cmdName = when (cmdId) {
+            0x01 -> "Auth Init"
+            0x02 -> "Auth Confirm"
+            0x03 -> "Brightness Preview"
+            0x04 -> "Preview Ringtone"
+            0x05 -> "Alarm"
+            0x08 -> "Audio Block"
+            0x09 -> "Time Sync"
+            0x10 -> "Audio Init"
+            else -> "Cmd $cmdId"
+        }
+        val authHint = context.getString(com.mrboombastic.buwudzik.R.string.auth_hint)
+        AppLogger.d(
+            TAG,
+            "Received ACK for command '$cmdName' (ID: ${cmdId.toHexString()}). Status: ${status.toHexString()}"
+        )
 
-            // Handle audio upload ACKs
-            if (cmdId == 0x08 || cmdId == 0x10) {
-                handleUploadAck(value)
-            }
+        // Handle audio upload ACKs
+        if (cmdId == 0x08 || cmdId == 0x10) {
+            handleUploadAck(value)
+        }
 
-            if (status == 0x00 || status == 0x09 || (cmdId == 0x01 && status == 0x02)) {
-                // cmdId 0x01 = Auth Init success, mark that we need to send Auth Confirm
-                if (cmdId == 0x01) {
-                    AppLogger.d(
-                        TAG, "Auth Init ACK received, will send Auth Confirm after write completes"
-                    )
-                    authInitAckReceived = true
-                    // Don't write here - wait for onCharacteristicWrite callback
-                } else if (cmdId == 0x02) {
-                    AppLogger.d(TAG, "Authentication successful! Device is now authenticated.")
-                    isAuthenticated = true
-                    pendingAuthWriteChar = null
-                    // Store token only after successful authentication
-                    if (isPendingPairing) {
-                        currentDeviceMac?.let { mac ->
-                            currentToken?.let { token ->
-                                tokenStorage.storeToken(mac, token)
-                                AppLogger.d(TAG, "Token stored for $mac after successful pairing")
-                            }
+        if (status == 0x00 || status == 0x09 || (cmdId == 0x01 && status == 0x02)) {
+            // cmdId 0x01 = Auth Init success, mark that we need to send Auth Confirm
+            if (cmdId == 0x01) {
+                AppLogger.d(
+                    TAG, "Auth Init ACK received, will send Auth Confirm after write completes"
+                )
+                authInitAckReceived = true
+                // Don't write here - wait for onCharacteristicWrite callback
+            } else if (cmdId == 0x02) {
+                AppLogger.d(TAG, "Authentication successful! Device is now authenticated.")
+                isAuthenticated = true
+                pendingAuthWriteChar = null
+                // Store token only after successful authentication
+                if (isPendingPairing) {
+                    currentDeviceMac?.let { mac ->
+                        currentToken?.let { token ->
+                            tokenStorage.storeToken(mac, token)
+                            AppLogger.d(TAG, "Token stored for $mac after successful pairing")
                         }
-                        isPendingPairing = false
                     }
+                    isPendingPairing = false
                 }
-                pendingAckContinuations.remove(cmdId)?.resume(true)
-            } else {
-                Log.e(TAG, "$cmdName failed with status $status")
-                pendingAckContinuations.remove(cmdId)
-                    ?.resumeWithException(Exception("$cmdName failed: $status"))
             }
+            pendingAckContinuations.remove(cmdId)?.resume(true)
+        } else {
+            val errorSuffix = if (status == 0x02) {
+                " $authHint"
+            } else ""
+            AppLogger.e(
+                TAG,
+                "[$characteristicUuid] $cmdName failed with status $status$errorSuffix (Full: ${value.toHexString()})"
+            )
+            pendingAckContinuations.remove(cmdId)
+                ?.resumeWithException(Exception("$cmdName failed: $status$errorSuffix"))
         }
     }
 
@@ -467,7 +477,7 @@ class QPController(private val context: Context) {
                             firmwareVersionReadContinuation = null
                         }
                     } else {
-                        handleAckNotification(value)
+                        handleAckNotification(value, characteristic.uuid)
                     }
                 }
 
@@ -481,7 +491,7 @@ class QPController(private val context: Context) {
                         }
                         // Also handle as regular ACK if size >= 4
                         if (value.size >= 4) {
-                            handleAckNotification(value)
+                            handleAckNotification(value, characteristic.uuid)
                         }
                     } else if (value.size >= 3 && value[0] == 0x11.toByte() && value[1] == 0x06.toByte()) {
                         val baseIndex = value[2].toInt() and 0xFF
@@ -620,22 +630,22 @@ class QPController(private val context: Context) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Write failed for ${characteristic?.uuid} with status $status")
                 deferred?.complete(false)
-            } else {
-                deferred?.complete(true)
+                return
+            }
+            deferred?.complete(true)
 
-                // Check if we need to send Auth Confirm (11 02) after Auth Init write completes
-                if (authInitAckReceived && characteristic?.uuid == UUID_AUTH_WRITE) {
-                    authInitAckReceived = false // Clear flag
-                    AppLogger.d(
-                        TAG, "Auth Init write complete, now sending Auth Confirm (11 02)..."
+            // Check if we need to send Auth Confirm (11 02) after Auth Init write completes
+            if (authInitAckReceived && characteristic?.uuid == UUID_AUTH_WRITE) {
+                authInitAckReceived = false // Clear flag
+                AppLogger.d(
+                    TAG, "Auth Init write complete, now sending Auth Confirm (11 02)..."
+                )
+                pendingAuthWriteChar?.let { char ->
+                    gatt?.writeCharacteristic(
+                        char,
+                        buildAuthConfirmPacket(),
+                        BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                     )
-                    pendingAuthWriteChar?.let { char ->
-                        gatt?.writeCharacteristic(
-                            char,
-                            buildAuthConfirmPacket(),
-                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                        )
-                    }
                 }
             }
         }
@@ -647,49 +657,7 @@ class QPController(private val context: Context) {
             AppLogger.d(
                 TAG, "onDescriptorWrite status=$status for ${descriptor?.characteristic?.uuid}"
             )
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                AppLogger.d(TAG, "Notification enabled for ${descriptor?.characteristic?.uuid}")
-
-                when (descriptor?.characteristic?.uuid) {
-                    UUID_AUTH_NOTIFY -> {
-                        pendingAuthWrite?.let { char ->
-                            AppLogger.d(
-                                TAG, "Descriptor write complete, sending Auth Init (11 01)..."
-                            )
-                            pendingAuthWriteChar = char // Save for second step
-                            gatt?.writeCharacteristic(
-                                char,
-                                buildAuthInitPacket(),
-                                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                            )
-                            pendingAuthWrite = null
-                        }
-                    }
-
-                    UUID_DATA_NOTIFY -> {
-                        pendingDataCommand?.let { cmd ->
-                            AppLogger.d(
-                                TAG,
-                                "Descriptor write complete, now sending data command: ${cmd.toHexString()}..."
-                            )
-                            val dataService =
-                                gatt?.services?.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
-                            val dataWriteChar = dataService?.getCharacteristic(UUID_DATA_WRITE)
-                            dataWriteChar?.let { char ->
-                                gatt.writeCharacteristic(
-                                    char, cmd, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                                )
-                            }
-                            pendingDataCommand = null
-                        }
-                    }
-
-                    UUID_SENSOR_NOTIFY -> {
-                        sensorNotificationContinuation?.resume(true)
-                        sensorNotificationContinuation = null
-                    }
-                }
-            } else {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Enable notification failed: $status")
                 when (descriptor?.characteristic?.uuid) {
                     UUID_AUTH_NOTIFY -> {
@@ -708,6 +676,48 @@ class QPController(private val context: Context) {
                         sensorNotificationContinuation?.resumeWithException(Exception("Enable sensor notification failed: $status"))
                         sensorNotificationContinuation = null
                     }
+                }
+                return
+            }
+            AppLogger.d(TAG, "Notification enabled for ${descriptor?.characteristic?.uuid}")
+
+            when (descriptor?.characteristic?.uuid) {
+                UUID_AUTH_NOTIFY -> {
+                    pendingAuthWrite?.let { char ->
+                        AppLogger.d(
+                            TAG, "Descriptor write complete, sending Auth Init (11 01)..."
+                        )
+                        pendingAuthWriteChar = char // Save for second step
+                        gatt?.writeCharacteristic(
+                            char,
+                            buildAuthInitPacket(),
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        )
+                        pendingAuthWrite = null
+                    }
+                }
+
+                UUID_DATA_NOTIFY -> {
+                    pendingDataCommand?.let { cmd ->
+                        AppLogger.d(
+                            TAG,
+                            "Descriptor write complete, now sending data command: ${cmd.toHexString()}..."
+                        )
+                        val dataService =
+                            gatt?.services?.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
+                        val dataWriteChar = dataService?.getCharacteristic(UUID_DATA_WRITE)
+                        dataWriteChar?.let { char ->
+                            gatt.writeCharacteristic(
+                                char, cmd, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                            )
+                        }
+                        pendingDataCommand = null
+                    }
+                }
+
+                UUID_SENSOR_NOTIFY -> {
+                    sensorNotificationContinuation?.resume(true)
+                    sensorNotificationContinuation = null
                 }
             }
         }
@@ -735,12 +745,31 @@ class QPController(private val context: Context) {
         }
 
         if (!isAuthenticated) {
-            authenticate()
+            try {
+                withTimeout(30000) {
+                    authenticate()
+                }
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Authentication failed or timed out", e)
+                return false
+            }
             delay(500) // Brief pause after auth to ensure stability
         }
 
-        synchronizeTime()
-        enableSensorNotifications()
+        try {
+            withTimeout(30000) {
+                synchronizeTime()
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Time synchronization failed or timed out", e)
+            return false // failure during time sync is fatal
+        }
+
+        try {
+            enableSensorNotifications()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to enable sensor notifications", e)
+        }
 
         return true
     }
@@ -805,6 +834,11 @@ class QPController(private val context: Context) {
                     continuation.resumeWithException(Exception("Auth descriptor not found"))
                     pendingAuthWrite = null
                 }
+
+                continuation.invokeOnCancellation {
+                    pendingAckContinuations.remove(0x02)
+                    pendingAuthWrite = null
+                }
             }
         }
     }
@@ -852,6 +886,10 @@ class QPController(private val context: Context) {
                     if (status != BluetoothGatt.GATT_SUCCESS) {
                         pendingAckContinuations.remove(0x09)
                         continuation.resumeWithException(Exception("writeCharacteristic failed for time sync: $status"))
+                    }
+
+                    continuation.invokeOnCancellation {
+                        pendingAckContinuations.remove(0x09)
                     }
                 }
             }
@@ -1396,7 +1434,7 @@ class QPController(private val context: Context) {
     }
 
     fun disconnect() {
-        scope.cancel()
+        job.cancelChildren()
         gatt?.disconnect()
         gatt?.close()
         gatt = null

@@ -255,7 +255,7 @@ class MainViewModel(
 
         val targetMac = settingsRepository.targetMacAddress
         if (targetMac.isEmpty()) {
-            Log.e("MainViewModel", "No target MAC address configured")
+            AppLogger.e("MainViewModel", "No target MAC address configured")
             return
         }
 
@@ -327,7 +327,7 @@ class MainViewModel(
                                     "MainViewModel", "Loaded ${alarmsWithTitles.size} alarms"
                                 )
                             } catch (e: Exception) {
-                                Log.e("MainViewModel", "Error loading alarms", e)
+                                AppLogger.e("MainViewModel", "Error loading alarms", e)
                             }
 
                             delay(200) // Small gap to avoid BLE race conditions
@@ -337,7 +337,7 @@ class MainViewModel(
                                 _deviceSettings.value = settings
                                 AppLogger.d("MainViewModel", "Loaded device settings: $settings")
                             } catch (e: Exception) {
-                                Log.e("MainViewModel", "Error loading settings", e)
+                                AppLogger.e("MainViewModel", "Error loading settings", e)
                             }
 
                             delay(200)
@@ -348,16 +348,20 @@ class MainViewModel(
                                     _deviceSettings.value?.copy(firmwareVersion = version)
                                 AppLogger.d("MainViewModel", "Loaded firmware version: $version")
                             } catch (e: Exception) {
-                                Log.e("MainViewModel", "Error loading firmware version", e)
+                                AppLogger.e("MainViewModel", "Error loading firmware version", e)
                             }
                         }
                     }
                 } else {
-                    Log.e("MainViewModel", "Failed to connect to clock")
+                    AppLogger.e("MainViewModel", "Failed to connect to clock")
                     startScanning() // Restart scanning if connection fails
                 }
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Error connecting to clock", e)
+                AppLogger.e(
+                    "MainViewModel",
+                    "Error connecting to clock ($targetMac): ${e.message}",
+                    e
+                )
                 _deviceConnected.value = false
                 startScanning() // Restart scanning on error
             } finally {
