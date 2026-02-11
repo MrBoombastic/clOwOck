@@ -7,6 +7,7 @@ import androidx.glance.state.GlanceStateDefinition
 import com.mrboombastic.buwudzik.data.SensorRepository
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.SensorData
+import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -60,18 +61,23 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Function to read and emit current state
             fun emitCurrentState() {
-                val result = trySend(
-                    WidgetState(
-                        sensorData = sensorRepo.getSensorData(),
-                        lastUpdate = sensorRepo.getLastUpdateTimestamp(),
-                        hasError = sensorRepo.hasUpdateError(),
-                        isLoading = sensorRepo.isLoading(),
-                        language = settingsRepo.language
+                try {
+                    val result = trySend(
+                        WidgetState(
+                            sensorData = sensorRepo.getSensorData(),
+                            lastUpdate = sensorRepo.getLastUpdateTimestamp(),
+                            hasError = sensorRepo.hasUpdateError(),
+                            isLoading = sensorRepo.isLoading(),
+                            language = settingsRepo.language
+                        )
                     )
-                )
-                // Log if send failed (channel full or closed)
-                if (!result.isSuccess) {
-                    android.util.Log.w(TAG, "Failed to emit state update: ${result.exceptionOrNull()?.message}")
+                    // Log if send failed (channel full or closed)
+                    if (!result.isSuccess) {
+                        AppLogger.w(TAG, "Failed to emit state update: ${result.exceptionOrNull()?.message}")
+                    }
+                } catch (e: Exception) {
+                    // Log any errors from repository operations
+                    AppLogger.e(TAG, "Error reading widget state from repositories", e)
                 }
             }
             
@@ -80,6 +86,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             
             // Create listeners (kept as local variables to maintain strong references)
             // Only emit updates for preference keys that affect widget state
+            // Note: SharedPreferences listeners are invoked on the main thread, and trySend()
+            // is thread-safe, so no additional synchronization is needed
             val sensorListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                 // Only react to sensor-related preference changes
                 if (key in SENSOR_KEYS) {
