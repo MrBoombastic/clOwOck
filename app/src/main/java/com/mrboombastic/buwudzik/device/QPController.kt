@@ -90,6 +90,29 @@ class QPController(private val context: Context) {
 
     companion object {
         private const val TAG = "QPController"
+
+        // Timeout constants (in milliseconds)
+        private const val TIMEOUT_AUTHENTICATION = 30000L
+        private const val TIMEOUT_TIME_SYNC = 30000L
+        private const val TIMEOUT_OPERATION = 5000L
+        private const val TIMEOUT_WRITE_CALLBACK = 5000L
+
+        // Delay constants (in milliseconds)
+        private const val DELAY_POST_AUTH = 500L
+        private const val DELAY_BLE_OPERATION = 200L
+        private const val DELAY_ALARM_RELOAD = 300L
+        private const val DELAY_ALARM_COMPLETION = 1000L
+        private const val DELAY_RSSI_POLL = 5000L
+        private const val DELAY_NOTIFICATION_ENABLE = 300L
+        private const val DELAY_PACKET_WRITE = 20L
+
+        // Audio upload constants
+        private const val AUDIO_PACKET_SIZE = 128
+        private const val AUDIO_PACKETS_PER_BLOCK = 4
+        private const val AUDIO_BLOCK_SIZE = AUDIO_PACKET_SIZE * AUDIO_PACKETS_PER_BLOCK
+        private const val AUDIO_ACK_WAIT_ITERATIONS = 50
+        private const val AUDIO_INIT_ACK_WAIT_ITERATIONS = 20
+        private const val AUDIO_ACK_WAIT_DELAY = 100L
     }
 
     // Token storage for persistence
@@ -390,7 +413,7 @@ class QPController(private val context: Context) {
                         } else {
                             alarmCompletionJob?.cancel()
                             alarmCompletionJob = scope.launch {
-                                delay(1000)
+                                delay(DELAY_ALARM_COMPLETION)
                                 AppLogger.d(
                                     TAG,
                                     "Timeout waiting for more packets, returning ${alarmBuffer.size} alarms"
@@ -597,10 +620,10 @@ class QPController(private val context: Context) {
 
         if (!isAuthenticated) {
             try {
-                withTimeout(30000) {
+                withTimeout(TIMEOUT_AUTHENTICATION) {
                     authenticate()
                 }
-                delay(500) // Brief pause after auth to ensure stability
+                delay(DELAY_POST_AUTH) // Brief pause after auth to ensure stability
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Authentication failed or timed out", e)
                 throw e // Propagate detailed error
@@ -608,7 +631,7 @@ class QPController(private val context: Context) {
         }
 
         try {
-            withTimeout(30000) {
+            withTimeout(TIMEOUT_AUTHENTICATION) {
                 synchronizeTime()
             }
         } catch (e: Exception) {
@@ -886,7 +909,7 @@ class QPController(private val context: Context) {
 
     private suspend fun writeDeviceSettingsInternal(settings: DeviceSettings): Boolean =
         withContext(NonCancellable) {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 suspendCancellableCoroutine { continuation ->
                     val currentGatt = gatt ?: run {
                         continuation.resumeWithException(Exception("GATT not connected"))
@@ -1091,7 +1114,7 @@ class QPController(private val context: Context) {
         snooze: Boolean = false
     ): Boolean = gattMutex.withLock {
         withContext(NonCancellable) {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 suspendCancellableCoroutine { continuation ->
                     val currentGatt = gatt ?: run {
                         continuation.resumeWithException(Exception("GATT not connected"))
@@ -1159,7 +1182,7 @@ class QPController(private val context: Context) {
 
     suspend fun deleteAlarm(alarmId: Int): Boolean = gattMutex.withLock {
         withContext(NonCancellable) {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 suspendCancellableCoroutine { continuation ->
                     val currentGatt = gatt ?: run {
                         continuation.resumeWithException(Exception("GATT not connected"))
@@ -1406,7 +1429,7 @@ class QPController(private val context: Context) {
             descriptor?.let {
                 currentGatt.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
             }
-            delay(300)
+            delay(DELAY_ALARM_RELOAD)
             enabledNotifications.add(UUID_DATA_NOTIFY)
         }
 
@@ -1439,9 +1462,9 @@ class QPController(private val context: Context) {
         }
 
         // Wait for init response (04 ff 10 XX)
-        repeat(20) {
+        repeat(AUDIO_INIT_ACK_WAIT_ITERATIONS) {
             if (uploadInitAckReceived) return@repeat
-            delay(100)
+            delay(AUDIO_ACK_WAIT_DELAY)
         }
 
         if (!uploadInitAckReceived) {
@@ -1451,8 +1474,8 @@ class QPController(private val context: Context) {
 
         // 2. Send audio data in packets
         // Protocol: 4 packets per block, wait for ACK after last packet
-        val packetSize = 128
-        val packetsPerBlock = 4
+        val packetSize = AUDIO_PACKET_SIZE
+        val packetsPerBlock = AUDIO_PACKETS_PER_BLOCK
         val blockSize = packetSize * packetsPerBlock
         var offset = 0
         var blockNum = 0
@@ -1504,9 +1527,9 @@ class QPController(private val context: Context) {
                     }
 
                     // Wait for block ACK from device (04 ff 08 XX)
-                    repeat(50) {
+                    repeat(AUDIO_ACK_WAIT_ITERATIONS) {
                         if (uploadAckReceived) return@repeat
-                        delay(100)
+                        delay(AUDIO_ACK_WAIT_DELAY)
                     }
 
                     if (!uploadAckReceived) {
@@ -1518,7 +1541,7 @@ class QPController(private val context: Context) {
                     if (!writeSuccess) {
                         AppLogger.w(TAG, "Write failed for block $blockNum, packet $pktIdx")
                     }
-                    delay(20)
+                    delay(DELAY_PACKET_WRITE)
                 }
 
                 offset += audioLen
@@ -1568,7 +1591,7 @@ class QPController(private val context: Context) {
 
         // Wait for callback with timeout
         return try {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 deferred.await()
             }
         } catch (e: Exception) {
