@@ -111,6 +111,7 @@ import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
 import com.mrboombastic.buwudzik.widget.SensorUpdateWorker
+import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -516,55 +517,25 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "MainActivity"
 
+        /**
+         * Schedule periodic widget updates using AlarmManager.
+         * This provides reliable updates even with aggressive battery optimization.
+         * Call this when the app starts or when widgets are enabled.
+         */
         fun scheduleUpdates(context: Context, intervalMinutes: Long) {
-            val workManager = WorkManager.getInstance(context)
-
-            AppLogger.d(TAG, "Scheduling WorkManager for $intervalMinutes min intervals")
-
-            // Use flex time for battery optimization (run anytime within last 5 min of interval)
-            val flexMinutes = minOf(5L, intervalMinutes / 3)
-
-            val workRequest = PeriodicWorkRequestBuilder<SensorUpdateWorker>(
-                intervalMinutes, TimeUnit.MINUTES, flexMinutes, TimeUnit.MINUTES
-            ).build()
-
-            // Use KEEP policy to avoid resetting the schedule on every app launch
-            // This ensures existing scheduled work continues instead of being replaced
-            workManager.enqueueUniquePeriodicWork(
-                "SensorUpdateWork", ExistingPeriodicWorkPolicy.KEEP, workRequest
-            )
-
-            AppLogger.d(
-                TAG,
-                "WorkManager scheduled with ${intervalMinutes}min interval, ${flexMinutes}min flex (keep)"
-            )
+            AppLogger.d(TAG, "Scheduling AlarmManager for $intervalMinutes min intervals")
+            WidgetUpdateScheduler.scheduleUpdates(context, intervalMinutes)
         }
 
         /**
          * Force reschedule updates with a new interval.
-         * Uses REPLACE policy to immediately apply the new interval.
          * Call this when user changes the update interval in settings.
          */
         fun rescheduleUpdates(context: Context, intervalMinutes: Long) {
-            val workManager = WorkManager.getInstance(context)
-
-            AppLogger.d(TAG, "Rescheduling WorkManager for $intervalMinutes min intervals")
-
-            val flexMinutes = minOf(5L, intervalMinutes / 3)
-
-            val workRequest = PeriodicWorkRequestBuilder<SensorUpdateWorker>(
-                intervalMinutes, TimeUnit.MINUTES, flexMinutes, TimeUnit.MINUTES
-            ).build()
-
-            // Use REPLACE policy to force update with new interval
-            workManager.enqueueUniquePeriodicWork(
-                "SensorUpdateWork", ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest
-            )
-
-            AppLogger.d(
-                TAG,
-                "WorkManager rescheduled with ${intervalMinutes}min interval, ${flexMinutes}min flex (REPLACE policy)"
-            )
+            AppLogger.d(TAG, "Rescheduling AlarmManager for $intervalMinutes min intervals")
+            // Cancel existing alarms and schedule new one with updated interval
+            WidgetUpdateScheduler.cancelUpdates(context)
+            WidgetUpdateScheduler.scheduleUpdates(context, intervalMinutes)
         }
     }
 
