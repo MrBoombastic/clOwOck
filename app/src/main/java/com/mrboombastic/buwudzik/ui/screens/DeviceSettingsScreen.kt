@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,7 +23,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,19 +40,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.mrboombastic.buwudzik.MainViewModel
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.Language
 import com.mrboombastic.buwudzik.device.TempUnit
 import com.mrboombastic.buwudzik.device.TimeFormat
-import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.LabeledSlider
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
+import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,16 +91,17 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
         }
     }
 
-    Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
-        StandardTopBar(
-            title = stringResource(R.string.device_settings_title),
-            navController = navController,
-            showProgress = isSaving || isBusy,
-            navigationEnabled = isUiEnabled
-        )
-                }
-            })
-    }) { padding ->
+    Scaffold(
+        snackbarHost = { CustomSnackbarHost(snackbarHostState) },
+        topBar = {
+            StandardTopBar(
+                title = stringResource(R.string.device_settings_title),
+                navController = navController,
+                showProgress = isSaving || isBusy,
+                navigationEnabled = isUiEnabled
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
