@@ -45,8 +45,10 @@ object WidgetUpdateScheduler {
 
         val canScheduleExact = alarmManager.canScheduleExactAlarms()
         if (promptUserForExactAlarms && !canScheduleExact) {
+            // Prompt user only for exact alarm permission here to avoid launching multiple
+            // Settings activities back-to-back. Any additional prompts (e.g., battery
+            // optimization exemption) should be handled separately in the UI layer.
             requestExactAlarmPermission(context)
-            requestBatteryOptimizationExemption(context)
         }
 
         // Prefer exact alarms when allowed; fall back to "inexact" to avoid crashes when not permitted
