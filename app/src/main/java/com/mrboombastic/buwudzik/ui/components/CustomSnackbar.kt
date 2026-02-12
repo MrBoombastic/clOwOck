@@ -43,19 +43,20 @@ fun CustomSnackbarHost(
                 )
             ) + fadeOut()
         ) {
+            val isDark = isSystemInDarkTheme()
             Snackbar(
                 snackbarData = data,
-                containerColor = if (isSystemInDarkTheme()) {
+                containerColor = if (isDark) {
                     MaterialTheme.colorScheme.surfaceContainerHighest
                 } else {
                     MaterialTheme.colorScheme.inverseSurface
                 },
-                contentColor = if (isSystemInDarkTheme()) {
+                contentColor = if (isDark) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
                     MaterialTheme.colorScheme.inverseOnSurface
                 },
-                actionColor = if (isSystemInDarkTheme()) {
+                actionColor = if (isDark) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.inversePrimary
