@@ -2,7 +2,6 @@ package com.mrboombastic.buwudzik
 
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -76,21 +75,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
-import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.mrboombastic.buwudzik.data.AlarmTitleRepository
-import com.mrboombastic.buwudzik.data.SensorRepository
 import com.mrboombastic.buwudzik.data.SettingsRepository
-import com.mrboombastic.buwudzik.device.Alarm
 import com.mrboombastic.buwudzik.device.BluetoothScanner
-import com.mrboombastic.buwudzik.device.DeviceSettings
-import com.mrboombastic.buwudzik.device.QPController
 import com.mrboombastic.buwudzik.device.SensorData
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.MenuTile
@@ -105,21 +97,11 @@ import com.mrboombastic.buwudzik.ui.theme.BuwudzikTheme
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
-import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
+import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
-import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 
 
 class MainActivity : AppCompatActivity() {

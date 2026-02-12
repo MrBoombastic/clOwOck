@@ -15,18 +15,18 @@ import com.mrboombastic.buwudzik.utils.TimeFormatUtils
  * @param label Label for the time picker
  * @param hour Hour value (0-23)
  * @param minute Minute value (0-59)
+ * @param modifier Optional modifier
  * @param enabled Whether the card is enabled
  * @param onClick Callback when card is clicked
- * @param modifier Optional modifier
  */
 @Composable
 fun TimePickerCard(
     label: String,
     hour: Int,
     minute: Int,
+    modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit = {}
 ) {
     OutlinedCard(
         onClick = onClick,

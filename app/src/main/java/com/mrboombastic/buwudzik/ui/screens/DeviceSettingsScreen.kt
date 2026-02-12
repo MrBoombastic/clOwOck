@@ -51,11 +51,11 @@ import com.mrboombastic.buwudzik.ui.components.LabeledSlider
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
+import com.mrboombastic.buwudzik.ui.components.TimePickerCard
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -393,52 +393,28 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         // Start Time
-                        OutlinedCard(
-                            onClick = { showStartTimePicker = true },
+                        TimePickerCard(
+                            label = stringResource(R.string.start_time_label),
+                            hour = nightStartHour,
+                            minute = nightStartMinute,
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp),
-                            enabled = isUiEnabled
-                        ) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(
-                                    stringResource(R.string.start_time_label),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Text(
-                                    String.format(
-                                        Locale.getDefault(),
-                                        "%02d:%02d",
-                                        nightStartHour,
-                                        nightStartMinute
-                                    ), style = MaterialTheme.typography.titleLarge
-                                )
-                            }
-                        }
+                            enabled = isUiEnabled,
+                            onClick = { showStartTimePicker = true }
+                        )
 
                         // End Time
-                        OutlinedCard(
-                            onClick = { showEndTimePicker = true },
+                        TimePickerCard(
+                            label = stringResource(R.string.end_time_label),
+                            hour = nightEndHour,
+                            minute = nightEndMinute,
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 8.dp),
-                            enabled = isUiEnabled
-                        ) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(
-                                    stringResource(R.string.end_time_label),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Text(
-                                    String.format(
-                                        Locale.getDefault(),
-                                        "%02d:%02d",
-                                        nightEndHour,
-                                        nightEndMinute
-                                    ), style = MaterialTheme.typography.titleLarge
-                                )
-                            }
-                        }
+                            enabled = isUiEnabled,
+                            onClick = { showEndTimePicker = true }
+                        )
                     }
                 }
 
