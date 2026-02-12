@@ -38,6 +38,7 @@ fun LabeledSlider(
             text = label,
             style = MaterialTheme.typography.bodyMedium
         )
+        Spacer(Modifier.height(4.dp))
         Slider(
             value = value,
             enabled = enabled,
