@@ -140,7 +140,7 @@ class BluetoothScanner(private val context: Context) {
         awaitClose {
             AppLogger.d("BluetoothScanner", "Flow closing/cancelled. Stopping scan.")
             try {
-                if (adapter?.isEnabled == true) {
+                if (adapter.isEnabled) {
                     leScanner.stopScan(callback)
                 }
             } catch (e: Exception) {
