@@ -144,7 +144,7 @@ class BluetoothScanner(private val context: Context) {
                     leScanner.stopScan(callback)
                 }
             } catch (e: Exception) {
-                AppLogger.e("BluetoothScanner", "Error stopping scan: ${e.message}")
+                AppLogger.e("BluetoothScanner", "Error stopping scan: ${e.message}", e)
             }
         }
     }
