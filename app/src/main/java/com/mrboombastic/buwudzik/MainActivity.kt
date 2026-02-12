@@ -2,6 +2,7 @@ package com.mrboombastic.buwudzik
 
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -84,6 +85,7 @@ import androidx.navigation.compose.rememberNavController
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.BluetoothScanner
 import com.mrboombastic.buwudzik.device.SensorData
+import com.mrboombastic.buwudzik.ui.components.ConfirmationDialog
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.MenuTile
 import com.mrboombastic.buwudzik.ui.screens.AlarmManagementScreen
@@ -98,6 +100,7 @@ import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
+import com.mrboombastic.buwudzik.widget.ExactAlarmPermissionDialog
 import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -135,8 +138,7 @@ class MainActivity : AppCompatActivity() {
             AppLogger.d(TAG, "Scheduling AlarmManager for $intervalMinutes min intervals")
             WidgetUpdateScheduler.scheduleUpdates(
                 context,
-                intervalMinutes,
-                promptUserForExactAlarms = true
+                intervalMinutes
             )
         }
 
@@ -150,8 +152,7 @@ class MainActivity : AppCompatActivity() {
             WidgetUpdateScheduler.cancelUpdates(context)
             WidgetUpdateScheduler.scheduleUpdates(
                 context,
-                intervalMinutes,
-                promptUserForExactAlarms = true
+                intervalMinutes
             )
         }
     }
@@ -267,6 +268,35 @@ class MainActivity : AppCompatActivity() {
                                 }
                             },
                             icon = { Icon(Icons.Default.Settings, contentDescription = null) })
+                    }
+
+                    var showExactAlarmDialog by remember { mutableStateOf(false) }
+                    val exactAlarmMessage = stringResource(R.string.exact_alarm_permission_message)
+                    val exactAlarmOneTime = stringResource(R.string.exact_alarm_permission_one_time)
+
+                    LaunchedEffect(Unit) {
+                        val alarmManager =
+                            context.getSystemService(ALARM_SERVICE) as? AlarmManager
+                        val needsExactAlarm =
+                            alarmManager != null && !alarmManager.canScheduleExactAlarms()
+                        if (needsExactAlarm && ExactAlarmPermissionDialog.shouldShowPrompt(context)) {
+                            ExactAlarmPermissionDialog.markPromptShown(context)
+                            showExactAlarmDialog = true
+                        }
+                    }
+
+                    if (showExactAlarmDialog) {
+                        ConfirmationDialog(
+                            title = stringResource(R.string.exact_alarm_permission_title),
+                            message = "$exactAlarmMessage\n\n$exactAlarmOneTime",
+                            confirmText = stringResource(R.string.exact_alarm_permission_allow),
+                            cancelText = stringResource(R.string.exact_alarm_permission_deny),
+                            onConfirm = {
+                                ExactAlarmPermissionDialog.openSystemAlarmSettings(context)
+                                showExactAlarmDialog = false
+                            },
+                            onDismiss = { showExactAlarmDialog = false }
+                        )
                     }
 
                     LaunchedEffect(disconnectionEvent) {

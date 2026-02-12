@@ -62,11 +62,13 @@ import com.mrboombastic.buwudzik.UpdateCheckResult
 import com.mrboombastic.buwudzik.UpdateChecker
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
+import com.mrboombastic.buwudzik.ui.components.ConfirmationDialog
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
+import com.mrboombastic.buwudzik.widget.ExactAlarmPermissionDialog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -105,6 +107,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showUpdateDialog by remember { mutableStateOf(false) }
+    var showResetDialogFlagsDialog by remember { mutableStateOf(false) }
 
     // Helper function to update widgets with proper error handling
     fun launchWidgetUpdate() {
@@ -218,26 +221,24 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
 
 
-    Scaffold(
-        snackbarHost = { CustomSnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = {
-                BackNavigationButton(navController) {
-                    val finalMac = macAddress.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
-                    val isValid = BluetoothAdapter.checkBluetoothAddress(finalMac)
+    Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
+        TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = {
+            BackNavigationButton(navController) {
+                val finalMac = macAddress.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
+                val isValid = BluetoothAdapter.checkBluetoothAddress(finalMac)
 
-                    if (isValid && finalMac != repository.targetMacAddress) {
-                        repository.targetMacAddress = finalMac
-                    }
-
-                    // Restart scanning if MAC or scan mode changed
-                    if (isValid && (finalMac != initialMacAddress || scanMode != initialScanMode)) {
-                        viewModel.restartScanning()
-                    }
-                    navController.popBackStack()
+                if (isValid && finalMac != repository.targetMacAddress) {
+                    repository.targetMacAddress = finalMac
                 }
-            })
-        }) { padding ->
+
+                // Restart scanning if MAC or scan mode changed
+                if (isValid && (finalMac != initialMacAddress || scanMode != initialScanMode)) {
+                    viewModel.restartScanning()
+                }
+                navController.popBackStack()
+            }
+        })
+    }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -281,16 +282,14 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             // Mark setup as incomplete to show device selection
                             repository.isSetupCompleted = false
                             navController.navigate("setup")
-                        },
-                        modifier = Modifier.padding(end = 4.dp)
+                        }, modifier = Modifier.padding(end = 4.dp)
                     ) {
                         Icon(
                             Icons.Default.Search,
                             contentDescription = stringResource(R.string.scan_devices_button),
                         )
                     }
-                }
-            )
+                })
 
 
             // Scan Mode
@@ -428,42 +427,37 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
             // Update Available Dialog
             if (showUpdateDialog && updateResult != null) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = {
-                        showUpdateDialog = false
-                    },
-                    title = { Text(stringResource(R.string.update_available_title)) },
-                    text = {
-                        Text(
-                            stringResource(
-                                R.string.update_available_message,
-                                updateResult!!.currentVersion,
-                                updateResult!!.latestVersion
-                            )
+                androidx.compose.material3.AlertDialog(onDismissRequest = {
+                    showUpdateDialog = false
+                }, title = { Text(stringResource(R.string.update_available_title)) }, text = {
+                    Text(
+                        stringResource(
+                            R.string.update_available_message,
+                            updateResult!!.currentVersion,
+                            updateResult!!.latestVersion
                         )
-                    },
-                    confirmButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = {
-                                showUpdateDialog = false
-                                val downloadUrl = updateResult?.downloadUrl
-                                if (downloadUrl != null) {
-                                    coroutineScope.launch {
-                                        val updateChecker = UpdateChecker(appContext)
-                                        updateChecker.downloadAndInstall(downloadUrl)
-                                        updateChecker.close()
-                                    }
+                    )
+                }, confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            showUpdateDialog = false
+                            val downloadUrl = updateResult?.downloadUrl
+                            if (downloadUrl != null) {
+                                coroutineScope.launch {
+                                    val updateChecker = UpdateChecker(appContext)
+                                    updateChecker.downloadAndInstall(downloadUrl)
+                                    updateChecker.close()
                                 }
-                            }) {
-                            Text(stringResource(R.string.download_update))
-                        }
-                    },
-                    dismissButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = { showUpdateDialog = false }) {
-                            Text(stringResource(R.string.later))
-                        }
-                    })
+                            }
+                        }) {
+                        Text(stringResource(R.string.download_update))
+                    }
+                }, dismissButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = { showUpdateDialog = false }) {
+                        Text(stringResource(R.string.later))
+                    }
+                })
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -476,23 +470,26 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 stringResource(
-                    R.string.version_label,
-                    versionName ?: stringResource(R.string.na_placeholder)
+                    R.string.version_label, versionName ?: stringResource(R.string.na_placeholder)
                 )
             )
             Text(stringResource(R.string.author_label, stringResource(R.string.app_author_name)))
+
+
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Github Button
             val githubUrl = stringResource(R.string.github_repo_url)
             val githubErrorMsg = stringResource(R.string.error_cannot_open_github)
             Button(
                 onClick = {
                     try {
                         val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            githubUrl.toUri()
+                            Intent.ACTION_VIEW, githubUrl.toUri()
                         )
                         context.startActivity(intent)
                     } catch (e: Exception) {
@@ -501,14 +498,37 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             snackbarHostState.showSnackbar(githubErrorMsg)
                         }
                     }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF24292e),
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth()
+                }, colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF24292e), contentColor = Color.White
+                ), modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.github_label))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Reset Dialog Flags Button
+            Button(
+                onClick = { showResetDialogFlagsDialog = true }, modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.reset_dialog_prompts_button))
+            }
+
+            if (showResetDialogFlagsDialog) {
+                val resetSuccessMessage = stringResource(R.string.reset_dialog_prompts_done)
+                ConfirmationDialog(
+                    title = stringResource(R.string.reset_dialog_prompts_title),
+                    message = stringResource(R.string.reset_dialog_prompts_message),
+                    confirmText = stringResource(R.string.reset_dialog_prompts_confirm),
+                    cancelText = stringResource(R.string.cancel),
+                    onConfirm = {
+                        ExactAlarmPermissionDialog.clearPromptFlag(context)
+                        showResetDialogFlagsDialog = false
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(resetSuccessMessage)
+                        }
+                    },
+                    onDismiss = { showResetDialogFlagsDialog = false })
             }
 
             // Check for Updates
@@ -602,10 +622,4 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
         }
     }
 }
-
-
-
-
-
-
 

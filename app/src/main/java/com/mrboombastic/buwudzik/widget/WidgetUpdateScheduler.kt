@@ -4,9 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.PowerManager
-import android.provider.Settings
 import com.mrboombastic.buwudzik.utils.AppLogger
 
 /**
@@ -29,7 +26,6 @@ object WidgetUpdateScheduler {
     fun scheduleUpdates(
         context: Context,
         intervalMinutes: Long,
-        promptUserForExactAlarms: Boolean = false
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
         if (alarmManager == null) {
@@ -44,12 +40,7 @@ object WidgetUpdateScheduler {
         val triggerAtMillis = System.currentTimeMillis() + intervalMillis
 
         val canScheduleExact = alarmManager.canScheduleExactAlarms()
-        if (promptUserForExactAlarms && !canScheduleExact) {
-            // Prompt user only for exact alarm permission here to avoid launching multiple
-            // Settings activities back-to-back. Any additional prompts (e.g., battery
-            // optimization exemption) should be handled separately in the UI layer.
-            requestExactAlarmPermission(context)
-        }
+
 
         // Prefer exact alarms when allowed; fall back to "inexact" to avoid crashes when not permitted
         if (canScheduleExact) {
@@ -119,55 +110,4 @@ object WidgetUpdateScheduler {
         )
     }
 
-    /**
-     * Request exact alarm permission when the app cannot schedule exact alarms.
-     */
-    private fun requestExactAlarmPermission(context: Context) {
-        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-            data = Uri.parse("package:${context.packageName}")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-
-        try {
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-                AppLogger.d(TAG, "Prompted user to allow exact alarm scheduling")
-            } else {
-                AppLogger.w(TAG, "Exact alarm settings screen unavailable")
-            }
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Unable to request exact alarm permission", e)
-        }
-    }
-
-    /**
-     * Request battery optimization exemption to improve alarm reliability.
-     */
-    private fun requestBatteryOptimizationExemption(context: Context) {
-        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-        if (powerManager == null) {
-            AppLogger.e(TAG, "PowerManager not available")
-            return
-        }
-
-        if (powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
-            return
-        }
-
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-            data = Uri.parse("package:${context.packageName}")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-
-        try {
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-                AppLogger.d(TAG, "Prompted user to exempt app from battery optimizations")
-            } else {
-                AppLogger.w(TAG, "Battery optimization settings screen unavailable")
-            }
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Unable to request battery optimization exemption", e)
-        }
-    }
 }
