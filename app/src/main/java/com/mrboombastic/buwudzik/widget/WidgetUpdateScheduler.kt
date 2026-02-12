@@ -45,15 +45,36 @@ object WidgetUpdateScheduler {
         val intervalMillis = intervalMinutes * 60 * 1000L
         val triggerAtMillis = System.currentTimeMillis() + intervalMillis
 
-        // Use setExactAndAllowWhileIdle for reliable updates
-        // MinSdk 34 guarantees this API is available (added in API 23)
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerAtMillis,
-            pendingIntent
-        )
-
-        AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using AlarmManager")
+        // Prefer exact alarms when allowed; fall back to inexact to avoid crashes when not permitted
+        if (alarmManager.canScheduleExactAlarms()) {
+            try {
+                // Use setExactAndAllowWhileIdle for reliable updates
+                // MinSdk 34 guarantees this API is available (added in API 23)
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent
+                )
+                AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using exact AlarmManager alarm")
+            } catch (se: SecurityException) {
+                // Exact alarms not allowed at runtime; fall back to inexact alarm to avoid crashing
+                AppLogger.e(TAG, "Exact alarm not permitted, falling back to inexact alarm for widget updates", se)
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent
+                )
+                AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using inexact AlarmManager alarm")
+            }
+        } else {
+            // Exact alarms are not allowed; use inexact alarm instead
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerAtMillis,
+                pendingIntent
+            )
+            AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using inexact AlarmManager alarm")
+        }
     }
 
     /**
