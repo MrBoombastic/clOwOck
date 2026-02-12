@@ -37,6 +37,7 @@ import com.mrboombastic.buwudzik.data.DeviceShareData
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,9 +55,9 @@ fun DeviceSharingScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.share_device_title)) },
-                navigationIcon = { BackNavigationButton(navController) }
+            StandardTopBar(
+                title = stringResource(R.string.share_device_title),
+                navController = navController
             )
         }
     ) { padding ->

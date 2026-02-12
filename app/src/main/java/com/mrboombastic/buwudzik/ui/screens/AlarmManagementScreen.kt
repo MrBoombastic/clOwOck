@@ -60,6 +60,7 @@ import com.mrboombastic.buwudzik.device.Alarm
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -145,19 +146,11 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
     }
 
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.alarm_management_title)) },
-            navigationIcon = {
-                BackNavigationButton(navController)
-            },
-            actions = {
-                if (isUpdating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+        StandardTopBar(
+            title = stringResource(R.string.alarm_management_title),
+            navController = navController,
+            showProgress = isUpdating
+        )
                 }
             })
     }, floatingActionButton = {

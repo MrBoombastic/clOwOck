@@ -30,16 +30,7 @@ object WidgetUpdateScheduler {
             return
         }
 
-        val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
-            action = WidgetUpdateReceiver.ACTION_UPDATE_WIDGET
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent = createUpdatePendingIntent(context)
 
         // Calculate next trigger time
         val intervalMillis = intervalMinutes * 60 * 1000L
@@ -90,20 +81,27 @@ object WidgetUpdateScheduler {
             return
         }
 
-        val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
-            action = WidgetUpdateReceiver.ACTION_UPDATE_WIDGET
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent = createUpdatePendingIntent(context)
 
         alarmManager.cancel(pendingIntent)
         pendingIntent.cancel()
 
         AppLogger.d(TAG, "Cancelled widget updates")
+    }
+
+    /**
+     * Creates a PendingIntent for widget update broadcasts.
+     */
+    private fun createUpdatePendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, WidgetUpdateReceiver::class.java).apply {
+            action = WidgetUpdateReceiver.ACTION_UPDATE_WIDGET
+        }
+
+        return PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 }

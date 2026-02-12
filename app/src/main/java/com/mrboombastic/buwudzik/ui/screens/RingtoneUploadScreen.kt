@@ -60,9 +60,11 @@ import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.audio.AudioConverter
 import com.mrboombastic.buwudzik.audio.AudioTrimmerDialog
 import com.mrboombastic.buwudzik.audio.ChannelMode
+import com.mrboombastic.buwudzik.device.BleConstants
 import com.mrboombastic.buwudzik.device.QPController
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -122,7 +124,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
 
     // Available online ringtones from QP server
     val onlineRingtones = remember {
-        QPController.RINGTONE_SIGNATURES.map { (name, sig) ->
+        BleConstants.RINGTONE_SIGNATURES.map { (name, sig) ->
             OnlineRingtone(
                 name = name,
                 url = "https://qingfseu.oss-eu-central-1.aliyuncs.com/rings/${
@@ -256,7 +258,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
 
                 // Use online ringtone signature if selected, otherwise fallback to custom slot
                 val targetSig =
-                    selectedOnlineRingtone?.signature ?: QPController.getCustomSlotSignature(
+                    selectedOnlineRingtone?.signature ?: BleConstants.getCustomSlotSignature(
                         currentSignature
                     )
 
@@ -277,19 +279,12 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     }
 
     Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.ringtone_upload_title)) },
-            navigationIcon = {
-                BackNavigationButton(navController, enabled = !isUploading)
-            },
-            actions = {
-                if (isUploading || isBusy || isConverting || isDownloading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+        StandardTopBar(
+            title = stringResource(R.string.ringtone_upload_title),
+            navController = navController,
+            showProgress = isUploading || isBusy || isConverting || isDownloading,
+            navigationEnabled = !isUploading
+        )
                 }
             })
     }) { padding ->

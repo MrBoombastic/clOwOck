@@ -173,7 +173,7 @@ class UpdateChecker(private val context: Context) {
         val downloadedMB = downloadedBytes / 1024 / 1024
         val totalMB = contentLength / 1024 / 1024
 
-        val notification = Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+        val notification = createBaseNotificationBuilder()
             .setContentTitle(context.getString(R.string.update_downloading_title))
             .setContentText(
                 context.getString(
@@ -200,7 +200,7 @@ class UpdateChecker(private val context: Context) {
     }
 
     private fun showCompletionNotification(notificationManager: NotificationManager) {
-        val notification = Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+        val notification = createBaseNotificationBuilder()
             .setContentTitle(context.getString(R.string.update_download_complete))
             .setContentText(context.getString(R.string.update_download_complete_desc))
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
@@ -210,13 +210,22 @@ class UpdateChecker(private val context: Context) {
     }
 
     private fun showErrorNotification(notificationManager: NotificationManager) {
-        val notification = Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+        val notification = createBaseNotificationBuilder()
             .setContentTitle(context.getString(R.string.update_download_error))
             .setContentText(context.getString(R.string.update_download_error_desc))
             .setSmallIcon(android.R.drawable.stat_notify_error)
             .setAutoCancel(true)
             .build()
         notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * Creates a base notification builder with common configuration.
+     * This consolidates the channel ID and provides a single point
+     * to add common notification properties in the future.
+     */
+    private fun createBaseNotificationBuilder(): Notification.Builder {
+        return Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
     }
 
     private fun launchInstaller(file: File) {

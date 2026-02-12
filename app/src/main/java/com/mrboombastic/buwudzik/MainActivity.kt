@@ -98,6 +98,7 @@ import com.mrboombastic.buwudzik.device.DeviceSettings
 import com.mrboombastic.buwudzik.device.QPController
 import com.mrboombastic.buwudzik.device.SensorData
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.MenuTile
 import com.mrboombastic.buwudzik.ui.screens.AlarmManagementScreen
 import com.mrboombastic.buwudzik.ui.screens.DeviceImportScreen
 import com.mrboombastic.buwudzik.ui.screens.DeviceSettingsScreen
@@ -1205,45 +1206,5 @@ fun Dashboard(
         }
     }
 }
-
-@Composable
-fun MenuTile(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    ElevatedCard(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = containerColor, contentColor = contentColor
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon, contentDescription = null, modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.width(20.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-
-
-
 
 
