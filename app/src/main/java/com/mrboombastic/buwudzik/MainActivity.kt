@@ -116,6 +116,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -217,7 +218,10 @@ class MainViewModel(
         } else {
             // scanJob automatically cancels or fails, but good to be explicit
             scanJob?.cancel()
+            rssiPollJob?.cancel()
+            connectionJob?.cancel()
             _deviceConnected.value = false
+            _deviceConnecting.value = false
         }
     }
 
@@ -316,8 +320,12 @@ class MainViewModel(
                     // Poll for RSSI
                     rssiPollJob?.cancel()
                     rssiPollJob = viewModelScope.launch {
-                        while (true) {
-                            qpController.readRssi()
+                        while (isActive && _deviceConnected.value) {
+                            try {
+                                qpController.readRssi()
+                            } catch (e: Exception) {
+                                AppLogger.w(TAG, "RSSI poll failed: ${e.message}")
+                            }
                             delay(5000) // Poll every 5 seconds
                         }
                     }
@@ -630,6 +638,43 @@ class MainActivity : AppCompatActivity() {
                     val disconnectionEvent by viewModel.disconnectionEvent.collectAsState()
                     val snackbarHostState = remember { SnackbarHostState() }
 
+                    // Register Receiver Globally
+                    val context = LocalContext.current
+                    DisposableEffect(context) {
+                        val receiver = BluetoothStateReceiver { enabled ->
+                            viewModel.updateBluetoothState(enabled)
+                        }
+                        val filter =
+                            android.content.IntentFilter(android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED)
+                        context.registerReceiver(receiver, filter)
+                        onDispose {
+                            context.unregisterReceiver(receiver)
+                        }
+                    }
+
+                    val isBluetoothEnabled by viewModel.isBluetoothEnabled.collectAsState()
+                    val enableBluetoothLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.StartActivityForResult()
+                    ) { }
+
+                    if (!isBluetoothEnabled) {
+                        AlertDialog(
+                            onDismissRequest = { },
+                            title = { Text(stringResource(R.string.bluetooth_required_title)) },
+                            text = { Text(stringResource(R.string.bluetooth_required_desc)) },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        val intent =
+                                            Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                                        enableBluetoothLauncher.launch(intent)
+                                    }) {
+                                    Text(stringResource(R.string.turn_on_bluetooth))
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Settings, contentDescription = null) })
+                    }
+
                     LaunchedEffect(disconnectionEvent) {
                         disconnectionEvent?.let { reason ->
                             // Reset connection state FIRST
@@ -796,19 +841,6 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavController) {
         AppLogger.d("HomeScreen", "Bluetooth enable request result: ${result.resultCode}")
     }
 
-    // Register Receiver
-    DisposableEffect(context) {
-        val receiver = BluetoothStateReceiver { enabled ->
-            viewModel.updateBluetoothState(enabled)
-        }
-        val filter =
-            android.content.IntentFilter(android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED)
-        context.registerReceiver(receiver, filter)
-        onDispose {
-            context.unregisterReceiver(receiver)
-        }
-    }
-
     // Permissions handling
     val permissionsToRequest = BluetoothUtils.BLUETOOTH_PERMISSIONS
     val permissionsRequiredMessage = stringResource(R.string.permissions_required)
@@ -840,24 +872,6 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavController) {
         }
     }
 
-    // Bluetooth Disabled Alert
-    if (!isBluetoothEnabled) {
-        AlertDialog(
-            onDismissRequest = { /* Prevent dismissal to enforce requirement */ },
-            title = { Text(stringResource(R.string.bluetooth_required_title)) },
-            text = { Text(stringResource(R.string.bluetooth_required_desc)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val intent =
-                            Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                        enableBluetoothLauncher.launch(intent)
-                    }) {
-                    Text(stringResource(R.string.turn_on_bluetooth))
-                }
-            },
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) })
-    }
 
     Scaffold(
         floatingActionButton = {

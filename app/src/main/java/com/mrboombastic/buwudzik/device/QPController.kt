@@ -818,8 +818,12 @@ class QPController(private val context: Context) {
     }
 
     fun readRssi() {
-        if (gatt?.readRemoteRssi() == false) {
-            AppLogger.w(TAG, "Failed to start RSSI read")
+        try {
+            if (gatt?.readRemoteRssi() == false) {
+                AppLogger.w(TAG, "Failed to start RSSI read")
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "RSSI read exception: ${e.message}")
         }
     }
 

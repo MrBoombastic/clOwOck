@@ -41,6 +41,7 @@
     <string name="about_app_label">About</string>
     <string name="version_label">Version: %1$s</string>
     <string name="author_label">Author: %1$s</string>
+    <string name="github_label" translatable="false">GitHub 🐙</string>
     <string name="check_updates_label">Check for updates</string>
     <string name="checking_updates">Checking for updates…</string>
     <string name="no_updates_available">No updates available</string>
@@ -201,4 +202,9 @@
     <string name="hint_unpair_instructions">You may need to unpair the device in app.</string>
     <string name="hint_check_nearby">Make sure the device is nearby.</string>
     <string name="hint_restart_bluetooth">Try restarting Bluetooth or unpairing the device.</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="error_cannot_open_github">Cannot open GitHub link</string>
+    <string name="na_placeholder">N/A</string>
+    <string name="app_author_name" translatable="false">MrBoombastic</string>
+    <string name="github_repo_url" translatable="false">https://github.com/MrBoombastic/clOwOck</string>
 </resources>

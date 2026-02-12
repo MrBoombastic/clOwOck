@@ -1,25 +1,23 @@
 package com.mrboombastic.buwudzik.ui.screens
 
-
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
 import android.content.pm.ResolveInfo
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,11 +25,13 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -45,8 +45,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -63,13 +63,17 @@ import com.mrboombastic.buwudzik.UpdateChecker
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
-import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
+import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+
+private const val TAG = "SettingsScreen"
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,9 +101,10 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
     var isCheckingUpdates by remember { mutableStateOf(false) }
     var updateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
     var versionName by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showUpdateDialog by remember { mutableStateOf(false) }
 
     // Helper function to update widgets with proper error handling
     fun launchWidgetUpdate() {
@@ -122,13 +127,10 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 versionName = packageInfo.versionName
             } catch (_: Exception) {
-                versionName = "N/A"
+                versionName = null
             }
         }
     }
-
-    // Check Bluetooth status
-    val isBluetoothEnabled = BluetoothUtils.isBluetoothEnabled(context)
 
     // Watch for MAC changes when returning from device setup screen
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -216,6 +218,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
 
     Scaffold(
+        snackbarHost = { CustomSnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = {
                 BackNavigationButton(navController) {
@@ -238,59 +241,55 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             // MAC Address with Scan Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = macAddress,
-                    onValueChange = {
-                        val uppercased = it.uppercase()
-                        macAddress = uppercased
-                        val trimmed = uppercased.trim()
+            OutlinedTextField(
+                value = macAddress,
+                onValueChange = {
+                    val uppercased = it.uppercase()
+                    macAddress = uppercased
+                    val trimmed = uppercased.trim()
 
-                        // Validate MAC address format (case-insensitive)
-                        // Note: BluetoothAdapter.checkBluetoothAddress usually requires uppercase in older Android versions
-                        isMacAddressValid = trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
+                    // Validate MAC address format (case-insensitive)
+                    isMacAddressValid =
+                        trimmed.isEmpty() || BluetoothAdapter.checkBluetoothAddress(trimmed)
 
-                        // Save to repository only if it's a valid and complete MAC address (17 chars)
-                        // or if it's cleared (will revert to default in BackNavigationButton)
-                        if (trimmed.length == 17 && isMacAddressValid) {
-                            repository.targetMacAddress = trimmed
-                            AppLogger.d("SettingsScreen", "MAC Address updated to: $trimmed")
-                        }
-                    },
-                    label = { Text(stringResource(R.string.target_mac_label)) },
-                    modifier = Modifier.weight(1f),
-                    isError = !isMacAddressValid,
-                    supportingText = {
-                        if (!isMacAddressValid) {
-                            Text(
-                                text = stringResource(R.string.invalid_mac_format),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
+                    // Save to repository only if it's a valid and complete MAC address (17 chars)
+                    // or if it's cleared (will revert to default in BackNavigationButton)
+                    if (trimmed.length == 17 && isMacAddressValid) {
+                        repository.targetMacAddress = trimmed
+                        AppLogger.d("SettingsScreen", "MAC Address updated to: $trimmed")
                     }
-                )
-
-                FilledTonalIconButton(
-                    onClick = {
-                        // Mark setup as incomplete to show device selection
-                        repository.isSetupCompleted = false
-                        navController.navigate("setup")
-                    }, modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = stringResource(R.string.scan_devices_button)
-                    )
+                },
+                label = { Text(stringResource(R.string.target_mac_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                isError = !isMacAddressValid,
+                supportingText = if (!isMacAddressValid) {
+                    {
+                        Text(
+                            text = stringResource(R.string.invalid_mac_format),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                } else null,
+                trailingIcon = {
+                    FilledTonalIconButton(
+                        onClick = {
+                            // Mark setup as incomplete to show device selection
+                            repository.isSetupCompleted = false
+                            navController.navigate("setup")
+                        },
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = stringResource(R.string.scan_devices_button),
+                        )
+                    }
                 }
-            }
+            )
 
 
             // Scan Mode
@@ -393,7 +392,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = null
 
                             expandedWidgetAction = false
-                            
+
                             // Update widgets in a structured coroutine scope
                             launchWidgetUpdate()
                         })
@@ -408,7 +407,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                             repository.selectedAppPackage = pkg
 
                             expandedWidgetAction = false
-                            
+
                             // Update widgets in a structured coroutine scope
                             launchWidgetUpdate()
                         })
@@ -417,74 +416,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Bluetooth Status
-            if (!isBluetoothEnabled) {
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.bluetooth_disabled),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Check for Updates
-            Button(
-                onClick = {
-                    isCheckingUpdates = true
-                    coroutineScope.launch {
-                        try {
-                            val updateChecker = UpdateChecker(appContext)
-                            val result = updateChecker.checkForUpdates()
-                            updateChecker.close()
-
-                            withContext(Dispatchers.Main) {
-                                isCheckingUpdates = false
-                                if (result.updateAvailable) {
-                                    updateResult = result
-                                    showUpdateDialog = true
-                                } else {
-                                    Toast.makeText(
-                                        appContext,
-                                        appContext.getString(R.string.no_updates_available),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                        } catch (e: Exception) {
-                            AppLogger.e("SettingsScreen", "Error checking for updates", e)
-                            withContext(Dispatchers.Main) {
-                                isCheckingUpdates = false
-                                Toast.makeText(
-                                    appContext,
-                                    appContext.getString(R.string.update_error),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                }, enabled = !isCheckingUpdates, modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isCheckingUpdates) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(end = 8.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-                Text(
-                    text = if (isCheckingUpdates) stringResource(R.string.checking_updates)
-                    else stringResource(R.string.check_updates_label)
-                )
-            }
-
-
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             // Import Device Button
             Button(
@@ -535,23 +466,106 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
 
             // App Info
             Text(
                 stringResource(R.string.about_app_label),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(stringResource(R.string.version_label, versionName ?: "N/A"))
-            Text(stringResource(R.string.author_label, "MrBoombastic"))
+            Text(
+                stringResource(
+                    R.string.version_label,
+                    versionName ?: stringResource(R.string.na_placeholder)
+                )
+            )
+            Text(stringResource(R.string.author_label, stringResource(R.string.app_author_name)))
+            Spacer(modifier = Modifier.height(12.dp))
+            val githubUrl = stringResource(R.string.github_repo_url)
+            val githubErrorMsg = stringResource(R.string.error_cannot_open_github)
+            Button(
+                onClick = {
+                    try {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            githubUrl.toUri()
+                        )
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        AppLogger.e(TAG, "Error opening GitHub URL", e)
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(githubErrorMsg)
+                        }
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF24292e),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.github_label))
+            }
+
+            // Check for Updates
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    isCheckingUpdates = true
+                    coroutineScope.launch {
+                        try {
+                            val updateChecker = UpdateChecker(appContext)
+                            val result = updateChecker.checkForUpdates()
+                            updateChecker.close()
+
+                            withContext(Dispatchers.Main) {
+                                isCheckingUpdates = false
+                                if (result.updateAvailable) {
+                                    updateResult = result
+                                    showUpdateDialog = true
+                                } else {
+                                    snackbarHostState.showSnackbar(
+                                        appContext.getString(R.string.no_updates_available),
+                                        duration = SnackbarDuration.Long
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            AppLogger.e("SettingsScreen", "Error checking for updates", e)
+                            withContext(Dispatchers.Main) {
+                                isCheckingUpdates = false
+                                snackbarHostState.showSnackbar(appContext.getString(R.string.update_error))
+                            }
+                        }
+                    }
+                }, enabled = !isCheckingUpdates, modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isCheckingUpdates) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+                Text(
+                    text = if (isCheckingUpdates) stringResource(R.string.checking_updates)
+                    else stringResource(R.string.check_updates_label)
+                )
+            }
+
 
             // Easter Egg Button
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             val deviceConnected by viewModel.deviceConnected.collectAsState()
             if (deviceConnected) {
                 val successMsg = stringResource(R.string.time_set_success)
                 val failedMsg = stringResource(R.string.time_set_failed)
                 val errorTemplate = stringResource(R.string.error_prefix)
+                val unknownErrorMsg = stringResource(R.string.unknown_error)
 
                 Button(
                     onClick = {
@@ -564,21 +578,15 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                                 val timestamp = cal.timeInMillis / 1000
                                 val success = viewModel.qpController.synchronizeTime(timestamp)
                                 if (success) {
-                                    Toast.makeText(
-                                        appContext, successMsg, Toast.LENGTH_SHORT
-                                    ).show()
+                                    snackbarHostState.showSnackbar(successMsg)
                                 } else {
-                                    Toast.makeText(
-                                        appContext, failedMsg, Toast.LENGTH_SHORT
-                                    ).show()
+                                    snackbarHostState.showSnackbar(failedMsg)
                                 }
                             } catch (e: Exception) {
                                 AppLogger.e("SettingsScreen", "Error setting time", e)
-                                Toast.makeText(
-                                    appContext,
-                                    errorTemplate.format(e.message ?: "Unknown"),
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                snackbarHostState.showSnackbar(
+                                    errorTemplate.format(e.message ?: unknownErrorMsg)
+                                )
                             }
                         }
                     }, modifier = Modifier.fillMaxWidth()

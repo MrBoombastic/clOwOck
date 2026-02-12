@@ -197,4 +197,7 @@
     <string name="hint_unpair_instructions">Może być konieczne zapomnienie urządzenia w aplikacji.</string>
     <string name="hint_check_nearby">Upewnij się, że urządzenie jest w pobliżu.</string>
     <string name="hint_restart_bluetooth">Spróbuj zrestartować Bluetooth lub rozparować urządzenie.</string>
+    <string name="unknown_error">Nieznany błąd</string>
+    <string name="error_cannot_open_github">Nie można było otworzyć łącza do GitHub</string>
+    <string name="na_placeholder">nd.</string>
 </resources>

@@ -199,7 +199,7 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when {

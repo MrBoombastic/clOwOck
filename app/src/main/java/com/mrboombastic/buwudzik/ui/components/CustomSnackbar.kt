@@ -13,6 +13,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -44,9 +45,21 @@ fun CustomSnackbarHost(
         ) {
             Snackbar(
                 snackbarData = data,
-                containerColor = MaterialTheme.colorScheme.inverseSurface,
-                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                actionColor = MaterialTheme.colorScheme.inversePrimary,
+                containerColor = if (isSystemInDarkTheme()) {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                } else {
+                    MaterialTheme.colorScheme.inverseSurface
+                },
+                contentColor = if (isSystemInDarkTheme()) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.inverseOnSurface
+                },
+                actionColor = if (isSystemInDarkTheme()) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.inversePrimary
+                },
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.padding(16.dp)
             )

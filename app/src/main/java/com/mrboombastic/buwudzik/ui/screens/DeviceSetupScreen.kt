@@ -124,7 +124,7 @@ fun DeviceSetupScreen(navController: NavController) {
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = stringResource(R.string.setup_title),
