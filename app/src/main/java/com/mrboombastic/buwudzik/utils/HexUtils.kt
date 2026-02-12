@@ -31,5 +31,7 @@ fun Byte.toHexString(): String = "%02x".format(this)
 
 /**
  * Extension function to convert Int to hex string.
+ * Formats as 0xXX for values 0-255 (single byte).
+ * For larger values, only the least significant byte is displayed.
  */
-fun Int.toHexString(): String = "0x%02x".format(this)
+fun Int.toHexString(): String = "0x%02x".format(this and 0xFF)
