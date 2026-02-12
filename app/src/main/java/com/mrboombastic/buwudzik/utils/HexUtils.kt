@@ -25,8 +25,3 @@ object HexUtils {
         return hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
     }
 }
-
-/**
- * Extension function for ByteArray to convert to hex string with spaces (for logging).
- */
-fun ByteArray.toHexString(): String = HexUtils.bytesToHexSpaced(this)

@@ -88,9 +88,7 @@ class QPController(private val context: Context) {
 
         // Timeout constants (in milliseconds)
         private const val TIMEOUT_AUTHENTICATION = 30000L
-        private const val TIMEOUT_TIME_SYNC = 30000L
         private const val TIMEOUT_OPERATION = 5000L
-        private const val TIMEOUT_WRITE_CALLBACK = 5000L
 
         // Delay constants (in milliseconds)
         const val DELAY_POST_AUTH = 500L
@@ -98,13 +96,11 @@ class QPController(private val context: Context) {
         const val DELAY_ALARM_RELOAD = 300L
         const val DELAY_ALARM_COMPLETION = 1000L
         const val DELAY_RSSI_POLL = 5000L
-        const val DELAY_NOTIFICATION_ENABLE = 300L
         const val DELAY_PACKET_WRITE = 20L
 
         // Audio upload constants
         private const val AUDIO_PACKET_SIZE = 128
         private const val AUDIO_PACKETS_PER_BLOCK = 4
-        private const val AUDIO_BLOCK_SIZE = AUDIO_PACKET_SIZE * AUDIO_PACKETS_PER_BLOCK
         private const val AUDIO_ACK_WAIT_ITERATIONS = 50
         private const val AUDIO_INIT_ACK_WAIT_ITERATIONS = 20
         private const val AUDIO_ACK_WAIT_DELAY = 100L

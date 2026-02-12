@@ -27,7 +27,8 @@ fun ProgressCard(
     title: String,
     progress: Float,
     modifier: Modifier = Modifier,
-    statusText: String? = null
+    statusText: String? = null,
+    showPercent: Boolean = true
 ) {
     Card(
         modifier = modifier
@@ -51,11 +52,13 @@ fun ProgressCard(
                     text = title,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(
-                    text = "${(progress * 100).toInt()}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+                if (showPercent) {
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
             }
 
             LinearProgressIndicator(

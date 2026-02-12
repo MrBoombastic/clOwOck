@@ -70,12 +70,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.utils.AppLogger
+import com.mrboombastic.buwudzik.utils.TimeFormatUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -330,7 +330,7 @@ fun AudioTrimmerDialog(
 
     // Sync text input with selection
     LaunchedEffect(selectionStartMs) {
-        startTimeText = formatTimeInput(selectionStartMs)
+        startTimeText = TimeFormatUtils.formatTimeInput(selectionStartMs)
     }
 
     // Update playback position while playing
@@ -419,7 +419,7 @@ fun AudioTrimmerDialog(
     }
 
     fun parseAndSetStartTime(text: String) {
-        val parsed = parseTimeInput(text)
+        val parsed = TimeFormatUtils.parseTimeInput(text)
         if (parsed != null) {
             selectionStartMs = parsed.coerceIn(
                 0L, (totalDurationMs - min(selectionDurationMs, maxDurationMs)).coerceAtLeast(0L)
@@ -531,8 +531,7 @@ fun AudioTrimmerDialog(
                     ScrollableWaveformView(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .height(120.dp),
                         waveform = wf,
                         totalDurationMs = totalDurationMs,
                         selectionStartMs = selectionStartMs,
@@ -554,18 +553,18 @@ fun AudioTrimmerDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = formatTime(selectionStartMs),
+                        text = TimeFormatUtils.formatTime(selectionStartMs),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = stringResource(R.string.duration_label) + ": " + formatTime(
+                        text = stringResource(R.string.duration_label) + ": " + TimeFormatUtils.formatTime(
                             selectionDurationMs
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = formatTime(selectionEndMs),
+                        text = TimeFormatUtils.formatTime(selectionEndMs),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -804,48 +803,5 @@ private fun ScrollableWaveformView(
                 )
             }
         }
-    }
-}
-
-private fun formatTime(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    val tenths = (ms % 1000) / 100
-    return if (minutes > 0) {
-        String.format(Locale.getDefault(), "%d:%02d.%d", minutes, seconds, tenths)
-    } else {
-        String.format(Locale.getDefault(), "%d.%d s", seconds, tenths)
-    }
-}
-
-private fun formatTimeInput(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    val tenths = (ms % 1000) / 100
-    return String.format(Locale.getDefault(), "%d:%02d.%d", minutes, seconds, tenths)
-}
-
-private fun parseTimeInput(text: String): Long? {
-    return try {
-        val parts = text.split(":")
-        when (parts.size) {
-            1 -> {
-                // Just seconds
-                (parts[0].toDouble() * 1000).toLong()
-            }
-
-            2 -> {
-                // Minutes:seconds
-                val minutes = parts[0].toLongOrNull() ?: 0
-                val seconds = parts[1].toDoubleOrNull() ?: 0.0
-                (minutes * 60 * 1000 + seconds * 1000).toLong()
-            }
-
-            else -> null
-        }
-    } catch (_: Exception) {
-        null
     }
 }

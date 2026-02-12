@@ -15,7 +15,7 @@ import com.mrboombastic.buwudzik.R
  * @param message Dialog message
  * @param confirmText Text for confirm button
  * @param cancelText Text for cancel button
- * @param isDestructive Whether the confirm action is destructive (uses error color)
+ * @param isDestructive Whether the confirmation action is destructive (uses error color)
  * @param onConfirm Callback when confirmed
  * @param onDismiss Callback when dismissed
  */

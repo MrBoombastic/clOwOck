@@ -48,6 +48,7 @@ import com.mrboombastic.buwudzik.device.TimeFormat
 import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.LabeledSlider
+import com.mrboombastic.buwudzik.ui.components.PreviewSlider
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
@@ -311,24 +312,20 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                 Spacer(Modifier.height(8.dp))
 
                 // Screen Brightness
-                LabeledSlider(
+                PreviewSlider(
                     label = stringResource(R.string.day_brightness_label, screenBrightness.toInt()),
                     value = screenBrightness,
                     enabled = isUiEnabled,
-                    onValueChange = {
-                        screenBrightness = it
-                        // Immediate update with debouncing
-                        immediateUpdateJob?.cancel()
-                        immediateUpdateJob = coroutineScope.launch {
-                            delay(200) // Lower debounce for smoother brightness preview
-                            viewModel.qpController.enqueueCommand {
-                                viewModel.qpController.setDaytimeBrightnessImmediate(it.toInt())
-                            }
+                    onValueChange = { screenBrightness = it },
+                    onValueChangeFinished = { saveSettings() },
+                    onPreview = { previewValue ->
+                        viewModel.qpController.enqueueCommand {
+                            viewModel.qpController.setDaytimeBrightnessImmediate(previewValue.toInt())
                         }
                     },
-                    onValueChangeFinished = { saveSettings() },
                     valueRange = 0f..100f,
-                    steps = 9 // Firmware uses nibble / 10
+                    steps = 9,
+                    debounceMs = 200
                 )
                 Spacer(Modifier.height(8.dp))
 
@@ -364,26 +361,22 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
 
                 if (nightModeEnabled) {
                     // Night Mode Brightness
-                    LabeledSlider(
+                    PreviewSlider(
                         label = stringResource(
                             R.string.night_brightness_label, nightModeBrightness.toInt()
                         ),
                         value = nightModeBrightness,
                         enabled = isUiEnabled,
-                        onValueChange = {
-                            nightModeBrightness = it
-                            // Immediate update with debouncing
-                            immediateUpdateJob?.cancel()
-                            immediateUpdateJob = coroutineScope.launch {
-                                delay(200) // Lower debounce for smoother brightness preview
-                                viewModel.qpController.enqueueCommand {
-                                    viewModel.qpController.setNightBrightnessImmediate(it.toInt())
-                                }
+                        onValueChange = { nightModeBrightness = it },
+                        onValueChangeFinished = { saveSettings() },
+                        onPreview = { previewValue ->
+                            viewModel.qpController.enqueueCommand {
+                                viewModel.qpController.setNightBrightnessImmediate(previewValue.toInt())
                             }
                         },
-                        onValueChangeFinished = { saveSettings() },
                         valueRange = 0f..100f,
-                        steps = 9 // Firmware uses nibble / 10
+                        steps = 9,
+                        debounceMs = 200
                     )
                     Spacer(Modifier.height(8.dp))
 
