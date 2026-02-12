@@ -10,6 +10,7 @@ import androidx.work.WorkManager
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.widget.SensorUpdateWorker
+import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
 import java.util.concurrent.TimeUnit
 
 /**
@@ -32,8 +33,8 @@ class BootReceiver : BroadcastReceiver() {
             val settingsRepository = SettingsRepository(context)
             val intervalMinutes = settingsRepository.updateInterval
 
-            // Re-schedule periodic updates (AlarmManager alarms are cleared on reboot)
-            MainActivity.scheduleUpdates(context, intervalMinutes)
+            // Re-schedule periodic updates using AlarmManager (alarms are cleared on reboot)
+            WidgetUpdateScheduler.scheduleUpdates(context, intervalMinutes)
 
             // Schedule an immediate update with a small delay to let the system settle
             val initialWorkRequest = OneTimeWorkRequestBuilder<SensorUpdateWorker>()
@@ -47,7 +48,7 @@ class BootReceiver : BroadcastReceiver() {
 
             AppLogger.d(
                 TAG,
-                "Scheduled initial update and periodic updates every $intervalMinutes minutes"
+                "Scheduled initial update and periodic AlarmManager updates every $intervalMinutes minutes"
             )
         }
     }
