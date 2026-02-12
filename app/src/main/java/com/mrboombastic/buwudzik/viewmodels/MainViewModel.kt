@@ -230,7 +230,7 @@ class MainViewModel(
                             } catch (e: Exception) {
                                 AppLogger.w(TAG, "RSSI poll failed: ${e.message}", e)
                             }
-                            delay(5000) // Poll every 5 seconds
+                            delay(QPController.DELAY_RSSI_POLL) // Poll every 5 seconds
                         }
                     }
 
@@ -252,7 +252,7 @@ class MainViewModel(
                                 AppLogger.e(TAG, "Error loading alarms", e)
                             }
 
-                            delay(200) // Small gap to avoid BLE race conditions
+                            delay(QPController.DELAY_BLE_OPERATION) // Small gap to avoid BLE race conditions
 
                             try {
                                 val settings = qpController.readDeviceSettings()
@@ -262,7 +262,7 @@ class MainViewModel(
                                 AppLogger.e(TAG, "Error loading settings", e)
                             }
 
-                            delay(200)
+                            delay(QPController.DELAY_BLE_OPERATION)
 
                             try {
                                 val version = qpController.readFirmwareVersion()
@@ -300,7 +300,7 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 // Delay to ensure previous write (like setAlarm) is fully processed by the device
-                delay(300)
+                delay(QPController.DELAY_ALARM_RELOAD)
                 AppLogger.d(TAG, "Reloading alarms...")
                 val deviceAlarms = qpController.readAlarms()
                 val alarmsWithTitles = deviceAlarms.map { alarm ->

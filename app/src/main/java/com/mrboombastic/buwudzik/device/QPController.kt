@@ -12,9 +12,6 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import androidx.annotation.RequiresPermission
 import com.mrboombastic.buwudzik.data.TokenStorage
-import com.mrboombastic.buwudzik.device.BleConstants.CUSTOM_RINGTONE_SLOT_1
-import com.mrboombastic.buwudzik.device.BleConstants.CUSTOM_RINGTONE_SLOT_2
-import com.mrboombastic.buwudzik.device.BleConstants.RINGTONE_SIGNATURES
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_AUTH_NOTIFY
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_AUTH_WRITE
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_CLIENT_CHARACTERISTIC_CONFIG
@@ -42,8 +39,6 @@ import java.util.UUID
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Controller for QP CGD1 device via BLE GATT
@@ -98,13 +93,13 @@ class QPController(private val context: Context) {
         private const val TIMEOUT_WRITE_CALLBACK = 5000L
 
         // Delay constants (in milliseconds)
-        private const val DELAY_POST_AUTH = 500L
-        private const val DELAY_BLE_OPERATION = 200L
-        private const val DELAY_ALARM_RELOAD = 300L
-        private const val DELAY_ALARM_COMPLETION = 1000L
-        private const val DELAY_RSSI_POLL = 5000L
-        private const val DELAY_NOTIFICATION_ENABLE = 300L
-        private const val DELAY_PACKET_WRITE = 20L
+        const val DELAY_POST_AUTH = 500L
+        const val DELAY_BLE_OPERATION = 200L
+        const val DELAY_ALARM_RELOAD = 300L
+        const val DELAY_ALARM_COMPLETION = 1000L
+        const val DELAY_RSSI_POLL = 5000L
+        const val DELAY_NOTIFICATION_ENABLE = 300L
+        const val DELAY_PACKET_WRITE = 20L
 
         // Audio upload constants
         private const val AUDIO_PACKET_SIZE = 128

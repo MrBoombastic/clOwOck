@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -22,7 +21,6 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,7 +33,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,17 +52,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.mrboombastic.buwudzik.MainViewModel
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.audio.AudioConverter
 import com.mrboombastic.buwudzik.audio.AudioTrimmerDialog
 import com.mrboombastic.buwudzik.audio.ChannelMode
 import com.mrboombastic.buwudzik.device.BleConstants
-import com.mrboombastic.buwudzik.device.QPController
-import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
+import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -278,16 +273,17 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
             })
     }
 
-    Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
-        StandardTopBar(
-            title = stringResource(R.string.ringtone_upload_title),
-            navController = navController,
-            showProgress = isUploading || isBusy || isConverting || isDownloading,
-            navigationEnabled = !isUploading
-        )
-                }
-            })
-    }) { padding ->
+    Scaffold(
+        snackbarHost = { CustomSnackbarHost(snackbarHostState) },
+        topBar = {
+            StandardTopBar(
+                title = stringResource(R.string.ringtone_upload_title),
+                navController = navController,
+                showProgress = isUploading || isBusy || isConverting || isDownloading,
+                navigationEnabled = !isUploading
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
