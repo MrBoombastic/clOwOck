@@ -130,12 +130,12 @@ class SensorUpdateWorker(
             // Update Glance widget
             AppLogger.d(TAG, "Updating Glance widget, hasError=$hasError")
             SensorGlanceWidget().updateAll(applicationContext)
-
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to update widget", e)
+        } finally {
             // Reschedule the next alarm-based update
             // This ensures continuous updates at the configured interval
             WidgetUpdateScheduler.scheduleUpdates(applicationContext, intervalMinutes)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to update widget", e)
         }
     }
 }
