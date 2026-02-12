@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,7 +20,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -36,7 +34,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,13 +51,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.mrboombastic.buwudzik.MainViewModel
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.device.Alarm
-import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
+import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -144,57 +141,55 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
             })
     }
 
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.alarm_management_title)) },
-            navigationIcon = {
-                BackNavigationButton(navController)
-            },
-            actions = {
-                if (isUpdating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            })
-    }, floatingActionButton = {
-        if (deviceConnected && hasPermissions) {
-            FloatingActionButton(onClick = {
-                if (!isUpdating) {
-                    if (alarms.size < 16) {
-                        // Create new alarm with next available ID
-                        // Find first unused ID just in case, though usually simple append works
-                        val usedIds = alarms.map { it.id }.toSet()
-                        val newId = (0..15).firstOrNull { !usedIds.contains(it) } ?: alarms.size
+    Scaffold(
+        topBar = {
+            StandardTopBar(
+                title = stringResource(R.string.alarm_management_title),
+                navController = navController,
+                showProgress = isUpdating
+            )
+        },
+        floatingActionButton = {
+            if (deviceConnected && hasPermissions) {
+                FloatingActionButton(onClick = {
+                    if (!isUpdating) {
+                        if (alarms.size < 16) {
+                            // Create new alarm with next available ID
+                            // Find first unused ID just in case, though usually simple append works
+                            val usedIds = alarms.map { it.id }.toSet()
+                            val newId = (0..15).firstOrNull { !usedIds.contains(it) } ?: alarms.size
 
-                        @Suppress("AssignedValueIsNeverRead") if (newId < 16) {
-                            selectedAlarm = Alarm(
-                                id = newId,
-                                enabled = true,
-                                hour = 8,
-                                minute = 0,
-                                days = 0,
-                                snooze = false
-                            )
+                            if (newId < 16) {
+                                @Suppress("AssignedValueIsNeverRead")
+                                selectedAlarm = Alarm(
+                                    id = newId,
+                                    enabled = true,
+                                    hour = 8,
+                                    minute = 0,
+                                    days = 0,
+                                    snooze = false
+                                )
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    R.string.max_alarms_message,
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
                         } else {
                             Toast.makeText(context, R.string.max_alarms_message, Toast.LENGTH_SHORT)
                                 .show()
                         }
-                    } else {
-                        Toast.makeText(context, R.string.max_alarms_message, Toast.LENGTH_SHORT)
-                            .show()
                     }
+                }) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_alarm_desc)
+                    )
                 }
-            }) {
-                Icon(
-                    Icons.Default.Add, contentDescription = stringResource(R.string.add_alarm_desc)
-                )
             }
-        }
-    }, snackbarHost = { CustomSnackbarHost(snackbarHostState) }) { padding ->
+        }, snackbarHost = { CustomSnackbarHost(snackbarHostState) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

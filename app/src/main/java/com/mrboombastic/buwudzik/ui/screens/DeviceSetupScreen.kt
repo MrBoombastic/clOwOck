@@ -45,6 +45,8 @@ import androidx.navigation.NavController
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.BluetoothScanner
+import com.mrboombastic.buwudzik.ui.components.StatusCard
+import com.mrboombastic.buwudzik.ui.components.StatusType
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 
@@ -146,18 +148,15 @@ fun DeviceSetupScreen(navController: NavController) {
 
                 when {
                     !isBluetoothEnabled -> {
-                        Text(
-                            text = stringResource(R.string.setup_enable_bluetooth),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
+                        StatusCard(
+                            message = stringResource(R.string.setup_enable_bluetooth),
+                            type = StatusType.ERROR
                         )
                     }
                     !hasPermissions -> {
-                        Text(
-                            text = stringResource(R.string.permissions_required),
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
+                        StatusCard(
+                            message = stringResource(R.string.permissions_required),
+                            type = StatusType.WARNING
                         )
                     }
                     isScanning -> {
@@ -175,11 +174,9 @@ fun DeviceSetupScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 if (discoveredDevices.isEmpty() && !isScanning && hasPermissions && isBluetoothEnabled) {
-                    Text(
-                        text = stringResource(R.string.setup_no_devices),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                    StatusCard(
+                        message = stringResource(R.string.setup_no_devices),
+                        type = StatusType.INFO
                     )
                 }
 

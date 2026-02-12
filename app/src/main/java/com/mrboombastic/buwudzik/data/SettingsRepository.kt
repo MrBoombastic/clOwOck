@@ -38,6 +38,10 @@ class SettingsRepository(private val context: Context) {
 
         private const val KEY_BATTERY_TYPE = "battery_type"
         const val DEFAULT_BATTERY_TYPE = "alkaline"
+
+        private const val KEY_RINGTONE_BASE_URL = "ringtone_base_url"
+        const val DEFAULT_RINGTONE_BASE_URL =
+            "https://qingplus.cleargrass.com/raw/rings"
     }
 
     /**
@@ -59,6 +63,20 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getString(KEY_BATTERY_TYPE, DEFAULT_BATTERY_TYPE) ?: DEFAULT_BATTERY_TYPE
         set(value) {
             prefs.edit { putString(KEY_BATTERY_TYPE, value) }
+        }
+
+    var ringtoneBaseUrl: String
+        get() =
+            prefs.getString(KEY_RINGTONE_BASE_URL, DEFAULT_RINGTONE_BASE_URL)
+                ?: DEFAULT_RINGTONE_BASE_URL
+        set(value) {
+            val trimmed = value.trim().trimEnd('/')
+            prefs.edit {
+                putString(
+                    KEY_RINGTONE_BASE_URL,
+                    trimmed.ifEmpty { DEFAULT_RINGTONE_BASE_URL }
+                )
+            }
         }
 
     var targetMacAddress: String

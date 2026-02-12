@@ -10,10 +10,14 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.content.Context
-import android.content.res.Resources
-import android.icu.util.TimeZone
 import androidx.annotation.RequiresPermission
 import com.mrboombastic.buwudzik.data.TokenStorage
+import com.mrboombastic.buwudzik.device.BleConstants.UUID_AUTH_NOTIFY
+import com.mrboombastic.buwudzik.device.BleConstants.UUID_AUTH_WRITE
+import com.mrboombastic.buwudzik.device.BleConstants.UUID_CLIENT_CHARACTERISTIC_CONFIG
+import com.mrboombastic.buwudzik.device.BleConstants.UUID_DATA_NOTIFY
+import com.mrboombastic.buwudzik.device.BleConstants.UUID_DATA_WRITE
+import com.mrboombastic.buwudzik.device.BleConstants.UUID_SENSOR_NOTIFY
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -35,145 +39,6 @@ import java.util.UUID
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.math.abs
-import kotlin.time.Duration.Companion.milliseconds
-
-/**
- * Reason for BLE disconnection
- */
-sealed class DisconnectionReason {
-    abstract fun getMessage(context: Resources): String
-    open fun getHint(context: Resources): String? = null
-
-    data object DeviceTerminated : DisconnectionReason() {
-        override fun getMessage(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_device_terminated)
-
-        override fun getHint(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.hint_unpair_instructions)
-    }
-
-    data object ConnectionTimeout : DisconnectionReason() {
-        override fun getMessage(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_timeout)
-
-        override fun getHint(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.hint_check_nearby)
-    }
-
-    data object LinkLost : DisconnectionReason() {
-        override fun getMessage(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_link_lost)
-    }
-
-    data object UserRequested : DisconnectionReason() {
-        override fun getMessage(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_user_requested)
-    }
-
-    data class Unknown(val status: Int, val hintResId: Int? = null) : DisconnectionReason() {
-        override fun getMessage(context: Resources) =
-            context.getString(com.mrboombastic.buwudzik.R.string.disconnect_reason_unknown, status)
-
-        override fun getHint(context: Resources) = hintResId?.let { context.getString(it) }
-    }
-
-    companion object {
-        fun fromGattStatus(status: Int): DisconnectionReason = when (status) {
-            0 -> UserRequested // GATT_SUCCESS - normal disconnect
-            8 -> ConnectionTimeout // GATT_CONN_TIMEOUT
-            19 -> DeviceTerminated // GATT_CONN_TERMINATE_PEER_USER
-            22 -> LinkLost // GATT_CONN_TERMINATE_LOCAL_HOST
-            133 -> Unknown(
-                status,
-                com.mrboombastic.buwudzik.R.string.hint_restart_bluetooth
-            ) // GATT_ERROR
-            else -> Unknown(status)
-        }
-    }
-}
-
-data class DeviceSettings(
-    val tempUnit: TempUnit = TempUnit.Celsius,
-    val timeFormat: TimeFormat = TimeFormat.H24,
-    val language: Language = Language.English,
-    val volume: Int = 3,
-    val timeZone: TimeZone = TimeZone.GMT_ZONE,
-    val nightModeBrightness: Int = 10,
-    val backlightDuration: Int = 60,
-    val screenBrightness: Int = 100,
-    val nightStartHour: Int = 22,
-    val nightStartMinute: Int = 0,
-    val nightEndHour: Int = 7,
-    val nightEndMinute: Int = 0,
-    val nightModeEnabled: Boolean = true,
-    val masterAlarmDisabled: Boolean = true,
-    val firmwareVersion: String = "",
-    val ringtoneSignature: ByteArray = byteArrayOf(
-        0xba.toByte(), 0x2c.toByte(), 0x2c.toByte(), 0x8c.toByte()
-    )
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as DeviceSettings
-        return tempUnit == other.tempUnit && timeFormat == other.timeFormat && language == other.language && volume == other.volume && timeZone == other.timeZone && nightModeBrightness == other.nightModeBrightness && backlightDuration == other.backlightDuration && screenBrightness == other.screenBrightness && nightStartHour == other.nightStartHour && nightStartMinute == other.nightStartMinute && nightEndHour == other.nightEndHour && nightEndMinute == other.nightEndMinute && nightModeEnabled == other.nightModeEnabled && masterAlarmDisabled == other.masterAlarmDisabled && firmwareVersion == other.firmwareVersion && ringtoneSignature.contentEquals(
-            other.ringtoneSignature
-        )
-    }
-
-    override fun hashCode(): Int {
-        var result = tempUnit.hashCode()
-        result = 31 * result + timeFormat.hashCode()
-        result = 31 * result + language.hashCode()
-        result = 31 * result + volume
-        result = 31 * result + timeZone.hashCode()
-        result = 31 * result + nightModeBrightness
-        result = 31 * result + backlightDuration
-        result = 31 * result + screenBrightness
-        result = 31 * result + nightStartHour
-        result = 31 * result + nightStartMinute
-        result = 31 * result + nightEndHour
-        result = 31 * result + nightEndMinute
-        result = 31 * result + nightModeEnabled.hashCode()
-        result = 31 * result + masterAlarmDisabled.hashCode()
-        result = 31 * result + firmwareVersion.hashCode()
-        result = 31 * result + ringtoneSignature.contentHashCode()
-        return result
-    }
-
-    /**
-     * Get the ringtone name. Returns null for custom ringtones - caller should use localized string.
-     */
-    fun getRingtoneName(): String? {
-        // Check for custom slots first - return null so caller can use localized string
-        if (QPController.isCustomSlot(ringtoneSignature)) return null
-        // Then check standard ringtones
-        return QPController.RINGTONE_SIGNATURES.entries.find {
-            it.value.contentEquals(ringtoneSignature)
-        }?.key ?: "Unknown"
-    }
-}
-
-enum class TempUnit { Celsius, Fahrenheit }
-enum class TimeFormat { H24, H12 }
-enum class Language { Chinese, English }
-
-fun TimeZone.encodeOffset(): Byte{
-    return abs(this.rawOffset.milliseconds.inWholeMinutes.div(6)).toByte()
-}
-
-fun TimeZone.encodeOffsetSign(): Byte{
-    return if (this.rawOffset >= 0) 1 else 0
-}
-
-
-fun createTimeZone(offset:Int,isPositive: Boolean): TimeZone {
-    val rawOffset = offset * 6 * 1000
-    val timeZone = TimeZone.getDefault()
-    timeZone.rawOffset = if(isPositive) rawOffset else -rawOffset
-    return timeZone
-}
 
 /**
  * Controller for QP CGD1 device via BLE GATT
@@ -221,66 +86,24 @@ class QPController(private val context: Context) {
     companion object {
         private const val TAG = "QPController"
 
-        // UUIDs for QP CGD1
-        private val UUID_AUTH_WRITE = UUID.fromString("00000001-0000-1000-8000-00805f9b34fb")
-        private val UUID_AUTH_NOTIFY = UUID.fromString("00000002-0000-1000-8000-00805f9b34fb")
-        private val UUID_DATA_WRITE = UUID.fromString("0000000b-0000-1000-8000-00805f9b34fb")
-        private val UUID_DATA_NOTIFY = UUID.fromString("0000000c-0000-1000-8000-00805f9b34fb")
-        private val UUID_SENSOR_NOTIFY = UUID.fromString("00000100-0000-1000-8000-00805f9b34fb")
-        private val UUID_CLIENT_CHARACTERISTIC_CONFIG =
-            UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        // Timeout constants (in milliseconds)
+        private const val TIMEOUT_AUTHENTICATION = 30000L
+        private const val TIMEOUT_OPERATION = 5000L
 
-        // Known ringtone signatures from https://qingplus.cleargrass.com/raw/rings
-        val RINGTONE_SIGNATURES = mapOf(
-            "Beep" to byteArrayOf(0xfd.toByte(), 0xc3.toByte(), 0x66.toByte(), 0xa5.toByte()),
-            "Digital Ringtone" to byteArrayOf(
-                0x09.toByte(), 0x61.toByte(), 0xbb.toByte(), 0x77.toByte()
-            ),
-            "Digital Ringtone 2" to byteArrayOf(
-                0xba.toByte(), 0x2c.toByte(), 0x2c.toByte(), 0x8c.toByte()
-            ),
-            "Cuckoo" to byteArrayOf(0xea.toByte(), 0x2d.toByte(), 0x4c.toByte(), 0x02.toByte()),
-            "Telephone" to byteArrayOf(0x79.toByte(), 0x1b.toByte(), 0xac.toByte(), 0xb3.toByte()),
-            "Exotic Guitar" to byteArrayOf(
-                0x1d.toByte(), 0x01.toByte(), 0x9f.toByte(), 0xd6.toByte()
-            ),
-            "Lively Piano" to byteArrayOf(
-                0x6e.toByte(), 0x70.toByte(), 0xb6.toByte(), 0x59.toByte()
-            ),
-            "Story Piano" to byteArrayOf(
-                0x8f.toByte(), 0x00.toByte(), 0x48.toByte(), 0x86.toByte()
-            ),
-            "Forest Piano" to byteArrayOf(
-                0x26.toByte(), 0x52.toByte(), 0x25.toByte(), 0x19.toByte()
-            )
-        )
+        // Delay constants (in milliseconds)
+        const val DELAY_POST_AUTH = 500L
+        const val DELAY_BLE_OPERATION = 200L
+        const val DELAY_ALARM_RELOAD = 300L
+        const val DELAY_ALARM_COMPLETION = 1000L
+        const val DELAY_RSSI_POLL = 5000L
+        const val DELAY_PACKET_WRITE = 20L
 
-        // Custom ringtone slots with alternating IDs (dead/beef)
-        val CUSTOM_RINGTONE_SLOT_1 =
-            byteArrayOf(0xde.toByte(), 0xad.toByte(), 0xde.toByte(), 0xad.toByte()) // dead
-        val CUSTOM_RINGTONE_SLOT_2 =
-            byteArrayOf(0xbe.toByte(), 0xef.toByte(), 0xbe.toByte(), 0xef.toByte()) // beef
-
-        /**
-         * Get the appropriate custom slot to use (alternates between dead and beef based on current)
-         */
-        fun getCustomSlotSignature(currentSignature: ByteArray?): ByteArray {
-            return if (currentSignature?.contentEquals(CUSTOM_RINGTONE_SLOT_1) == true) {
-                CUSTOM_RINGTONE_SLOT_2 // Current is dead, use beef
-            } else {
-                CUSTOM_RINGTONE_SLOT_1 // Current is beef or other, use dead
-            }
-        }
-
-        /**
-         * Check if signature is a custom slot (for i18n - caller should use localized string)
-         */
-        fun isCustomSlot(signature: ByteArray): Boolean {
-            return signature.contentEquals(CUSTOM_RINGTONE_SLOT_1) || signature.contentEquals(
-                CUSTOM_RINGTONE_SLOT_2
-            )
-        }
-
+        // Audio upload constants
+        private const val AUDIO_PACKET_SIZE = 128
+        private const val AUDIO_PACKETS_PER_BLOCK = 4
+        private const val AUDIO_ACK_WAIT_ITERATIONS = 50
+        private const val AUDIO_INIT_ACK_WAIT_ITERATIONS = 20
+        private const val AUDIO_ACK_WAIT_DELAY = 100L
     }
 
     // Token storage for persistence
@@ -581,7 +404,7 @@ class QPController(private val context: Context) {
                         } else {
                             alarmCompletionJob?.cancel()
                             alarmCompletionJob = scope.launch {
-                                delay(1000)
+                                delay(DELAY_ALARM_COMPLETION)
                                 AppLogger.d(
                                     TAG,
                                     "Timeout waiting for more packets, returning ${alarmBuffer.size} alarms"
@@ -788,10 +611,10 @@ class QPController(private val context: Context) {
 
         if (!isAuthenticated) {
             try {
-                withTimeout(30000) {
+                withTimeout(TIMEOUT_AUTHENTICATION) {
                     authenticate()
                 }
-                delay(500) // Brief pause after auth to ensure stability
+                delay(DELAY_POST_AUTH) // Brief pause after auth to ensure stability
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Authentication failed or timed out", e)
                 throw e // Propagate detailed error
@@ -799,7 +622,7 @@ class QPController(private val context: Context) {
         }
 
         try {
-            withTimeout(30000) {
+            withTimeout(TIMEOUT_AUTHENTICATION) {
                 synchronizeTime()
             }
         } catch (e: Exception) {
@@ -1077,7 +900,7 @@ class QPController(private val context: Context) {
 
     private suspend fun writeDeviceSettingsInternal(settings: DeviceSettings): Boolean =
         withContext(NonCancellable) {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 suspendCancellableCoroutine { continuation ->
                     val currentGatt = gatt ?: run {
                         continuation.resumeWithException(Exception("GATT not connected"))
@@ -1282,7 +1105,7 @@ class QPController(private val context: Context) {
         snooze: Boolean = false
     ): Boolean = gattMutex.withLock {
         withContext(NonCancellable) {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 suspendCancellableCoroutine { continuation ->
                     val currentGatt = gatt ?: run {
                         continuation.resumeWithException(Exception("GATT not connected"))
@@ -1350,7 +1173,7 @@ class QPController(private val context: Context) {
 
     suspend fun deleteAlarm(alarmId: Int): Boolean = gattMutex.withLock {
         withContext(NonCancellable) {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 suspendCancellableCoroutine { continuation ->
                     val currentGatt = gatt ?: run {
                         continuation.resumeWithException(Exception("GATT not connected"))
@@ -1509,9 +1332,7 @@ class QPController(private val context: Context) {
         AppLogger.d(TAG, "QPController closed and all jobs canceled")
     }
 
-    private fun ByteArray.toHexString(): String {
-        return joinToString(" ") { "%02x".format(it) }
-    }
+
 
     suspend fun previewRingtone(settings: DeviceSettings? = null): Boolean = gattMutex.withLock {
         val command = if (settings != null) {
@@ -1563,7 +1384,6 @@ class QPController(private val context: Context) {
 
     /**
      * Upload custom ringtone audio to the device.
-     * Based on original BluetoothController.kt from QingpingUploader.
      *
      * @param pcmData PCM audio data (8-bit unsigned, 8kHz, mono)
      * @param targetSignature The ringtone slot signature to overwrite (must be different from current)
@@ -1599,7 +1419,7 @@ class QPController(private val context: Context) {
             descriptor?.let {
                 currentGatt.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
             }
-            delay(300)
+            delay(DELAY_ALARM_RELOAD)
             enabledNotifications.add(UUID_DATA_NOTIFY)
         }
 
@@ -1632,9 +1452,9 @@ class QPController(private val context: Context) {
         }
 
         // Wait for init response (04 ff 10 XX)
-        repeat(20) {
+        repeat(AUDIO_INIT_ACK_WAIT_ITERATIONS) {
             if (uploadInitAckReceived) return@repeat
-            delay(100)
+            delay(AUDIO_ACK_WAIT_DELAY)
         }
 
         if (!uploadInitAckReceived) {
@@ -1644,8 +1464,8 @@ class QPController(private val context: Context) {
 
         // 2. Send audio data in packets
         // Protocol: 4 packets per block, wait for ACK after last packet
-        val packetSize = 128
-        val packetsPerBlock = 4
+        val packetSize = AUDIO_PACKET_SIZE
+        val packetsPerBlock = AUDIO_PACKETS_PER_BLOCK
         val blockSize = packetSize * packetsPerBlock
         var offset = 0
         var blockNum = 0
@@ -1697,9 +1517,9 @@ class QPController(private val context: Context) {
                     }
 
                     // Wait for block ACK from device (04 ff 08 XX)
-                    repeat(50) {
+                    repeat(AUDIO_ACK_WAIT_ITERATIONS) {
                         if (uploadAckReceived) return@repeat
-                        delay(100)
+                        delay(AUDIO_ACK_WAIT_DELAY)
                     }
 
                     if (!uploadAckReceived) {
@@ -1711,7 +1531,7 @@ class QPController(private val context: Context) {
                     if (!writeSuccess) {
                         AppLogger.w(TAG, "Write failed for block $blockNum, packet $pktIdx")
                     }
-                    delay(20)
+                    delay(DELAY_PACKET_WRITE)
                 }
 
                 offset += audioLen
@@ -1761,7 +1581,7 @@ class QPController(private val context: Context) {
 
         // Wait for callback with timeout
         return try {
-            withTimeout(5000) {
+            withTimeout(TIMEOUT_OPERATION) {
                 deferred.await()
             }
         } catch (e: Exception) {

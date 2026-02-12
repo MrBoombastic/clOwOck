@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,7 +23,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,21 +40,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.mrboombastic.buwudzik.MainViewModel
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.Language
 import com.mrboombastic.buwudzik.device.TempUnit
 import com.mrboombastic.buwudzik.device.TimeFormat
-import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.LabeledSlider
+import com.mrboombastic.buwudzik.ui.components.PreviewSlider
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
+import com.mrboombastic.buwudzik.ui.components.TimePickerCard
+import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,23 +92,17 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
         }
     }
 
-    Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.device_settings_title)) },
-            navigationIcon = {
-                BackNavigationButton(navController, enabled = isUiEnabled)
-            },
-            actions = {
-                if (isSaving || isBusy) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            })
-    }) { padding ->
+    Scaffold(
+        snackbarHost = { CustomSnackbarHost(snackbarHostState) },
+        topBar = {
+            StandardTopBar(
+                title = stringResource(R.string.device_settings_title),
+                navController = navController,
+                showProgress = isSaving || isBusy,
+                navigationEnabled = isUiEnabled
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -318,28 +312,26 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                 Spacer(Modifier.height(8.dp))
 
                 // Screen Brightness
-                Text(stringResource(R.string.day_brightness_label, screenBrightness.toInt()))
-                Slider(
-                    value = screenBrightness, enabled = isUiEnabled, onValueChange = {
-                        screenBrightness = it
-                        // Immediate update with debouncing
-                        immediateUpdateJob?.cancel()
-                        immediateUpdateJob = coroutineScope.launch {
-                            delay(200) // Lower debounce for smoother brightness preview
-                            viewModel.qpController.enqueueCommand {
-                                viewModel.qpController.setDaytimeBrightnessImmediate(it.toInt())
-                            }
+                PreviewSlider(
+                    label = stringResource(R.string.day_brightness_label, screenBrightness.toInt()),
+                    value = screenBrightness,
+                    enabled = isUiEnabled,
+                    onValueChange = { screenBrightness = it },
+                    onValueChangeFinished = { saveSettings() },
+                    onPreview = { previewValue ->
+                        viewModel.qpController.enqueueCommand {
+                            viewModel.qpController.setDaytimeBrightnessImmediate(previewValue.toInt())
                         }
-                    }, onValueChangeFinished = {
-                        saveSettings()
-                    }, valueRange = 0f..100f, steps = 9 // Firmware uses nibble / 10
+                    },
+                    valueRange = 0f..100f,
+                    steps = 9,
+                    debounceMs = 200
                 )
                 Spacer(Modifier.height(8.dp))
 
                 // Backlight Duration
-                Text(stringResource(R.string.backlight_duration_label, backlightDuration.toInt()))
-
-                Slider(
+                LabeledSlider(
+                    label = stringResource(R.string.backlight_duration_label, backlightDuration.toInt()),
                     value = backlightDuration,
                     enabled = isUiEnabled,
                     onValueChange = { backlightDuration = it },
@@ -369,25 +361,22 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
 
                 if (nightModeEnabled) {
                     // Night Mode Brightness
-                    Text(
-                        stringResource(
+                    PreviewSlider(
+                        label = stringResource(
                             R.string.night_brightness_label, nightModeBrightness.toInt()
-                        )
-                    )
-                    Slider(
-                        value = nightModeBrightness, enabled = isUiEnabled, onValueChange = {
-                            nightModeBrightness = it
-                            // Immediate update with debouncing
-                            immediateUpdateJob?.cancel()
-                            immediateUpdateJob = coroutineScope.launch {
-                                delay(200) // Lower debounce for smoother brightness preview
-                                viewModel.qpController.enqueueCommand {
-                                    viewModel.qpController.setNightBrightnessImmediate(it.toInt())
-                                }
+                        ),
+                        value = nightModeBrightness,
+                        enabled = isUiEnabled,
+                        onValueChange = { nightModeBrightness = it },
+                        onValueChangeFinished = { saveSettings() },
+                        onPreview = { previewValue ->
+                            viewModel.qpController.enqueueCommand {
+                                viewModel.qpController.setNightBrightnessImmediate(previewValue.toInt())
                             }
-                        }, onValueChangeFinished = {
-                            saveSettings()
-                        }, valueRange = 0f..100f, steps = 9 // Firmware uses nibble / 10
+                        },
+                        valueRange = 0f..100f,
+                        steps = 9,
+                        debounceMs = 200
                     )
                     Spacer(Modifier.height(8.dp))
 
@@ -397,52 +386,28 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         // Start Time
-                        OutlinedCard(
-                            onClick = { showStartTimePicker = true },
+                        TimePickerCard(
+                            label = stringResource(R.string.start_time_label),
+                            hour = nightStartHour,
+                            minute = nightStartMinute,
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp),
-                            enabled = isUiEnabled
-                        ) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(
-                                    stringResource(R.string.start_time_label),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Text(
-                                    String.format(
-                                        Locale.getDefault(),
-                                        "%02d:%02d",
-                                        nightStartHour,
-                                        nightStartMinute
-                                    ), style = MaterialTheme.typography.titleLarge
-                                )
-                            }
-                        }
+                            enabled = isUiEnabled,
+                            onClick = { showStartTimePicker = true }
+                        )
 
                         // End Time
-                        OutlinedCard(
-                            onClick = { showEndTimePicker = true },
+                        TimePickerCard(
+                            label = stringResource(R.string.end_time_label),
+                            hour = nightEndHour,
+                            minute = nightEndMinute,
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 8.dp),
-                            enabled = isUiEnabled
-                        ) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(
-                                    stringResource(R.string.end_time_label),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Text(
-                                    String.format(
-                                        Locale.getDefault(),
-                                        "%02d:%02d",
-                                        nightEndHour,
-                                        nightEndMinute
-                                    ), style = MaterialTheme.typography.titleLarge
-                                )
-                            }
-                        }
+                            enabled = isUiEnabled,
+                            onClick = { showEndTimePicker = true }
+                        )
                     }
                 }
 
