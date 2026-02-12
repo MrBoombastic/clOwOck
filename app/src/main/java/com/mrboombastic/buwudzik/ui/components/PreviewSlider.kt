@@ -17,27 +17,27 @@ import kotlinx.coroutines.launch
  *
  * @param label Slider label
  * @param value Current value
- * @param enabled Whether slider is enabled
  * @param onValueChange Called when value changes (not debounced)
  * @param onValueChangeFinished Called when user finishes changing value
+ * @param modifier Optional modifier
+ * @param enabled Whether slider is enabled
  * @param onPreview Called with debouncing for preview updates (optional)
  * @param valueRange Range of values
  * @param steps Number of steps
  * @param debounceMs Debounce delay in milliseconds for preview
- * @param modifier Optional modifier
  */
 @Composable
 fun PreviewSlider(
     label: String,
     value: Float,
-    enabled: Boolean = true,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onPreview: (suspend (Float) -> Unit)? = null,
     valueRange: ClosedFloatingPointRange<Float> = 0f..100f,
     steps: Int = 0,
-    debounceMs: Long = 200,
-    modifier: Modifier = Modifier
+    debounceMs: Long = 200
 ) {
     val coroutineScope = rememberCoroutineScope()
     var previewJob by remember { mutableStateOf<Job?>(null) }

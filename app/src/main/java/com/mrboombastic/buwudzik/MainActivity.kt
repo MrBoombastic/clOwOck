@@ -133,7 +133,11 @@ class MainActivity : AppCompatActivity() {
          */
         fun scheduleUpdates(context: Context, intervalMinutes: Long) {
             AppLogger.d(TAG, "Scheduling AlarmManager for $intervalMinutes min intervals")
-            WidgetUpdateScheduler.scheduleUpdates(context, intervalMinutes)
+            WidgetUpdateScheduler.scheduleUpdates(
+                context,
+                intervalMinutes,
+                promptUserForExactAlarms = true
+            )
         }
 
         /**
@@ -144,7 +148,11 @@ class MainActivity : AppCompatActivity() {
             AppLogger.d(TAG, "Rescheduling AlarmManager for $intervalMinutes min intervals")
             // Cancel existing alarms and schedule new one with updated interval
             WidgetUpdateScheduler.cancelUpdates(context)
-            WidgetUpdateScheduler.scheduleUpdates(context, intervalMinutes)
+            WidgetUpdateScheduler.scheduleUpdates(
+                context,
+                intervalMinutes,
+                promptUserForExactAlarms = true
+            )
         }
     }
 
@@ -814,5 +822,4 @@ fun Dashboard(
         }
     }
 }
-
 

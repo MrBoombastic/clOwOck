@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
  * @param onValueChange Callback when the slider value changes
  * @param onValueChangeFinished Callback when the user finishes changing the value
  * @param valueRange The range of values for the slider
+ * @param modifier Modifier for the entire component
  * @param steps Number of discrete steps (0 for continuous)
  * @param enabled Whether the slider is enabled
- * @param modifier Modifier for the entire component
  */
 @Composable
 fun LabeledSlider(
@@ -29,9 +29,9 @@ fun LabeledSlider(
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
+    modifier: Modifier = Modifier,
     steps: Int = 0,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    enabled: Boolean = true
 ) {
     Column(modifier = modifier) {
         Text(
