@@ -36,11 +36,10 @@ object WidgetUpdateScheduler {
         val intervalMillis = intervalMinutes * 60 * 1000L
         val triggerAtMillis = System.currentTimeMillis() + intervalMillis
 
-        // Prefer exact alarms when allowed; fall back to inexact to avoid crashes when not permitted
+        // Prefer exact alarms when allowed; fall back to "inexact" to avoid crashes when not permitted
         if (alarmManager.canScheduleExactAlarms()) {
             try {
                 // Use setExactAndAllowWhileIdle for reliable updates
-                // MinSdk 34 guarantees this API is available (added in API 23)
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,

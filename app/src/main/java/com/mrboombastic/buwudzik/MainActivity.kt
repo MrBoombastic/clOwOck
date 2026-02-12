@@ -67,8 +67,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -86,9 +84,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.mrboombastic.buwudzik.data.AlarmTitleRepository
 import com.mrboombastic.buwudzik.data.SensorRepository
 import com.mrboombastic.buwudzik.data.SettingsRepository
@@ -111,7 +106,6 @@ import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.widget.SensorGlanceWidget
-import com.mrboombastic.buwudzik.widget.SensorUpdateWorker
 import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -126,6 +120,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var scanner: BluetoothScanner
