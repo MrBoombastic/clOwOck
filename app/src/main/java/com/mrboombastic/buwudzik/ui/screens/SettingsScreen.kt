@@ -122,14 +122,15 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
     // Load version name asynchronously to avoid blocking main thread
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
+        val fetchedVersionName = withContext(Dispatchers.IO) {
             try {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                versionName = packageInfo.versionName
+                packageInfo.versionName
             } catch (_: Exception) {
-                versionName = null
+                null
             }
         }
+        versionName = fetchedVersionName
     }
 
     // Watch for MAC changes when returning from device setup screen
