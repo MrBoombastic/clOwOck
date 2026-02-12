@@ -20,7 +20,7 @@ profileinstaller = "1.4.1"
 zxing = "4.3.0"
 cameraX = "1.5.3"
 glance = "1.1.1"
-material3 = "1.4.0"
+
 
 [libraries]
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
