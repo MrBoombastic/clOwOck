@@ -21,6 +21,7 @@ zxing = "4.3.0"
 cameraX = "1.5.3"
 glance = "1.1.1"
 
+
 [libraries]
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
@@ -42,7 +43,6 @@ androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
@@ -53,6 +53,7 @@ zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", ve
 camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraX" }
 camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraX" }
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "cameraX" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 
 
 [plugins]

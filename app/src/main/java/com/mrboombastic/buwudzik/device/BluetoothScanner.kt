@@ -51,6 +51,12 @@ class BluetoothScanner(private val context: Context) {
             return@callbackFlow
         }
 
+        if (adapter?.isEnabled != true) {
+            AppLogger.e("BluetoothScanner", "Bluetooth is disabled")
+            close()
+            return@callbackFlow
+        }
+
         val leScanner = scanner
         if (leScanner == null) {
             AppLogger.e("BluetoothScanner", "BluetoothLeScanner is null")
@@ -100,6 +106,7 @@ class BluetoothScanner(private val context: Context) {
 
             override fun onScanFailed(errorCode: Int) {
                 AppLogger.e("BluetoothScanner", "Scan failed: $errorCode")
+                close()
             }
         }
 
@@ -121,11 +128,24 @@ class BluetoothScanner(private val context: Context) {
             "BluetoothScanner",
             "Starting BLE Scanner with configured filters and settings."
         )
-        leScanner.startScan(filters, settings, callback)
+
+        try {
+            leScanner.startScan(filters, settings, callback)
+        } catch (e: Exception) {
+            AppLogger.e("BluetoothScanner", "Error starting scan: ${e.message}", e)
+            close()
+            return@callbackFlow
+        }
 
         awaitClose {
             AppLogger.d("BluetoothScanner", "Flow closing/cancelled. Stopping scan.")
-            leScanner.stopScan(callback)
+            try {
+                if (adapter?.isEnabled == true) {
+                    leScanner.stopScan(callback)
+                }
+            } catch (e: Exception) {
+                AppLogger.e("BluetoothScanner", "Error stopping scan: ${e.message}", e)
+            }
         }
     }
 
