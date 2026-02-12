@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun MenuTile(
+    modifier: Modifier = Modifier,
     title: String,
     icon: ImageVector,
     onClick: () -> Unit,
@@ -34,7 +35,7 @@ fun MenuTile(
 ) {
     ElevatedCard(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(72.dp),
         colors = CardDefaults.elevatedCardColors(
