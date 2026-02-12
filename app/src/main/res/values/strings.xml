@@ -19,6 +19,8 @@
     <string name="master_alarm_label">Enable alarms</string>
     <string name="language_label">Language</string>
     <string name="language_system">system</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_polish" translatable="false">polski</string>
     <string name="widget_update_interval_label">Widget update interval</string>
     <string name="minutes_15">15 minutes (default)</string>
     <string name="minutes_30">30 minutes</string>
