@@ -125,8 +125,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-
-private const val TAG = "MainActivity"
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 
 class MainActivity : AppCompatActivity() {
