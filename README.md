@@ -63,18 +63,18 @@ versions.
 
 ## Screenshots
 
-<img src="docs/setup.png" width="23%" alt="Setup screenshot">
-<img src="docs/pair.png" width="23%" alt="Pairing screenshot">
-<img src="docs/settings.png" width="23%" alt="Settings screenshot">
-<img src="docs/s1.png" width="23%" alt="Home page screenshot">
-<img src="docs/s2.png" width="23%" alt="Alarms page screenshot">
-<img src="docs/s3.png" width="23%" alt="Alarm settings screenshot">
-<img src="docs/s4.png" width="23%" alt="Device settings screenshot">
-<img src="docs/s5.png" width="23%" alt="Device settings screenshot continued">
-<img src="docs/s6.png" width="23%" alt="Ringtone page screenshot">
-<img src="docs/s7.png" width="23%" alt="Trimming audio screenshot">
-<img src="docs/import.png" width="23%" alt="Import device screenshot">
-<img src="docs/widget.png" width="23%" alt="Multiple widgets screenshot">
+<img src="docs/setup.png" width="23%" alt="Setup screenshot"></img>
+<img src="docs/pair.png" width="23%" alt="Pairing screenshot"></img>
+<img src="docs/settings.png" width="23%" alt="Settings screenshot"></img>
+<img src="docs/s1.png" width="23%" alt="Home page screenshot"></img>
+<img src="docs/s2.png" width="23%" alt="Alarms page screenshot"></img>
+<img src="docs/s3.png" width="23%" alt="Alarm settings screenshot"></img>
+<img src="docs/s4.png" width="23%" alt="Device settings screenshot"></img>
+<img src="docs/s5.png" width="23%" alt="Device settings screenshot continued"></img>
+<img src="docs/s6.png" width="23%" alt="Ringtone page screenshot"></img>
+<img src="docs/s7.png" width="23%" alt="Trimming audio screenshot"></img>
+<img src="docs/import.png" width="23%" alt="Import device screenshot"></img>
+<img src="docs/widget.png" width="23%" alt="Multiple widgets screenshot"></img>
 
 ## Protocol Specification
 
