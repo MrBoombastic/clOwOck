@@ -19,15 +19,15 @@ import androidx.compose.ui.unit.dp
  * Reusable progress card component for showing upload/download progress
  * @param title Title of the progress operation
  * @param progress Progress value from 0.0 to 1.0
- * @param statusText Optional status text to display below the progress bar
  * @param modifier Optional modifier
+ * @param statusText Optional status text to display below the progress bar
  */
 @Composable
 fun ProgressCard(
     title: String,
     progress: Float,
-    statusText: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    statusText: String? = null
 ) {
     Card(
         modifier = modifier

@@ -18,14 +18,14 @@ enum class StatusType {
 /**
  * Reusable status card for displaying messages to the user
  * @param message The message to display
- * @param type The type of status (ERROR, WARNING, INFO)
  * @param modifier Optional modifier
+ * @param type The type of status (ERROR, WARNING, INFO)
  */
 @Composable
 fun StatusCard(
     message: String,
-    type: StatusType = StatusType.ERROR,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    type: StatusType = StatusType.ERROR
 ) {
     val color = when (type) {
         StatusType.ERROR -> MaterialTheme.colorScheme.error
