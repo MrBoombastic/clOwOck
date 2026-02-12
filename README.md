@@ -1,7 +1,34 @@
 # clOwOck
 
-Android app for displaying data from the Qingping CGD1 - Bluetooth LE alarm
-clock with sensors.
+Android app for displaying data from the Qingping CGD1 - Bluetooth LE alarm clock with sensors.
+
+## Table of Contents
+
+- [Warning](#warning)
+- [Features](#features)
+- [Technical Details](#technical-details)
+- [Screenshots](#screenshots)
+- [Protocol Specification](#protocol-specification)
+  - [1. Service & Characteristics Profile](#1-service--characteristics-profile)
+  - [2. Authentication (Two-Step Token Protocol)](#2-authentication-two-step-token-protocol)
+    - [2.1. Time Synchronization](#21-time-synchronization)
+  - [3. Managing Alarms](#3-managing-alarms)
+    - [3.1. Set Alarm](#31-set-alarm)
+    - [3.2. Delete Alarm](#32-delete-alarm)
+    - [3.3. Read Alarms](#33-read-alarms)
+  - [4. Device Settings](#4-device-settings)
+    - [4.1. Set Immediate Brightness (Preview)](#41-set-immediate-brightness-preview)
+    - [4.2. Preview Ringtone](#42-preview-ringtone)
+  - [5. Real-Time Sensor Stream](#5-real-time-sensor-stream)
+  - [6. Battery Level](#6-battery-level)
+  - [7. Firmware Version](#7-firmware-version)
+  - [8. Audio Transfer Protocol (Ringtone Upload)](#8-audio-transfer-protocol-ringtone-upload)
+    - [Known Ringtone Signatures](#known-ringtone-signatures)
+    - [Custom Ringtone Slots](#custom-ringtone-slots)
+    - [Custom Ringtone JSON Manifest](#custom-ringtone-json-manifest)
+    - [Upload Protocol](#upload-protocol)
+  - [9. Known Command IDs Summary](#9-known-command-ids-summary)
+  - [10. GATT Disconnection Status Codes](#10-gatt-disconnection-status-codes)
 
 ## Warning
 
@@ -10,44 +37,44 @@ so it's only semi-slop, but you have been warned, etc., etc.
 
 ## Features
 
-* Initial setup screen to guide the user through finding and selecting their device.
-* Scans for a specific Bluetooth LE device by its MAC address.
-* Share saved device with others using QR code.
-* Parses and displays sensor data.
-* Management of up to 16 device alarms.
-* **Custom ringtones uploading.**
-* Global alarm switch to enable or disable all device alarms at once.
-* Bluetooth state monitoring with automatic prompts to enable it.
-* Interactive real-time previews for brightness and volume settings.
-* Widget for displaying sensor data on the home screen.
-* Configurable background updates to fetch data periodically.
-* Settings to customize the device's MAC address, theme (light/dark/system), and language.
+- Initial setup screen to guide the user through finding and selecting their device
+- Scans for a specific Bluetooth LE device by its MAC address
+- Share saved device with others using QR code
+- Parses and displays sensor data
+- Management of up to 16 device alarms
+- **Custom ringtones uploading**
+- Global alarm switch to enable or disable all device alarms at once
+- Bluetooth state monitoring with automatic prompts to enable it
+- Interactive real-time previews for brightness and volume settings
+- Widget for displaying sensor data on the home screen
+- Configurable background updates to fetch data periodically
+- Settings to customize the device's MAC address, theme (light/dark/system), and language
 
 ## Technical Details
 
 The application is built with modern Android development technologies and targets recent Android
 versions.
 
-* **Target API:** The application targets Android 16 (API level 36) and has a minimum requirement of
-  Android 14 (API level 34).
-* **UI:** Jetpack Compose for a declarative and modern UI.
-* **Background Processing:** `WorkManager` and `AlarmManager` for scheduling periodic data fetches,
-  ensuring the widget is always up-to-date.
+- **Target API:** The application targets Android 16 (API level 36) and has a minimum requirement of
+  Android 14 (API level 34)
+- **UI:** Jetpack Compose for a declarative and modern UI
+- **Background Processing:** `WorkManager` and `AlarmManager` for scheduling periodic data fetches,
+  ensuring the widget is always up-to-date
 
 ## Screenshots
 
-<img src="docs/setup.png" width="23%">a</img>
-<img src="docs/pair.png" width="23%"></img>
-<img src="docs/settings.png" width="23%"></img>
-<img src="docs/s1.png" width="23%"></img>
-<img src="docs/s2.png" width="23%"></img>
-<img src="docs/s3.png" width="23%"></img>
-<img src="docs/s4.png" width="23%"></img>
-<img src="docs/s5.png" width="23%"></img>
-<img src="docs/s6.png" width="23%"></img>
-<img src="docs/s7.png" width="23%"></img>
-<img src="docs/import.png" width="23%"></img>
-<img src="docs/widget.png" width="23%"></img>
+<img src="docs/setup.png" width="23%" alt="Setup screenshot">
+<img src="docs/pair.png" width="23%" alt="Pairing screenshot">
+<img src="docs/settings.png" width="23%" alt="Settings screenshot">
+<img src="docs/s1.png" width="23%" alt="Home page screenshot">
+<img src="docs/s2.png" width="23%" alt="Alarms page screenshot">
+<img src="docs/s3.png" width="23%" alt="Alarm settings screenshot">
+<img src="docs/s4.png" width="23%" alt="Device settings screenshot">
+<img src="docs/s5.png" width="23%" alt="Device settings screenshot continued">
+<img src="docs/s6.png" width="23%" alt="Ringtone page screenshot">
+<img src="docs/s7.png" width="23%" alt="Trimming audio screenshot">
+<img src="docs/import.png" width="23%" alt="Import device screenshot">
+<img src="docs/widget.png" width="23%" alt="Multiple widgets screenshot">
 
 ## Protocol Specification
 
@@ -76,8 +103,8 @@ same token must be used for all future connections.
 
 **Flow:**
 
-1. Connect to the device and discover services.
-2. Enable Notifications on **Auth Notify** (`...0002`).
+1. Connect to the device and discover services
+2. Enable Notifications on **Auth Notify** (`...0002`)
 3. Send **Auth Init** to **Auth Write** (`...0001`): `11 01 [Token 16B]`
 4. Wait for ACK on **Auth Notify**: `04 ff 01 00 02` (success, proceed to step 5)
 5. Send **Auth Confirm** to **Auth Write**: `11 02 [Token 16B]`
@@ -102,8 +129,8 @@ action and check if the device will close connection with you.
 
 After authentication, it is recommended to synchronize the time.
 
-* **Command (Auth Write):** `05 09 [Timestamp 4B LE]`
-* **Response (Auth Notify):** `04 ff 09 00 00` (Success).
+- **Command (Auth Write):** `05 09 [Timestamp 4B LE]`
+- **Response (Auth Notify):** `04 ff 09 00 00` (Success)
 
 ### 3. Managing Alarms
 
@@ -114,58 +141,45 @@ operations happen on the **Data** characteristics.
 
 To create or modify an alarm:
 
-* **Command:** `07 05 [ID] [Enabled] [HH] [MM] [Days] [Snooze]`
-
-
-* **ID:** The alarm index (0-15).
-
-* **Enabled:** `0x01` = On, `0x00` = Off.
-
-* **HH, MM:** Hour (0-23) and Minute (0-59).
-
-* **Days (Bitmask):**
-
-    * `0x01` = Monday
-
-    * `0x02` = Tuesday
-
-    * `0x04` = Wednesday
-
-    * `0x08` = Thursday
-
-    * `0x10` = Friday
-
-    * `0x20` = Saturday
-
-    * `0x40` = Sunday
-
-    * `0x00` = Once
-
-* **Snooze:** `0x01` = On, `0x00` = Off.
+- **Command:** `07 05 [ID] [Enabled] [HH] [MM] [Days] [Snooze]`
+- **ID:** The alarm index (0-15)
+- **Enabled:** `0x01` = On, `0x00` = Off
+- **HH, MM:** Hour (0-23) and Minute (0-59)
+- **Days (Bitmask):**
+  - `0x01` = Monday
+  - `0x02` = Tuesday
+  - `0x04` = Wednesday
+  - `0x08` = Thursday
+  - `0x10` = Friday
+  - `0x20` = Saturday
+  - `0x40` = Sunday
+  - `0x00` = Once
+- **Snooze:** `0x01` = On, `0x00` = Off
 
 #### 3.2. Delete Alarm
 
 To delete an alarm, overwrite it with `FF` values (marking it as empty/unused).
 
-* **Command:** `07 05 [ID] FF FF FF FF FF`
+- **Command:** `07 05 [ID] FF FF FF FF FF`
 
 #### 3.3. Read Alarms
 
-* **Command:** `01 06`
-* **Response:** `11 06 [Base Index] [Alarm Entry 1 (5B)] ...`
-* **Alarm Entry:** `[Enabled] [HH] [MM] [Days] [Snooze]`
+- **Command:** `01 06`
+- **Response:** `11 06 [Base Index] [Alarm Entry 1 (5B)] ...`
+- **Alarm Entry:** `[Enabled] [HH] [MM] [Days] [Snooze]`
 
 **Note:** Device sends multiple packets if needed (up to 4 alarms per packet). All 16 slots are
 returned, empty slots have `FF FF FF FF FF` values.
 
-* **ACK (after Set/Delete):** `04 ff 05 00 00` (Success)
+- **ACK (after Set/Delete):** `04 ff 05 00 00` (Success)
 
 ### 4. Device Settings
 
 Managed via a single comprehensive payload on **Data Write**.
 
-* **Command:** Start with `13` (Set Settings) or `01 02` (Read Settings).
-* **Set Settings Payload (20 bytes):**
+- **Command:** Start with `13` (Set Settings) or `01 02` (Read Settings)
+- **Set Settings Payload (20 bytes):**
+
   `13 01 [Vol] [Hdr1] [Hdr2] [Flags] [Timezone] [Duration] [Brightness] [NightStartH] [NightStartM] [NightEndH] [NightEndM] [TzSign] [NightEn] [Sig 4B]`
 
 | Byte  | Value           | Description                                                                                                    |
@@ -203,32 +217,32 @@ This byte acts as a **bitfield** where individual bits control specific boolean 
 
 #### 4.1. Set Immediate Brightness (Preview)
 
-* **Command (Data Write):** `02 03 [Value]`
-* **Value:** Brightness level / 10 (`0-10`).
-* **Response (Data Notify):** `04 ff 03 00 00` (Success).
+- **Command (Data Write):** `02 03 [Value]`
+- **Value:** Brightness level / 10 (`0-10`).
+- **Response (Data Notify):** `04 ff 03 00 00` (Success).
 
 #### 4.2. Preview Ringtone
 
 Plays a generic "beep" sound for testing volume level (not the user's selected ringtone).
 
-* **Command (Data Write):** `01 04` (Play at current volume) or `02 04 [Vol]` (Play at volume `1-5`)
-* **Response (Data Notify):** `04 ff 04 00 00` (Success).
+- **Command (Data Write):** `01 04` (Play at current volume) or `02 04 [Vol]` (Play at volume `1-5`)
+- **Response (Data Notify):** `04 ff 04 00 00` (Success)
 
 ### 5. Real-Time Sensor Stream
 
-* **Target:** `00000100-...` (Notify)
-* **Format:** `[00] [Temp L] [Temp H] [Hum L] [Hum H]`
-* **Values:** Little Endian Int16 / 100.0.
+- **Target:** `00000100-...` (Notify)
+- **Format:** `[00] [Temp L] [Temp H] [Hum L] [Hum H]`
+- **Values:** Little Endian Int16 / 100.0
 
 ### 6. Battery Level
 
-* **Service UUID:** `0x180f`, **Char UUID:** `0x2a19`.
-* **Format:** 1 byte (percentage).
+- **Service UUID:** `0x180f`, **Char UUID:** `0x2a19`
+- **Format:** 1 byte (percentage)
 
 ### 7. Firmware Version
 
-* **Command (Auth Write):** `01 0d`
-* **Response (Auth Notify):** `0b [Length] [ASCII String]`
+- **Command (Auth Write):** `01 0d`
+- **Response (Auth Notify):** `0b [Length] [ASCII String]`
 
 ### 8. Audio Transfer Protocol (Ringtone Upload)
 
@@ -346,6 +360,7 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
 - Wait for block ACK (`04 ff 08 ...`) after every 4 packets
 
 **Step 4 - Completion:**
+
 After sending all audio data, the device will apply the new ringtone.
 
 ### 9. Known Command IDs Summary
