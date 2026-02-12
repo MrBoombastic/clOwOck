@@ -27,6 +27,12 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_LANGUAGE = "language"
         private const val KEY_UPDATE_INTERVAL = "update_interval"
         const val DEFAULT_LANGUAGE = "system"
+
+        /**
+         * Default widget update interval in minutes.
+         * Supported intervals: 15, 30, 45, 60, 120, 240, 480, 720, 1440 minutes
+         * Corresponds to: 15min, 30min, 45min, 1h, 2h, 4h, 8h, 12h, 24h
+         */
         const val DEFAULT_INTERVAL = 15L
 
         private const val KEY_SELECTED_APP = "selected_app_package"

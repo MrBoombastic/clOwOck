@@ -21,15 +21,15 @@ object WidgetUpdateScheduler {
      */
     private fun mapToSystemInterval(intervalMinutes: Long): Long {
         return when {
-            intervalMinutes <= 15 -> AlarmManager.INTERVAL_FIFTEEN_MINUTES
-            intervalMinutes <= 30 -> AlarmManager.INTERVAL_HALF_HOUR
-            intervalMinutes <= 45 -> AlarmManager.INTERVAL_FIFTEEN_MINUTES * 3
-            intervalMinutes <= 60 -> AlarmManager.INTERVAL_HOUR
-            intervalMinutes <= 120 -> AlarmManager.INTERVAL_HOUR * 2
-            intervalMinutes <= 240 -> AlarmManager.INTERVAL_HOUR * 4
-            intervalMinutes <= 480 -> AlarmManager.INTERVAL_HOUR * 8
-            intervalMinutes <= 720 -> AlarmManager.INTERVAL_HALF_DAY
-            else -> AlarmManager.INTERVAL_DAY
+            intervalMinutes <= 15 -> AlarmManager.INTERVAL_FIFTEEN_MINUTES  // 15 min
+            intervalMinutes <= 30 -> AlarmManager.INTERVAL_HALF_HOUR        // 30 min
+            intervalMinutes <= 45 -> AlarmManager.INTERVAL_FIFTEEN_MINUTES * 3  // 45 min
+            intervalMinutes <= 60 -> AlarmManager.INTERVAL_HOUR             // 1 hour
+            intervalMinutes <= 120 -> AlarmManager.INTERVAL_HOUR * 2        // 2 hours
+            intervalMinutes <= 240 -> AlarmManager.INTERVAL_HOUR * 4        // 4 hours
+            intervalMinutes <= 480 -> AlarmManager.INTERVAL_HOUR * 8        // 8 hours
+            intervalMinutes <= 720 -> AlarmManager.INTERVAL_HALF_DAY        // 12 hours
+            else -> AlarmManager.INTERVAL_DAY                                // 24 hours (1440 min)
         }
     }
 
