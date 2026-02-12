@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">clOwOck</string>
     <string name="widget_description">Displays temperature, humidity, and battery status from your device.</string>
-    <string name="scanning_status" tools:ignore="Typos">Scanning for supported devices…</string>
+    <string name="scanning_status" tools:ignore="Typos">Scanning for the selected device…</string>
     <string name="battery_label">Battery: %1$d%%</string>
     <string name="rssi_label">RSSI: %1$d dBm (%2$d%%)</string>
     <string name="last_update_label">Last update: %1$s</string>

@@ -41,10 +41,10 @@ object WidgetUpdateScheduler {
 
         val canScheduleExact = alarmManager.canScheduleExactAlarms()
 
-
-        // Prefer exact alarms when allowed; fall back to "inexact" to avoid crashes when not permitted
-        if (canScheduleExact) {
-            try {
+        // Always attempt to schedule exact alarms first
+        // This ensures the app is registered in system settings even if it fails
+        try {
+            if (canScheduleExact) {
                 // Use setExactAndAllowWhileIdle for reliable updates
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
@@ -52,9 +52,27 @@ object WidgetUpdateScheduler {
                     pendingIntent
                 )
                 AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using exact AlarmManager alarm")
-            } catch (se: SecurityException) {
-                // Exact alarms not allowed at runtime; fall back to inexact alarm to avoid crashing
-                AppLogger.e(TAG, "Exact alarm not permitted, falling back to inexact alarm for widget updates", se)
+            } else {
+                // Permission not granted - attempt exact alarm to trigger system registration
+                // This will fail with SecurityException but registers app in settings on some devices
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                    )
+                    AppLogger.d(
+                        TAG,
+                        "Unexpectedly succeeded in scheduling exact alarm without permission"
+                    )
+                } catch (_: SecurityException) {
+                    AppLogger.d(
+                        TAG,
+                        "Expected SecurityException when attempting exact alarm without permission - app should now be visible in settings"
+                    )
+                }
+
+                // Fall back to inexact alarm for actual functionality
                 alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,
@@ -62,14 +80,19 @@ object WidgetUpdateScheduler {
                 )
                 AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using inexact AlarmManager alarm")
             }
-        } else {
-            // Exact alarms are not allowed; use inexact alarm instead
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent
-            )
-            AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using inexact AlarmManager alarm")
+        } catch (e: Exception) {
+            // Unexpected error - log and fall back to inexact alarm
+            AppLogger.e(TAG, "Unexpected error scheduling alarms", e)
+            try {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent
+                )
+                AppLogger.d(TAG, "Fallback: Scheduled inexact alarm")
+            } catch (fallbackError: Exception) {
+                AppLogger.e(TAG, "Failed to schedule any alarm", fallbackError)
+            }
         }
     }
 

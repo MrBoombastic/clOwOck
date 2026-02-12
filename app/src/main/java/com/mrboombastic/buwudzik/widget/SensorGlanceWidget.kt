@@ -150,10 +150,6 @@ class SensorGlanceWidget : GlanceAppWidget() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "🌡️", style = TextStyle(fontSize = (tempSizeVal * 0.6f).sp)
-                        )
-                        Spacer(modifier = GlanceModifier.height(2.dp))
-                        Text(
                             text = LocalContext.current.getString(R.string.widget_tap_to_open),
                             style = TextStyle(
                                 color = dimText, fontSize = subSizeVal.sp

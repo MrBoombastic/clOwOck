@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">bUwUdzik</string>
     <string name="widget_description">Wyświetla temperaturę, wilgotność i stan baterii z Twojego urządzenia.</string>
-    <string name="scanning_status">Skanowanie wspieranych urządzeń…</string>
+    <string name="scanning_status">Szukam wybranego urządzenia…</string>
     <string name="battery_label">Bateria: %1$d%%</string>
     <string name="rssi_label">Moc sygnału: %1$d dBm (%2$d%%)</string>
     <string name="last_update_label">Ostatnia aktualizacja: %1$s</string>
