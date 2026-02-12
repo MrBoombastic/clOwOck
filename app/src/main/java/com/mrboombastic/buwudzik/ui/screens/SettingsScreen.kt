@@ -518,8 +518,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     coroutineScope.launch {
                         try {
                             val updateChecker = UpdateChecker(appContext)
-                            val result = updateChecker.checkForUpdates()
-                            updateChecker.close()
+                            val result = try {
+                                updateChecker.checkForUpdates()
+                            } finally {
+                                updateChecker.close()
+                            }
 
                             withContext(Dispatchers.Main) {
                                 isCheckingUpdates = false
