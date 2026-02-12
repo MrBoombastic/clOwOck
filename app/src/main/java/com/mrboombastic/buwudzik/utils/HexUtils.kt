@@ -25,11 +25,6 @@ object HexUtils {
 fun ByteArray.toHexString(): String = HexUtils.bytesToHex(this)
 
 /**
- * Extension function to convert Byte to hex string.
- */
-fun Byte.toHexString(): String = "%02x".format(this)
-
-/**
  * Extension function to convert Int to hex string.
  * Formats as 0xXX for values 0-255 (single byte).
  * For larger values, only the least significant byte is displayed.
