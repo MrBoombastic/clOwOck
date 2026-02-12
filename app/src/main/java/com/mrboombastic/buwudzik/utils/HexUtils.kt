@@ -12,13 +12,6 @@ object HexUtils {
     }
 
     /**
-     * Convert bytes to hex string with space separators (for logging).
-     */
-    fun bytesToHexSpaced(bytes: ByteArray): String {
-        return bytes.joinToString(" ") { "%02x".format(it) }
-    }
-
-    /**
      * Convert hex string to bytes.
      */
     fun hexToBytes(hex: String): ByteArray {

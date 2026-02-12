@@ -33,20 +33,4 @@ object FileDownloadUtils {
             connection.disconnect()
         }
     }
-
-    /**
-     * Format estimated time remaining
-     * @param ms Time in milliseconds
-     * @return Formatted string like "1m 23s" or "45s"
-     */
-    fun formatEta(ms: Long): String {
-        val seconds = (ms / 1000).coerceAtLeast(0)
-        val minutes = seconds / 60
-        val secs = seconds % 60
-        return if (minutes > 0) {
-            "${minutes}m ${secs}s"
-        } else {
-            "${secs}s"
-        }
-    }
 }

@@ -39,8 +39,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.mrboombastic.buwudzik.MainActivity
 import com.mrboombastic.buwudzik.R
-import java.text.SimpleDateFormat
-import java.util.Date
+import com.mrboombastic.buwudzik.utils.TimeFormatUtils.formatAbsoluteTime
 import java.util.Locale
 
 class SensorGlanceWidget : GlanceAppWidget() {
@@ -266,16 +265,6 @@ class SensorGlanceWidget : GlanceAppWidget() {
                     )
                 }
             }
-        }
-    }
-
-    companion object {
-        /**
-         * Format a timestamp as absolute time using SimpleDateFormat and user's locale.
-         */
-        fun formatAbsoluteTime(timestampMs: Long, locale: Locale): String {
-            val sdf = SimpleDateFormat("dd.MM HH:mm", locale)
-            return sdf.format(Date(timestampMs))
         }
     }
 }
