@@ -19,6 +19,7 @@ import com.mrboombastic.buwudzik.device.BleConstants.UUID_DATA_NOTIFY
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_DATA_WRITE
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_SENSOR_NOTIFY
 import com.mrboombastic.buwudzik.utils.AppLogger
+import com.mrboombastic.buwudzik.utils.toHexString
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
