@@ -76,6 +76,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
@@ -646,7 +647,12 @@ class MainActivity : AppCompatActivity() {
                         }
                         val filter =
                             android.content.IntentFilter(android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED)
-                        context.registerReceiver(receiver, filter)
+                        ContextCompat.registerReceiver(
+                            context,
+                            receiver,
+                            filter,
+                            ContextCompat.RECEIVER_NOT_EXPORTED
+                        )
                         onDispose {
                             context.unregisterReceiver(receiver)
                         }
@@ -832,14 +838,6 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavController) {
     val context = LocalContext.current
     val sensorData by viewModel.sensorData.collectAsState()
     val isBluetoothEnabled by viewModel.isBluetoothEnabled.collectAsState()
-
-    // Bluetooth Enable Launcher
-    val enableBluetoothLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // We can check result.resultCode, but the receiver will update the state anyway
-        AppLogger.d("HomeScreen", "Bluetooth enable request result: ${result.resultCode}")
-    }
 
     // Permissions handling
     val permissionsToRequest = BluetoothUtils.BLUETOOTH_PERMISSIONS

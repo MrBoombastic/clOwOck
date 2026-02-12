@@ -132,7 +132,7 @@ class BluetoothScanner(private val context: Context) {
         try {
             leScanner.startScan(filters, settings, callback)
         } catch (e: Exception) {
-            AppLogger.e("BluetoothScanner", "Error starting scan: ${e.message}")
+            AppLogger.e("BluetoothScanner", "Error starting scan: ${e.message}", e)
             close()
             return@callbackFlow
         }
