@@ -823,7 +823,7 @@ class QPController(private val context: Context) {
                 AppLogger.w(TAG, "Failed to start RSSI read")
             }
         } catch (e: Exception) {
-            AppLogger.w(TAG, "RSSI read exception: ${e.message}")
+            AppLogger.w(TAG, "RSSI read exception", e)
         }
     }
 
