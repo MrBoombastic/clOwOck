@@ -201,16 +201,6 @@
     <string name="unknown_error">Nieznany błąd</string>
     <string name="error_cannot_open_github">Nie można było otworzyć łącza do GitHub</string>
     <string name="na_placeholder">nd.</string>
-    <string name="exact_alarm_permission_title">Ulepszenie aktualizacji widżetu</string>
-    <string name="exact_alarm_permission_message">Przyznaj dodatkowe uprawnienie tej aplikacji, aby pomóc w aktualizowaniu widżetu. Bez tego aktualizacje mogą być opóźnione.</string>
-    <string name="exact_alarm_permission_allow">Zezwól</string>
-    <string name="exact_alarm_permission_deny">Teraz nie</string>
-    <string name="exact_alarm_permission_one_time">Ten komunikat zostanie pokazany tylko raz.</string>
-    <string name="reset_dialog_prompts_button">Zresetuj komunikaty</string>
-    <string name="reset_dialog_prompts_title">Zresetować komunikaty dialogów?</string>
-    <string name="reset_dialog_prompts_message">Pozwoli to ponownie wyświetlać jednorazowe wskazówki uprawnień.</string>
-    <string name="reset_dialog_prompts_confirm">Resetuj</string>
-    <string name="reset_dialog_prompts_done">Komunikaty zresetowane</string>
     <string name="ringtone_base_url_label">Adres URL repozytorium dzwonków</string>
     <string name="ringtone_base_url_hint">Pełny URL manifestu JSON.</string>
     <string name="ringtone_base_url_json_note">W celu utworzenia niestandardowego manifestu JSON, zobacz instrukcje w repozytorium GitHub.</string>

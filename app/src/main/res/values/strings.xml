@@ -210,16 +210,6 @@
     <string name="na_placeholder">N/A</string>
     <string name="app_author_name" translatable="false">MrBoombastic</string>
     <string name="github_repo_url" translatable="false">https://github.com/MrBoombastic/clOwOck</string>
-    <string name="exact_alarm_permission_title">Improve Widget Updates</string>
-    <string name="exact_alarm_permission_message">Allow exact alarm scheduling to keep your widget updating precisely. Without this permission, widget updates may be delayed.</string>
-    <string name="exact_alarm_permission_allow">Allow</string>
-    <string name="exact_alarm_permission_deny">Not now</string>
-    <string name="exact_alarm_permission_one_time">This message is shown only once.</string>
-    <string name="reset_dialog_prompts_button">Reset dialog prompts</string>
-    <string name="reset_dialog_prompts_title">Reset dialog prompts?</string>
-    <string name="reset_dialog_prompts_message">This will allow one-time permission tips to show again.</string>
-    <string name="reset_dialog_prompts_confirm">Reset</string>
-    <string name="reset_dialog_prompts_done">Dialog prompts reset</string>
     <string name="ringtone_base_url_label">Ringtone repository URL</string>
     <string name="ringtone_base_url_hint">Full JSON manifest URL.</string>
     <string name="ringtone_base_url_json_note">For custom JSON manifests, see the GitHub repo for setup instructions.</string>

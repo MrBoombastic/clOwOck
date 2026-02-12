@@ -35,7 +35,7 @@ object WidgetUpdateScheduler {
 
     /**
      * Schedule periodic widget updates using AlarmManager.
-     * This ensures updates happen reliably at the specified interval.
+     * Uses inexact repeating alarms for battery efficiency and reliability.
      *
      * @param context Application context
      * @param intervalMinutes Update interval in minutes
@@ -55,47 +55,20 @@ object WidgetUpdateScheduler {
         // Calculate interval and first trigger time
         val intervalMillis = intervalMinutes * 60 * 1000L
         val triggerAtMillis = System.currentTimeMillis() + intervalMillis
-
-        val canScheduleExact = alarmManager.canScheduleExactAlarms()
+        val systemInterval = mapToSystemInterval(intervalMinutes)
 
         try {
-            if (canScheduleExact) {
-                // Use setRepeating for precise recurring alarms
-                alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP, triggerAtMillis, intervalMillis, pendingIntent
-                )
-                AppLogger.d(
-                    TAG,
-                    "Scheduled repeating widget update every $intervalMinutes minutes using exact alarms"
-                )
-            } else {
-                // Use setInexactRepeating for battery-efficient recurring alarms
-                val systemInterval = mapToSystemInterval(intervalMinutes)
-                alarmManager.setInexactRepeating(
-                    AlarmManager.RTC_WAKEUP, triggerAtMillis, systemInterval, pendingIntent
-                )
-                AppLogger.d(
-                    TAG,
-                    "Scheduled inexact repeating widget update (requested: $intervalMinutes min, system interval: ${systemInterval / 60000} min)"
-                )
-            }
-        } catch (e: SecurityException) {
-            // Permission not granted - fall back to inexact repeating alarm
-            AppLogger.w(
-                TAG, "Exact alarm permission not granted, falling back to inexact repeating", e
+            // Use setInexactRepeating for battery-efficient recurring alarms
+            // This doesn't require any special permission
+            alarmManager.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP, triggerAtMillis, systemInterval, pendingIntent
             )
-
-            val systemInterval = mapToSystemInterval(intervalMinutes)
-            try {
-                alarmManager.setInexactRepeating(
-                    AlarmManager.RTC_WAKEUP, triggerAtMillis, systemInterval, pendingIntent
-                )
-                AppLogger.d(TAG, "Fallback: Scheduled inexact repeating alarm")
-            } catch (fallbackError: Exception) {
-                AppLogger.e(TAG, "Failed to schedule any repeating alarm", fallbackError)
-            }
+            AppLogger.d(
+                TAG,
+                "Scheduled inexact repeating widget update (requested: $intervalMinutes min, system interval: ${systemInterval / 60000} min)"
+            )
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Unexpected error scheduling alarms", e)
+            AppLogger.e(TAG, "Failed to schedule repeating alarm", e)
         }
     }
 

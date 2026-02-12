@@ -62,13 +62,11 @@ import com.mrboombastic.buwudzik.UpdateCheckResult
 import com.mrboombastic.buwudzik.UpdateChecker
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
-import com.mrboombastic.buwudzik.ui.components.ConfirmationDialog
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
-import com.mrboombastic.buwudzik.widget.ExactAlarmPermissionDialog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -108,7 +106,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showUpdateDialog by remember { mutableStateOf(false) }
-    var showResetDialogFlagsDialog by remember { mutableStateOf(false) }
 
     // Helper function to update widgets with proper error handling
     fun launchWidgetUpdate() {
@@ -528,29 +525,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Reset Dialog Flags Button
-            Button(
-                onClick = { showResetDialogFlagsDialog = true }, modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.reset_dialog_prompts_button))
-            }
-
-            if (showResetDialogFlagsDialog) {
-                val resetSuccessMessage = stringResource(R.string.reset_dialog_prompts_done)
-                ConfirmationDialog(
-                    title = stringResource(R.string.reset_dialog_prompts_title),
-                    message = stringResource(R.string.reset_dialog_prompts_message),
-                    confirmText = stringResource(R.string.reset_dialog_prompts_confirm),
-                    cancelText = stringResource(R.string.cancel),
-                    onConfirm = {
-                        ExactAlarmPermissionDialog.clearPromptFlag(context)
-                        showResetDialogFlagsDialog = false
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(resetSuccessMessage)
-                        }
-                    },
-                    onDismiss = { showResetDialogFlagsDialog = false })
-            }
 
             // Check for Updates
             Spacer(modifier = Modifier.height(8.dp))

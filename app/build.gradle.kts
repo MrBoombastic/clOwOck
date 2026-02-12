@@ -18,8 +18,8 @@ configure<ApplicationExtension> {
         applicationId = "com.mrboombastic.buwudzik"
         minSdk = 34
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.6.1"
+        versionCode = 17
+        versionName = "1.6.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
