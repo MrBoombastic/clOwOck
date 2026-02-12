@@ -53,6 +53,7 @@ import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -93,19 +94,12 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
     }
 
     Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.device_settings_title)) },
-            navigationIcon = {
-                BackNavigationButton(navController, enabled = isUiEnabled)
-            },
-            actions = {
-                if (isSaving || isBusy) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+        StandardTopBar(
+            title = stringResource(R.string.device_settings_title),
+            navController = navController,
+            showProgress = isSaving || isBusy,
+            navigationEnabled = isUiEnabled
+        )
                 }
             })
     }) { padding ->

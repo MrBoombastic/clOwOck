@@ -52,6 +52,7 @@ import com.mrboombastic.buwudzik.data.DeviceShareData
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
 
 private val qrReader = MultiFormatReader().apply {
@@ -92,9 +93,10 @@ fun DeviceImportScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.import_device_title)) },
-                navigationIcon = { BackNavigationButton(navController) })
+            StandardTopBar(
+                title = stringResource(R.string.import_device_title),
+                navController = navController
+            )
         }) { padding ->
         Column(
             modifier = Modifier

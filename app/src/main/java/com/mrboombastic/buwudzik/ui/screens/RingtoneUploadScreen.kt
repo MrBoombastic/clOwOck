@@ -64,6 +64,7 @@ import com.mrboombastic.buwudzik.device.BleConstants
 import com.mrboombastic.buwudzik.device.QPController
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -278,19 +279,12 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     }
 
     Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
-        TopAppBar(
-            title = { Text(stringResource(R.string.ringtone_upload_title)) },
-            navigationIcon = {
-                BackNavigationButton(navController, enabled = !isUploading)
-            },
-            actions = {
-                if (isUploading || isBusy || isConverting || isDownloading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+        StandardTopBar(
+            title = stringResource(R.string.ringtone_upload_title),
+            navController = navController,
+            showProgress = isUploading || isBusy || isConverting || isDownloading,
+            navigationEnabled = !isUploading
+        )
                 }
             })
     }) { padding ->
