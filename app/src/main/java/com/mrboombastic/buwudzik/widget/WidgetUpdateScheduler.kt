@@ -4,12 +4,12 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import com.mrboombastic.buwudzik.utils.AppLogger
 
 /**
  * Manages AlarmManager-based periodic widget updates.
  * Uses setExactAndAllowWhileIdle() for reliable updates even during Doze mode.
+ * MinSdk is 34, so setExactAndAllowWhileIdle() is always available.
  */
 object WidgetUpdateScheduler {
 
@@ -46,20 +46,12 @@ object WidgetUpdateScheduler {
         val triggerAtMillis = System.currentTimeMillis() + intervalMillis
 
         // Use setExactAndAllowWhileIdle for reliable updates
-        // This works even during Doze mode and is appropriate for widgets
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent
-            )
-        }
+        // MinSdk 34 guarantees this API is available (added in API 23)
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis,
+            pendingIntent
+        )
 
         AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using AlarmManager")
     }

@@ -30,6 +30,7 @@ class SensorUpdateWorker(
 
         val repository = SensorRepository(applicationContext)
         val settingsRepository = SettingsRepository(applicationContext)
+        val intervalMinutes = settingsRepository.updateInterval
 
         // Check if this is a forced refresh (user pressed button) - skip cache check on first attempt only
         val forceRefresh = inputData.getBoolean("force_refresh", false)
@@ -42,7 +43,7 @@ class SensorUpdateWorker(
 
         if (shouldSkipScan && (!forceRefresh || isRetry)) {
             AppLogger.d(TAG, "Data is fresh (${dataAge}ms old), skipping scan and updating widget")
-            updateWidget(hasError = false)
+            updateWidget(hasError = false, intervalMinutes = intervalMinutes)
             return Result.success()
         }
 
@@ -54,19 +55,19 @@ class SensorUpdateWorker(
             applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         if (bluetoothManager?.adapter == null) {
             AppLogger.e(TAG, "Bluetooth adapter not available.")
-            updateWidget(hasError = true)
+            updateWidget(hasError = true, intervalMinutes = intervalMinutes)
             return Result.failure()
         }
 
         if (!com.mrboombastic.buwudzik.ui.utils.BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
             AppLogger.w(TAG, "Missing Bluetooth permissions for background scan.")
-            updateWidget(hasError = true)
+            updateWidget(hasError = true, intervalMinutes = intervalMinutes)
             return Result.success()
         }
 
         if (!bluetoothManager.adapter.isEnabled) {
             AppLogger.w(TAG, "Bluetooth is disabled. Showing error indicator.")
-            updateWidget(hasError = true)
+            updateWidget(hasError = true, intervalMinutes = intervalMinutes)
             return Result.success()  // Don't fail, just show error
         }
 
@@ -91,7 +92,7 @@ class SensorUpdateWorker(
                 "Got data: temp=${result.temperature}°C, humidity=${result.humidity}%, battery=${result.battery}%"
             )
             repository.saveSensorData(result)
-            updateWidget(hasError = false)  // Success - clear any error indicator
+            updateWidget(hasError = false, intervalMinutes = intervalMinutes)  // Success - clear any error indicator
             Result.success()
         } else {
             AppLogger.w(TAG, "No sensor data received within timeout (device may be out of range).")
@@ -100,7 +101,7 @@ class SensorUpdateWorker(
             val freshLastUpdate = repository.getLastUpdateTimestamp()
             if (freshLastUpdate > lastUpdate) {
                 AppLogger.d(TAG, "Fresh data arrived during scan, updating widget")
-                updateWidget(hasError = false)
+                updateWidget(hasError = false, intervalMinutes = intervalMinutes)
                 return Result.success()
             }
 
@@ -113,13 +114,13 @@ class SensorUpdateWorker(
                 Result.retry()
             } else {
                 AppLogger.w(TAG, "Max retry attempts reached. Device appears unreachable.")
-                updateWidget(hasError = true)  // Show error indicator after all retries failed
+                updateWidget(hasError = true, intervalMinutes = intervalMinutes)  // Show error indicator after all retries failed
                 Result.success()  // Return success to keep periodic work scheduled
             }
         }
     }
 
-    private suspend fun updateWidget(hasError: Boolean) {
+    private suspend fun updateWidget(hasError: Boolean, intervalMinutes: Long) {
         try {
             // Store error and loading state in repository for Glance widget
             val repository = SensorRepository(applicationContext)
@@ -132,8 +133,6 @@ class SensorUpdateWorker(
 
             // Reschedule the next alarm-based update
             // This ensures continuous updates at the configured interval
-            val settingsRepository = SettingsRepository(applicationContext)
-            val intervalMinutes = settingsRepository.updateInterval
             WidgetUpdateScheduler.scheduleUpdates(applicationContext, intervalMinutes)
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to update widget", e)

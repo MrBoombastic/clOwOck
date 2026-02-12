@@ -16,6 +16,8 @@ class SensorGlanceReceiver : GlanceAppWidgetReceiver() {
     /**
      * Called when the first widget is added.
      * Schedule periodic updates using AlarmManager to ensure reliable widget updates.
+     * Note: This is only called once when the first widget is added, so creating a
+     * SettingsRepository instance here is acceptable.
      */
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
@@ -31,6 +33,7 @@ class SensorGlanceReceiver : GlanceAppWidgetReceiver() {
     /**
      * Called when the last widget is removed.
      * Cancel periodic updates to save battery since no widgets need updating.
+     * Note: This is only called once when the last widget is removed.
      */
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
