@@ -29,12 +29,13 @@ fun MenuTile(
     title: String,
     icon: ImageVector,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     ElevatedCard(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(72.dp),
         colors = CardDefaults.elevatedCardColors(
