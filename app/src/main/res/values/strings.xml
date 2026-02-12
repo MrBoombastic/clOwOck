@@ -29,7 +29,7 @@
     <string name="hours_8">8 hours</string>
     <string name="hours_12">12 hours</string>
     <string name="hours_24">24 hours</string>
-    <string name="widget_select_app_label">Select app to launch after tapping widget</string>
+    <string name="widget_select_app_label">App to launch after tapping widget</string>
     <string name="default_app_label">default (this app)</string>
     <string name="theme_label">Theme</string>
     <string name="theme_system">system</string>
@@ -156,6 +156,7 @@
     <string name="drag_to_adjust_hint">Drag to move selection.</string>
     <string name="custom_ringtone_name">Custom</string>
     <string name="downloading_ringtone">Downloading ringtone…</string>
+    <string name="downloading_list">Downloading list…</string>
     <string name="channel_mode_label">Audio channel</string>
     <string name="channel_left">left</string>
     <string name="channel_mix">both</string>
@@ -217,4 +218,9 @@
     <string name="reset_dialog_prompts_message">This will allow one-time permission tips to show again.</string>
     <string name="reset_dialog_prompts_confirm">Reset</string>
     <string name="reset_dialog_prompts_done">Dialog prompts reset</string>
+    <string name="ringtone_base_url_label">Ringtone repository URL</string>
+    <string name="ringtone_base_url_hint">Full JSON manifest URL.</string>
+    <string name="ringtone_base_url_json_note">For custom JSON manifests, see the GitHub repo for setup instructions.</string>
+    <string name="no_ringtones_available">No ringtones available</string>
+    <string name="check_repository_url">Check the repository URL in settings or try again.</string>
 </resources>

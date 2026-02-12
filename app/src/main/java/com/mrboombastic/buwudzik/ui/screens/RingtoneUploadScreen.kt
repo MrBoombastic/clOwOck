@@ -32,6 +32,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -48,11 +50,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.audio.AudioConverter
 import com.mrboombastic.buwudzik.audio.AudioTrimmerDialog
 import com.mrboombastic.buwudzik.audio.ChannelMode
+import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.BleConstants
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
 import com.mrboombastic.buwudzik.ui.components.ProgressCard
@@ -95,6 +101,28 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     val isBusy by viewModel.qpController.isBusy.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val repository = remember { SettingsRepository(context) }
+
+    // Make ringtone base URL reactive to repository changes
+    var ringtoneBaseUrl by remember { mutableStateOf(repository.ringtoneBaseUrl) }
+
+    // Watch for lifecycle changes to refresh URL when returning from settings
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Refresh URL when returning to this screen
+                val currentUrl = repository.ringtoneBaseUrl
+                if (currentUrl != ringtoneBaseUrl) {
+                    ringtoneBaseUrl = currentUrl
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var isUploading by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableFloatStateOf(0f) }
@@ -107,6 +135,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     var trimDurationMs by remember { mutableLongStateOf(10000L) }
     var isConverting by remember { mutableStateOf(false) }
     var isDownloading by remember { mutableStateOf(false) }
+    var isLoadingManifest by remember { mutableStateOf(false) }
 
     val audioConverter = remember { AudioConverter(context) }
 
@@ -115,19 +144,79 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     val currentRingtoneName = settings?.getRingtoneName() ?: customRingtoneName
     val currentSignature = settings?.ringtoneSignature
 
-    // Available online ringtones from QP server
-    val onlineRingtones = remember {
-        BleConstants.RINGTONE_SIGNATURES.map { (name, sig) ->
-            OnlineRingtone(
-                name = name,
-                url = "https://qingfseu.oss-eu-central-1.aliyuncs.com/rings/${
-                    sig.joinToString("") {
-                        "%02x".format(
-                            it
+    // Pre-capture string resources for use in coroutines
+    val uploadCompleteText = stringResource(R.string.upload_complete)
+    val uploadFailedText = stringResource(R.string.upload_failed)
+    val downloadingText = stringResource(R.string.downloading_ringtone)
+    val downloadingListText = stringResource(R.string.downloading_list)
+    val noAudioText = stringResource(R.string.error_no_audio_selected)
+    val downloadFailedText = stringResource(R.string.error_download_failed)
+
+    fun showError(message: String) {
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
+
+    // Available online ringtones - now dynamically loaded from manifest
+    var onlineRingtones by remember { mutableStateOf<List<OnlineRingtone>>(emptyList()) }
+
+    // Load ringtones from manifest
+    LaunchedEffect(ringtoneBaseUrl) {
+        isLoadingManifest = true
+        try {
+            // Fetch and parse JSON manifest
+            val manifestData = withContext(Dispatchers.IO) {
+                FileDownloadUtils.downloadFile(ringtoneBaseUrl)
+            }
+
+            val manifestString = String(manifestData).trim()
+            val json = org.json.JSONObject(manifestString)
+            val discoveredRingtones = mutableListOf<OnlineRingtone>()
+
+            json.keys().forEach { hexKey ->
+                try {
+                    val ringtoneObj = json.getJSONObject(hexKey)
+                    val name = ringtoneObj.optString("name", "Ringtone")
+                    val wavUrl = ringtoneObj.optString("wav", "")
+
+                    if (wavUrl.isNotEmpty()) {
+                        // Convert hex string to byte array
+                        val signature =
+                            hexKey.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                        discoveredRingtones.add(
+                            OnlineRingtone(
+                                name = name,
+                                url = wavUrl,
+                                signature = signature
+                            )
                         )
                     }
-                }.wav",
-                signature = sig)
+                } catch (e: Exception) {
+                    AppLogger.w(
+                        "RingtoneUpload",
+                        "Failed to parse ringtone entry for $hexKey: ${e.message}"
+                    )
+                }
+            }
+            onlineRingtones = discoveredRingtones
+            AppLogger.d(
+                "RingtoneUpload",
+                "Loaded ${discoveredRingtones.size} ringtones from JSON manifest"
+            )
+        } catch (e: Exception) {
+            AppLogger.e(
+                "RingtoneUpload",
+                "Failed to load ringtones from $ringtoneBaseUrl: ${e.message}"
+            )
+            // Keep list empty on failure
+            onlineRingtones = emptyList()
+            showError("Failed to load ringtone manifest: ${e.message}")
+        } finally {
+            isLoadingManifest = false
         }
     }
 
@@ -142,21 +231,6 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
         }
     }
 
-    // Pre-capture string resources for use in coroutines
-    val uploadCompleteText = stringResource(R.string.upload_complete)
-    val uploadFailedText = stringResource(R.string.upload_failed)
-    val downloadingText = stringResource(R.string.downloading_ringtone)
-    val noAudioText = stringResource(R.string.error_no_audio_selected)
-    val downloadFailedText = stringResource(R.string.error_download_failed)
-
-    fun showError(message: String) {
-        coroutineScope.launch {
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Long
-            )
-        }
-    }
 
     fun convertAndUpload(targetSignature: ByteArray, channelMode: ChannelMode) {
         coroutineScope.launch {
@@ -275,7 +349,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
             StandardTopBar(
                 title = stringResource(R.string.ringtone_upload_title),
                 navController = navController,
-                showProgress = isUploading || isBusy || isConverting || isDownloading,
+                showProgress = isUploading || isBusy || isConverting || isDownloading || isLoadingManifest,
                 navigationEnabled = !isUploading
             )
         }
@@ -317,8 +391,9 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
             }
 
             // Upload progress
-            if (isUploading || isDownloading) {
+            if (isUploading || isDownloading || isLoadingManifest) {
                 val title = when {
+                    isLoadingManifest -> downloadingListText
                     isDownloading -> downloadingText
                     isConverting -> stringResource(R.string.converting_audio)
                     else -> stringResource(
@@ -326,7 +401,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
                         (uploadProgress * 100).toInt()
                     )
                 }
-                val statusText = if (!isDownloading && !isConverting) {
+                val statusText = if (!isDownloading && !isConverting && !isLoadingManifest) {
                     estimatedTimeRemaining?.let { eta ->
                         stringResource(R.string.eta_label, TimeFormatUtils.formatTime(eta))
                     }
@@ -335,7 +410,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
                 }
                 ProgressCard(
                     title = title,
-                    progress = if (isConverting || isDownloading) 0f else uploadProgress,
+                    progress = if (isConverting || isDownloading || isLoadingManifest) 0f else uploadProgress,
                     statusText = statusText,
                     showPercent = false
                 )
@@ -381,6 +456,31 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
                 color = MaterialTheme.colorScheme.primary
             )
 
+            // Ringtone items or empty state
+            if (onlineRingtones.isEmpty() && !isLoadingManifest) {
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_ringtones_available),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = stringResource(R.string.check_repository_url),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+                return@Scaffold
+            }
             // Ringtone items
             onlineRingtones.forEach { ringtone ->
                 val isCurrentRingtone = currentSignature.safeContentEquals(ringtone.signature)
@@ -416,7 +516,8 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
 
                                                     val realUrl = if (json.has(sigHex)) {
                                                         // Assuming schema {"hex": {"wav": "url", ...}}
-                                                        json.getJSONObject(sigHex).getString("wav")
+                                                        json.getJSONObject(sigHex)
+                                                            .getString("wav")
                                                     } else {
                                                         null
                                                     }
@@ -447,7 +548,8 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
                                             }
 
                                             // Save as WAV directly (remote file is .wav)
-                                            val file = File(context.cacheDir, "temp_ringtone.wav")
+                                            val file =
+                                                File(context.cacheDir, "temp_ringtone.wav")
                                             FileOutputStream(file).use { it.write(wavData) }
                                             selectedCustomUri = Uri.fromFile(file)
                                             showAudioTrimmer = true

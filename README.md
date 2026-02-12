@@ -262,6 +262,61 @@ you name it. The device may reject
 uploads if the target signature matches the currently active ringtone, but audio itself is different
 from the one you are uploading.
 
+#### Custom Ringtone JSON Manifest
+
+If you want to host your own ringtone repository, you can create a JSON manifest file. Just point to
+a JSON file (e.g., `https://example.com/rings/index.json`), and the app will parse the manifest for
+ringtone URLs
+
+**Manifest Format:**
+
+The JSON file should map hex signatures to objects containing at least a `"wav"` URL. The official
+app uses an additional `"pcm"` field, but this app takes the Wave and converts it on its own.
+
+```json
+{
+  "1d019fd6": {
+    "name": "Exotic Guitar",
+    "wav": "https://example.com/rings/1d019fd6.wav"
+  },
+  "6e70b659": {
+    "name": "Lively Piano",
+    "wav": "https://example.com/rings/6e70b659.wav"
+  },
+  "8f004886": {
+    "name": "Story Piano",
+    "wav": "https://example.com/rings/8f004886.wav"
+  },
+  "26522519": {
+    "name": "Forest Piano",
+    "wav": "https://example.com/rings/26522519.wav"
+  },
+  "fdc366a5": {
+    "name": "Beep",
+    "wav": "https://example.com/rings/fdc366a5.wav"
+  },
+  "ea2d4c02": {
+    "name": "Cuckoo",
+    "wav": "https://example.com/rings/ea2d4c02.wav"
+  },
+  "0961bb77": {
+    "name": "Digital Ringtone",
+    "wav": "https://example.com/rings/0961bb77.wav"
+  },
+  "ba2c2c8c": {
+    "name": "Digital Ringtone 2",
+    "wav": "https://example.com/rings/ba2c2c8c.wav"
+  },
+  "791bacb3": {
+    "name": "Telephone Ringtone",
+    "wav": "https://example.com/rings/791bacb3.wav"
+  }
+}
+```
+
+**Key:** Hex signature (without `0x` prefix).  
+**Value:** Object with `name` (display name) and `wav` (full URL to WAV file).
+
 #### Upload Protocol
 
 **Audio Format:** 8-bit Unsigned PCM, 8000 Hz, Mono

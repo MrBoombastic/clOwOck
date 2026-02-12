@@ -95,6 +95,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     var updateInterval by remember { mutableLongStateOf(repository.updateInterval) }
     var selectedAppPackage by remember { mutableStateOf(repository.selectedAppPackage) }
     var theme by remember { mutableStateOf(repository.theme) }
+    var ringtoneBaseUrl by remember { mutableStateOf(repository.ringtoneBaseUrl) }
 
     var expandedWidgetAction by remember { mutableStateOf(false) }
 
@@ -359,6 +360,24 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     MainActivity.rescheduleUpdates(context, minutes)
                 })
 
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = ringtoneBaseUrl,
+                onValueChange = { newValue ->
+                    ringtoneBaseUrl = newValue
+                    repository.ringtoneBaseUrl = newValue
+                },
+                label = { Text(stringResource(R.string.ringtone_base_url_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Text(
+                text = stringResource(R.string.ringtone_base_url_hint) + " " + stringResource(R.string.ringtone_base_url_json_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+            )
 
             // Widget Action
             Spacer(modifier = Modifier.height(12.dp))
@@ -622,4 +641,3 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
         }
     }
 }
-

@@ -29,7 +29,7 @@
     <string name="hours_8">8 godzin</string>
     <string name="hours_12">12 godzin</string>
     <string name="hours_24">24 godziny</string>
-    <string name="widget_select_app_label">Wybierz aplikację do uruchomienia po kliknięciu widżetu</string>
+    <string name="widget_select_app_label">Aplikacja do uruchomienia po kliknięciu widżetu</string>
     <string name="default_app_label">domyślna (ta aplikacja)</string>
     <string name="theme_label">Motyw</string>
     <string name="theme_system">systemowy</string>
@@ -151,6 +151,7 @@
     <string name="drag_to_adjust_hint">Przeciągnij, by przesunąć zaznaczenie.</string>
     <string name="custom_ringtone_name">Własny</string>
     <string name="downloading_ringtone">Pobieranie dzwonka…</string>
+    <string name="downloading_list">Pobieranie listy…</string>
     <string name="channel_mode_label">Kanał audio</string>
     <string name="error_download_failed">Pobieranie się nie powiodło</string>
     <string name="setup_new_device">Konfiguracja nowego urządzenia</string>
@@ -210,4 +211,9 @@
     <string name="reset_dialog_prompts_message">Pozwoli to ponownie wyswietlać jednorazowe wskazówki uprawnień.</string>
     <string name="reset_dialog_prompts_confirm">Resetuj</string>
     <string name="reset_dialog_prompts_done">Komunikaty zresetowane</string>
+    <string name="ringtone_base_url_label">Adres URL repozytorium dzwonków</string>
+    <string name="ringtone_base_url_hint">Pełny URL manifestu JSON.</string>
+    <string name="ringtone_base_url_json_note">W celu utworzenia niestandardowego manifestu JSON, zobacz instrukcje w repozytorium GitHub.</string>
+    <string name="no_ringtones_available">Brak dostępnych dzwonków</string>
+    <string name="check_repository_url">Sprawdź adres URL repozytorium w ustawieniach lub spróbuj ponownie później.</string>
 </resources>

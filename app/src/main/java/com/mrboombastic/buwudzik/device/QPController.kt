@@ -1384,7 +1384,6 @@ class QPController(private val context: Context) {
 
     /**
      * Upload custom ringtone audio to the device.
-     * Based on original BluetoothController.kt from QingpingUploader.
      *
      * @param pcmData PCM audio data (8-bit unsigned, 8kHz, mono)
      * @param targetSignature The ringtone slot signature to overwrite (must be different from current)

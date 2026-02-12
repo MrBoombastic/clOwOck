@@ -3,7 +3,7 @@ package com.mrboombastic.buwudzik.device
 import java.util.UUID
 
 /**
- * BLE constants and ringtone signatures for the Qingping CGD1 alarm clock.
+ * BLE constants and ringtone signatures for the CGD1 alarm clock.
  */
 object BleConstants {
     // UUIDs for QP CGD1
