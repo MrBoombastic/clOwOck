@@ -51,6 +51,7 @@ import com.mrboombastic.buwudzik.device.TimeFormat
 import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.LabeledSlider
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
 import com.mrboombastic.buwudzik.ui.components.SimpleTimePickerDialog
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
@@ -312,9 +313,11 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                 Spacer(Modifier.height(8.dp))
 
                 // Screen Brightness
-                Text(stringResource(R.string.day_brightness_label, screenBrightness.toInt()))
-                Slider(
-                    value = screenBrightness, enabled = isUiEnabled, onValueChange = {
+                LabeledSlider(
+                    label = stringResource(R.string.day_brightness_label, screenBrightness.toInt()),
+                    value = screenBrightness,
+                    enabled = isUiEnabled,
+                    onValueChange = {
                         screenBrightness = it
                         // Immediate update with debouncing
                         immediateUpdateJob?.cancel()
@@ -324,16 +327,16 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                                 viewModel.qpController.setDaytimeBrightnessImmediate(it.toInt())
                             }
                         }
-                    }, onValueChangeFinished = {
-                        saveSettings()
-                    }, valueRange = 0f..100f, steps = 9 // Firmware uses nibble / 10
+                    },
+                    onValueChangeFinished = { saveSettings() },
+                    valueRange = 0f..100f,
+                    steps = 9 // Firmware uses nibble / 10
                 )
                 Spacer(Modifier.height(8.dp))
 
                 // Backlight Duration
-                Text(stringResource(R.string.backlight_duration_label, backlightDuration.toInt()))
-
-                Slider(
+                LabeledSlider(
+                    label = stringResource(R.string.backlight_duration_label, backlightDuration.toInt()),
                     value = backlightDuration,
                     enabled = isUiEnabled,
                     onValueChange = { backlightDuration = it },
@@ -363,13 +366,13 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
 
                 if (nightModeEnabled) {
                     // Night Mode Brightness
-                    Text(
-                        stringResource(
+                    LabeledSlider(
+                        label = stringResource(
                             R.string.night_brightness_label, nightModeBrightness.toInt()
-                        )
-                    )
-                    Slider(
-                        value = nightModeBrightness, enabled = isUiEnabled, onValueChange = {
+                        ),
+                        value = nightModeBrightness,
+                        enabled = isUiEnabled,
+                        onValueChange = {
                             nightModeBrightness = it
                             // Immediate update with debouncing
                             immediateUpdateJob?.cancel()
@@ -379,9 +382,10 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                                     viewModel.qpController.setNightBrightnessImmediate(it.toInt())
                                 }
                             }
-                        }, onValueChangeFinished = {
-                            saveSettings()
-                        }, valueRange = 0f..100f, steps = 9 // Firmware uses nibble / 10
+                        },
+                        onValueChangeFinished = { saveSettings() },
+                        valueRange = 0f..100f,
+                        steps = 9 // Firmware uses nibble / 10
                     )
                     Spacer(Modifier.height(8.dp))
 
