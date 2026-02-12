@@ -8,13 +8,30 @@ import com.mrboombastic.buwudzik.utils.AppLogger
 
 /**
  * Manages AlarmManager-based periodic widget updates.
- * Uses setExactAndAllowWhileIdle() for reliable updates even during Doze mode.
- * MinSdk is 34, so setExactAndAllowWhileIdle() is always available.
+ * Uses setInexactRepeating() for recurring alarms with minimal battery impact.
  */
 object WidgetUpdateScheduler {
 
     private const val TAG = "WidgetUpdateScheduler"
     private const val REQUEST_CODE = 1001
+
+    /**
+     * Maps a custom interval in minutes to the closest system-defined interval.
+     * Uses standard AlarmManager intervals for battery efficiency.
+     */
+    private fun mapToSystemInterval(intervalMinutes: Long): Long {
+        return when {
+            intervalMinutes <= 15 -> AlarmManager.INTERVAL_FIFTEEN_MINUTES
+            intervalMinutes <= 30 -> AlarmManager.INTERVAL_HALF_HOUR
+            intervalMinutes <= 45 -> AlarmManager.INTERVAL_FIFTEEN_MINUTES * 3
+            intervalMinutes <= 60 -> AlarmManager.INTERVAL_HOUR
+            intervalMinutes <= 120 -> AlarmManager.INTERVAL_HOUR * 2
+            intervalMinutes <= 240 -> AlarmManager.INTERVAL_HOUR * 4
+            intervalMinutes <= 480 -> AlarmManager.INTERVAL_HOUR * 8
+            intervalMinutes <= 720 -> AlarmManager.INTERVAL_HALF_DAY
+            else -> AlarmManager.INTERVAL_DAY
+        }
+    }
 
     /**
      * Schedule periodic widget updates using AlarmManager.
@@ -35,64 +52,50 @@ object WidgetUpdateScheduler {
 
         val pendingIntent = createUpdatePendingIntent(context)
 
-        // Calculate next trigger time
+        // Calculate interval and first trigger time
         val intervalMillis = intervalMinutes * 60 * 1000L
         val triggerAtMillis = System.currentTimeMillis() + intervalMillis
 
         val canScheduleExact = alarmManager.canScheduleExactAlarms()
 
-        // Always attempt to schedule exact alarms first
-        // This ensures the app is registered in system settings even if it fails
         try {
             if (canScheduleExact) {
-                // Use setExactAndAllowWhileIdle for reliable updates
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
+                // Use setRepeating for precise recurring alarms
+                alarmManager.setRepeating(
+                    AlarmManager.RTC_WAKEUP, triggerAtMillis, intervalMillis, pendingIntent
                 )
-                AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using exact AlarmManager alarm")
+                AppLogger.d(
+                    TAG,
+                    "Scheduled repeating widget update every $intervalMinutes minutes using exact alarms"
+                )
             } else {
-                // Permission not granted - attempt exact alarm to trigger system registration
-                // This will fail with SecurityException but registers app in settings on some devices
-                try {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        triggerAtMillis,
-                        pendingIntent
-                    )
-                    AppLogger.d(
-                        TAG,
-                        "Unexpectedly succeeded in scheduling exact alarm without permission"
-                    )
-                } catch (_: SecurityException) {
-                    AppLogger.d(
-                        TAG,
-                        "Expected SecurityException when attempting exact alarm without permission - app should now be visible in settings"
-                    )
-                }
-
-                // Fall back to inexact alarm for actual functionality
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
+                // Use setInexactRepeating for battery-efficient recurring alarms
+                val systemInterval = mapToSystemInterval(intervalMinutes)
+                alarmManager.setInexactRepeating(
+                    AlarmManager.RTC_WAKEUP, triggerAtMillis, systemInterval, pendingIntent
                 )
-                AppLogger.d(TAG, "Scheduled next widget update in $intervalMinutes minutes using inexact AlarmManager alarm")
+                AppLogger.d(
+                    TAG,
+                    "Scheduled inexact repeating widget update (requested: $intervalMinutes min, system interval: ${systemInterval / 60000} min)"
+                )
+            }
+        } catch (e: SecurityException) {
+            // Permission not granted - fall back to inexact repeating alarm
+            AppLogger.w(
+                TAG, "Exact alarm permission not granted, falling back to inexact repeating", e
+            )
+
+            val systemInterval = mapToSystemInterval(intervalMinutes)
+            try {
+                alarmManager.setInexactRepeating(
+                    AlarmManager.RTC_WAKEUP, triggerAtMillis, systemInterval, pendingIntent
+                )
+                AppLogger.d(TAG, "Fallback: Scheduled inexact repeating alarm")
+            } catch (fallbackError: Exception) {
+                AppLogger.e(TAG, "Failed to schedule any repeating alarm", fallbackError)
             }
         } catch (e: Exception) {
-            // Unexpected error - log and fall back to inexact alarm
             AppLogger.e(TAG, "Unexpected error scheduling alarms", e)
-            try {
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
-                )
-                AppLogger.d(TAG, "Fallback: Scheduled inexact alarm")
-            } catch (fallbackError: Exception) {
-                AppLogger.e(TAG, "Failed to schedule any alarm", fallbackError)
-            }
         }
     }
 

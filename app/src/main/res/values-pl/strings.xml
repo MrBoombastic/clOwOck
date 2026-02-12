@@ -208,7 +208,7 @@
     <string name="exact_alarm_permission_one_time">Ten komunikat zostanie pokazany tylko raz.</string>
     <string name="reset_dialog_prompts_button">Zresetuj komunikaty</string>
     <string name="reset_dialog_prompts_title">Zresetować komunikaty dialogów?</string>
-    <string name="reset_dialog_prompts_message">Pozwoli to ponownie wyswietlać jednorazowe wskazówki uprawnień.</string>
+    <string name="reset_dialog_prompts_message">Pozwoli to ponownie wyświetlać jednorazowe wskazówki uprawnień.</string>
     <string name="reset_dialog_prompts_confirm">Resetuj</string>
     <string name="reset_dialog_prompts_done">Komunikaty zresetowane</string>
     <string name="ringtone_base_url_label">Adres URL repozytorium dzwonków</string>
