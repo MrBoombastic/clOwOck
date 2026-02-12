@@ -15,6 +15,7 @@ import android.icu.util.TimeZone
 import androidx.annotation.RequiresPermission
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.utils.AppLogger
+import com.mrboombastic.buwudzik.utils.toHexString
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -1509,9 +1510,7 @@ class QPController(private val context: Context) {
         AppLogger.d(TAG, "QPController closed and all jobs canceled")
     }
 
-    private fun ByteArray.toHexString(): String {
-        return joinToString(" ") { "%02x".format(it) }
-    }
+
 
     suspend fun previewRingtone(settings: DeviceSettings? = null): Boolean = gattMutex.withLock {
         val command = if (settings != null) {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.mrboombastic.buwudzik.utils.AppLogger
+import com.mrboombastic.buwudzik.utils.HexUtils
 import java.security.SecureRandom
 
 /**
@@ -93,14 +94,14 @@ class TokenStorage(context: Context) {
      * Convert bytes to hex string.
      */
     fun bytesToHex(bytes: ByteArray): String {
-        return bytes.joinToString("") { "%02x".format(it) }
+        return HexUtils.bytesToHex(bytes)
     }
 
     /**
      * Convert hex string to bytes.
      */
     fun hexToBytes(hex: String): ByteArray {
-        return hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        return HexUtils.hexToBytes(hex)
     }
 }
 
