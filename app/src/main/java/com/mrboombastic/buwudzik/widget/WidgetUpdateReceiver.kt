@@ -17,6 +17,8 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "WidgetUpdateReceiver"
         const val ACTION_UPDATE_WIDGET = "com.mrboombastic.buwudzik.ACTION_UPDATE_WIDGET"
+        // Use a unique work name to avoid conflicts with manual refresh (force_refresh=true)
+        private const val PERIODIC_UPDATE_WORK_NAME = "SensorWidgetPeriodicUpdate"
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
@@ -24,12 +26,13 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
             AppLogger.d(TAG, "AlarmManager triggered widget update")
 
             // Enqueue a one-time work request to fetch sensor data
+            // Use KEEP policy to avoid canceling in-flight manual refreshes
             val workRequest = OneTimeWorkRequestBuilder<SensorUpdateWorker>()
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
-                "SensorWidgetRefresh",
-                ExistingWorkPolicy.REPLACE,
+                PERIODIC_UPDATE_WORK_NAME,
+                ExistingWorkPolicy.KEEP,
                 workRequest
             )
         }
