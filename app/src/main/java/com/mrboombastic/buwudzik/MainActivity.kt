@@ -324,7 +324,7 @@ class MainViewModel(
                             try {
                                 qpController.readRssi()
                             } catch (e: Exception) {
-                                AppLogger.w(TAG, "RSSI poll failed: ${e.message}")
+                                AppLogger.w(TAG, "RSSI poll failed: ${e.message}", e)
                             }
                             delay(5000) // Poll every 5 seconds
                         }
