@@ -29,7 +29,7 @@
     <string name="hours_12">12 godzin</string>
     <string name="hours_24">24 godziny</string>
     <string name="show_widget_error_label">Pokaż wskaźnik błędu widżetu</string>
-    <string name="show_widget_error_hint">Wyświetlaj ostrzeżenie, gdy aktualizacja w tle się nie powiedzie</string>
+    <string name="show_widget_error_hint">Wyświetlaj ostrzeżenie, gdy aktualizacja w tle się nie powiedzie.</string>
     <string name="widget_select_app_label">Aplikacja do uruchomienia po kliknięciu widżetu</string>
     <string name="default_app_label">domyślna (ta aplikacja)</string>
     <string name="theme_label">Motyw</string>
