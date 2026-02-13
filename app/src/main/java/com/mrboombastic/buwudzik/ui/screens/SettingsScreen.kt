@@ -166,26 +166,35 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
     LaunchedEffect(expandedWidgetAction) {
         if (expandedWidgetAction && installedApps.isEmpty()) {
-            withContext(Dispatchers.IO) {
+            // Launch in background to avoid blocking UI
+            launch(Dispatchers.IO) {
                 val pm = context.packageManager
                 val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
                 val apps = pm.queryIntentActivities(intent, 0)
                 AppLogger.d("SettingsScreen", "Found ${apps.size} launcher apps")
-                installedApps = apps.sortedBy { it.loadLabel(pm).toString().lowercase() }
+                val sortedApps = apps.sortedBy { it.loadLabel(pm).toString().lowercase() }
+                withContext(Dispatchers.Main) {
+                    installedApps = sortedApps
+                }
             }
         }
     }
 
     LaunchedEffect(selectedAppPackage) {
         if (selectedAppPackage != null) {
-
-            withContext(Dispatchers.IO) {
+            // Launch in background to avoid blocking UI
+            launch(Dispatchers.IO) {
                 try {
                     val pm = context.packageManager
                     val appInfo = pm.getApplicationInfo(selectedAppPackage!!, 0)
-                    selectedAppLabel = pm.getApplicationLabel(appInfo).toString()
+                    val label = pm.getApplicationLabel(appInfo).toString()
+                    withContext(Dispatchers.Main) {
+                        selectedAppLabel = label
+                    }
                 } catch (_: Exception) {
-                    selectedAppLabel = selectedAppPackage
+                    withContext(Dispatchers.Main) {
+                        selectedAppLabel = selectedAppPackage
+                    }
                 }
             }
         } else {

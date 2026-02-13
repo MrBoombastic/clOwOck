@@ -614,19 +614,26 @@ fun Dashboard(
                 // Small buttons for Share and Unpair
                 if (isPaired) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    SmallButton(
-                        title = stringResource(R.string.share_device_button),
-                        icon = Icons.Default.Share,
-                        onClick = { navController.navigate("device-sharing") }
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SmallButton(
+                            title = stringResource(R.string.share_device_button),
+                            icon = Icons.Default.Share,
+                            onClick = { navController.navigate("device-sharing") },
+                            modifier = Modifier.weight(1f)
+                        )
 
-                    @Suppress("AssignedValueIsNeverRead")
-                    SmallButton(
-                        title = stringResource(R.string.unpair_device),
-                        icon = Icons.Default.Warning,
-                        onClick = { showUnpairDialog = true },
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                        @Suppress("AssignedValueIsNeverRead")
+                        SmallButton(
+                            title = stringResource(R.string.unpair_device),
+                            icon = Icons.Default.Warning,
+                            onClick = { showUnpairDialog = true },
+                            contentColor = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -660,7 +667,8 @@ fun Dashboard(
                         title = stringResource(R.string.unpair_device),
                         icon = Icons.Default.Warning,
                         onClick = { showUnpairDialog = true },
-                        contentColor = MaterialTheme.colorScheme.error
+                        contentColor = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth(0.9f)
                     )
                 }
             }
