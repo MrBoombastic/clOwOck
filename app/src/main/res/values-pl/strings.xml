@@ -3,14 +3,13 @@
     <string name="widget_description">Wyświetla temperaturę, wilgotność i stan baterii z Twojego urządzenia.</string>
     <string name="scanning_status">Szukam wybranego urządzenia…</string>
     <string name="battery_label">Bateria: %1$d%%</string>
-    <string name="rssi_label">Moc sygnału: %1$d dBm (%2$d%%)</string>
     <string name="last_update_label">Ostatnia aktualizacja: %1$s</string>
-    <string name="permissions_required">Uprawnienia wymagane do skanowania</string>
+    <string name="permissions_required">Uprawnienia wymagane do skanowania.</string>
     <string name="settings_desc">Ustawienia</string>
     <string name="settings_title">Ustawienia</string>
     <string name="back_desc">Wstecz</string>
     <string name="target_mac_label">Docelowy adres MAC</string>
-    <string name="scan_devices_button">Skanuj urządzenie</string>
+    <string name="scan_devices_button">Skanuj urządzenia</string>
     <string name="scan_mode_label">Tryb skanowania</string>
     <string name="mode_low_power">oszczędzanie energii</string>
     <string name="mode_balanced">zrównoważony</string>
@@ -29,6 +28,8 @@
     <string name="hours_8">8 godzin</string>
     <string name="hours_12">12 godzin</string>
     <string name="hours_24">24 godziny</string>
+    <string name="show_widget_error_label">Pokaż wskaźnik błędu widżetu</string>
+    <string name="show_widget_error_hint">Wyświetlaj ostrzeżenie, gdy aktualizacja w tle się nie powiedzie</string>
     <string name="widget_select_app_label">Aplikacja do uruchomienia po kliknięciu widżetu</string>
     <string name="default_app_label">domyślna (ta aplikacja)</string>
     <string name="theme_label">Motyw</string>
@@ -103,7 +104,7 @@
     <string name="firmware_version_fmt">Wersja oprogramowania: %1$s</string>
     <string name="device_timeout_message">Upłynął limit czasu urządzenia. Podejdź bliżej i spróbuj ponownie.</string>
     <string name="save_failed_message">Nie udało się zapisać: %1$s</string>
-    <string name="alarm_management_title">Zarządzanie budzikami</string>
+    <string name="alarm_management_title">Budziki</string>
     <string name="alarm_updated_msg">Zaktualizowano budzik %1$d</string>
     <string name="alarm_deleted_msg">Usunięto budzik %1$d</string>
     <string name="enable_bluetooth_msg">Proszę włączyć Bluetooth</string>
@@ -178,7 +179,7 @@
     <string name="no_device_to_share">Brak sparowanego urządzenia do udostępnienia</string>
     <string name="share_device_button">Udostępnij urządzenie</string>
     <string name="import_device_button">Importuj urządzenie</string>
-    <string name="camera_permission_required">Wymagane jest uprawnienie do aparatu, aby skanować kody QR</string>
+    <string name="camera_permission_required">Wymagane jest uprawnienie do aparatu, aby skanować kody QR.</string>
     <string name="channel_left">lewy</string>
     <string name="channel_mix">oba</string>
     <string name="channel_right">prawy</string>

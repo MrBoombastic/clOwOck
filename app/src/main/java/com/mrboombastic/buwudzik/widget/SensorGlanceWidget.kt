@@ -75,7 +75,7 @@ class SensorGlanceWidget : GlanceAppWidget() {
                     humidityText = humidityText,
                     batteryText = batteryText,
                     lastUpdateText = lastUpdateText,
-                    hasError = state.hasError,
+                    hasError = state.hasError && state.showWidgetError,
                     isLoading = state.isLoading,
                     hasData = hasData,
                     size = size

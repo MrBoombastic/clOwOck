@@ -48,6 +48,9 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_RINGTONE_BASE_URL = "ringtone_base_url"
         const val DEFAULT_RINGTONE_BASE_URL =
             "https://qingplus.cleargrass.com/raw/rings"
+
+        private const val KEY_SHOW_WIDGET_ERROR = "show_widget_error"
+        const val DEFAULT_SHOW_WIDGET_ERROR = true
     }
 
     /**
@@ -135,5 +138,11 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getBoolean(KEY_SETUP_COMPLETED, false)
         set(value) {
             prefs.edit { putBoolean(KEY_SETUP_COMPLETED, value) }
+        }
+
+    var showWidgetError: Boolean
+        get() = prefs.getBoolean(KEY_SHOW_WIDGET_ERROR, DEFAULT_SHOW_WIDGET_ERROR)
+        set(value) {
+            prefs.edit { putBoolean(KEY_SHOW_WIDGET_ERROR, value) }
         }
 }

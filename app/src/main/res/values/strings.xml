@@ -3,9 +3,9 @@
     <string name="widget_description">Displays temperature, humidity, and battery status from your device.</string>
     <string name="scanning_status" tools:ignore="Typos">Scanning for the selected device…</string>
     <string name="battery_label">Battery: %1$d%%</string>
-    <string name="rssi_label">RSSI: %1$d dBm (%2$d%%)</string>
+    <string name="rssi_label" translatable="false">RSSI: %1$d dBm (%2$d%%)</string>
     <string name="last_update_label">Last update: %1$s</string>
-    <string name="permissions_required">Permissions required for scanning</string>
+    <string name="permissions_required">Permissions required for scanning.</string>
     <string name="settings_desc">Settings</string>
     <string name="settings_title">Settings</string>
     <string name="back_desc">Back</string>
@@ -31,6 +31,8 @@
     <string name="hours_8">8 hours</string>
     <string name="hours_12">12 hours</string>
     <string name="hours_24">24 hours</string>
+    <string name="show_widget_error_label">Show widget error indicator</string>
+    <string name="show_widget_error_hint">Display warning when background updates fail</string>
     <string name="widget_select_app_label">App to launch after tapping widget</string>
     <string name="default_app_label">default (this app)</string>
     <string name="theme_label">Theme</string>
@@ -110,7 +112,7 @@
     <string name="firmware_version_fmt">Firmware version: %1$s</string>
     <string name="device_timeout_message">Device timed out. Please move closer and try again.</string>
     <string name="save_failed_message">Failed to save: %1$s</string>
-    <string name="alarm_management_title">Alarm management</string>
+    <string name="alarm_management_title">Alarms</string>
     <string name="alarm_updated_msg" tools:ignore="PluralsCandidate">Alarm %1$d updated</string>
     <string name="alarm_deleted_msg" tools:ignore="PluralsCandidate">Alarm %1$d deleted</string>
     <string name="enable_bluetooth_msg">Please enable Bluetooth</string>
@@ -119,7 +121,7 @@
     <string name="no_alarms_msg">No alarms found</string>
     <string name="master_alarm_off_msg">All alarms are currently disabled</string>
     <string name="snooze_enabled_msg">Snooze enabled</string>
-    <string name="select_time_title">Select Time</string>
+    <string name="select_time_title">Select time</string>
     <string name="edit_alarm_title">Edit alarm %1$d</string>
     <string name="repeat_on_label">Repeat on:</string>
     <string name="snooze_label">Snooze</string>
@@ -193,7 +195,7 @@
     <string name="no_device_to_share">No device paired to share</string>
     <string name="share_device_button">Share device</string>
     <string name="import_device_button">Import device</string>
-    <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
+    <string name="camera_permission_required">Camera permission is required to scan QR codes.</string>
     <string name="widget_refresh_description">Refresh sensor data</string>
     <string name="auth_hint">You may need to unpair the device in settings, then pair it again.</string>
     <string name="invalid_mac_format">Invalid MAC address format (XX:XX:XX:XX:XX:XX)!</string>

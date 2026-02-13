@@ -27,7 +27,8 @@ data class WidgetState(
     val lastUpdate: Long = 0,
     val hasError: Boolean = false,
     val isLoading: Boolean = false,
-    val language: String = "system"
+    val language: String = "system",
+    val showWidgetError: Boolean = true
 )
 
 /**
@@ -53,7 +54,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
         
         // Settings preference key that affects widget display
         private const val SETTINGS_KEY_LANGUAGE = "language"
-        
+        private const val SETTINGS_KEY_SHOW_WIDGET_ERROR = "show_widget_error"
+
         // Singleton instance to prevent listener accumulation
         @SuppressLint("StaticFieldLeak")
         @Volatile
@@ -98,7 +100,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                                 lastUpdate = sensorRepo.getLastUpdateTimestamp(),
                                 hasError = sensorRepo.hasUpdateError(),
                                 isLoading = sensorRepo.isLoading(),
-                                language = settingsRepo.language
+                                language = settingsRepo.language,
+                                showWidgetError = settingsRepo.showWidgetError
                             )
                         )
                         // Log if send failed (channel full or closed)
@@ -130,7 +133,7 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
                 
                 val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     // Only react to widget-relevant settings changes (null check for safety)
-                    if (key == SETTINGS_KEY_LANGUAGE) {
+                    if (key == SETTINGS_KEY_LANGUAGE || key == SETTINGS_KEY_SHOW_WIDGET_ERROR) {
                         emitCurrentState()
                     }
                 }
@@ -161,7 +164,8 @@ class WidgetStateDataStore(private val context: Context) : DataStore<WidgetState
             lastUpdate = sensorRepo.getLastUpdateTimestamp(),
             hasError = sensorRepo.hasUpdateError(),
             isLoading = sensorRepo.isLoading(),
-            language = settingsRepo.language
+            language = settingsRepo.language,
+            showWidgetError = settingsRepo.showWidgetError
         )
     }
 }
