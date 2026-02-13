@@ -3,6 +3,8 @@
     <string name="widget_description">Displays temperature, humidity, and battery status from your device.</string>
     <string name="scanning_status" tools:ignore="Typos">Scanning for the selected device…</string>
     <string name="battery_label">Battery: %1$d%%</string>
+    <!-- RSSI is a technical acronym (Received Signal Strength Indicator) and dBm is a standard unit.
+         Intentionally untranslatable to maintain technical accuracy across all locales. -->
     <string name="rssi_label" translatable="false">RSSI: %1$d dBm (%2$d%%)</string>
     <string name="last_update_label">Last update: %1$s</string>
     <string name="permissions_required">Permissions required for scanning.</string>
