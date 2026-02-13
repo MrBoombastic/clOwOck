@@ -166,27 +166,28 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
 
     LaunchedEffect(expandedWidgetAction) {
         if (expandedWidgetAction && installedApps.isEmpty()) {
-            withContext(Dispatchers.IO) {
+            val sortedApps = withContext(Dispatchers.IO) {
                 val pm = context.packageManager
                 val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
                 val apps = pm.queryIntentActivities(intent, 0)
                 AppLogger.d("SettingsScreen", "Found ${apps.size} launcher apps")
-                installedApps = apps.sortedBy { it.loadLabel(pm).toString().lowercase() }
+                apps.sortedBy { it.loadLabel(pm).toString().lowercase() }
             }
+            installedApps = sortedApps
         }
     }
 
     LaunchedEffect(selectedAppPackage) {
         if (selectedAppPackage != null) {
-
-            withContext(Dispatchers.IO) {
-                try {
+            try {
+                val label = withContext(Dispatchers.IO) {
                     val pm = context.packageManager
                     val appInfo = pm.getApplicationInfo(selectedAppPackage!!, 0)
-                    selectedAppLabel = pm.getApplicationLabel(appInfo).toString()
-                } catch (_: Exception) {
-                    selectedAppLabel = selectedAppPackage
+                    pm.getApplicationLabel(appInfo).toString()
                 }
+                selectedAppLabel = label
+            } catch (_: Exception) {
+                selectedAppLabel = selectedAppPackage
             }
         } else {
             selectedAppLabel = null
@@ -202,7 +203,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val languages = mapOf(
         "system" to stringResource(R.string.language_system),
         "en" to stringResource(R.string.language_english),
-        "pl" to stringResource(R.string.language_polish)
+        "pl" to stringResource(R.string.language_polish),
+        "de" to stringResource(R.string.language_german),
+        "fr" to stringResource(R.string.language_french),
+        "it" to stringResource(R.string.language_italian),
+        "zh" to stringResource(R.string.language_chinese)
     )
 
     val intervals = mapOf(
@@ -556,9 +561,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
             ) {
                 Text(stringResource(R.string.github_label))
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
 
             // Check for Updates
             Spacer(modifier = Modifier.height(8.dp))

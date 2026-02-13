@@ -21,6 +21,10 @@
     <string name="language_system">system</string>
     <string name="language_english" translatable="false">English</string>
     <string name="language_polish" translatable="false">polski</string>
+    <string name="language_german" translatable="false">Deutsch (AI)</string>
+    <string name="language_french" translatable="false">français (AI)</string>
+    <string name="language_italian" translatable="false">italiano (AI)</string>
+    <string name="language_chinese" translatable="false">简体中文 (AI)</string>
     <string name="widget_update_interval_label">Widget update interval</string>
     <string name="minutes_15">15 minutes (default)</string>
     <string name="minutes_30">30 minutes</string>
@@ -115,7 +119,6 @@
     <string name="alarm_management_title">Alarms</string>
     <string name="alarm_updated_msg" tools:ignore="PluralsCandidate">Alarm %1$d updated</string>
     <string name="alarm_deleted_msg" tools:ignore="PluralsCandidate">Alarm %1$d deleted</string>
-    <string name="enable_bluetooth_msg">Please enable Bluetooth</string>
     <string name="bluetooth_perms_msg">Bluetooth permissions required</string>
     <string name="connect_first_msg">Please connect to the device from the main screen first</string>
     <string name="no_alarms_msg">No alarms found</string>
@@ -204,7 +207,6 @@
     <string name="disconnect_reason_link_lost">Link lost.</string>
     <string name="disconnect_reason_user_requested">User requested disconnect.</string>
     <string name="disconnect_reason_unknown">Disconnected (status: %1$d).</string>
-    <string name="hint_unpair_instructions">You may need to unpair the device in app.</string>
     <string name="hint_check_nearby">Make sure the device is nearby.</string>
     <string name="hint_restart_bluetooth">Try restarting Bluetooth or unpairing the device.</string>
     <string name="unknown_error">Unknown error</string>

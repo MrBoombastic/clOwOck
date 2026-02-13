@@ -15,7 +15,7 @@ sealed class DisconnectionReason {
             context.getString(R.string.disconnect_reason_device_terminated)
 
         override fun getHint(context: Resources) =
-            context.getString(R.string.hint_unpair_instructions)
+            context.getString(R.string.auth_hint)
     }
 
     data object ConnectionTimeout : DisconnectionReason() {
