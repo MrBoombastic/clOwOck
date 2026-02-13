@@ -200,7 +200,7 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
             when {
                 !isBluetoothEnabled -> {
                     Text(
-                        text = stringResource(R.string.enable_bluetooth_msg),
+                        text = stringResource(R.string.setup_enable_bluetooth),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(16.dp)

@@ -107,7 +107,6 @@
     <string name="alarm_management_title">Budziki</string>
     <string name="alarm_updated_msg">Zaktualizowano budzik %1$d</string>
     <string name="alarm_deleted_msg">Usunięto budzik %1$d</string>
-    <string name="enable_bluetooth_msg">Proszę włączyć Bluetooth</string>
     <string name="bluetooth_perms_msg">Wymagane uprawnienia do Bluetooth</string>
     <string name="connect_first_msg">Najpierw połącz się z urządzeniem na ekranie głównym</string>
     <string name="no_alarms_msg">Nie znaleziono budzików</string>
@@ -196,7 +195,6 @@
     <string name="disconnect_reason_link_lost">Utracono połączenie.</string>
     <string name="disconnect_reason_user_requested">Użytkownik się rozłączył.</string>
     <string name="disconnect_reason_unknown">Rozłączono (status: %1$d).</string>
-    <string name="hint_unpair_instructions">Może być konieczne zapomnienie urządzenia w aplikacji.</string>
     <string name="hint_check_nearby">Upewnij się, że urządzenie jest w pobliżu.</string>
     <string name="hint_restart_bluetooth">Spróbuj zrestartować Bluetooth lub rozparować urządzenie.</string>
     <string name="unknown_error">Nieznany błąd</string>

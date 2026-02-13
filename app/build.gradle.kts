@@ -20,8 +20,6 @@ configure<ApplicationExtension> {
         targetSdk = 36
         versionCode = 17
         versionName = "1.6.3"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -51,16 +49,12 @@ kotlin {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.activity)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.work.runtime.ktx)
@@ -71,7 +65,6 @@ dependencies {
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.slf4j.simple)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.zxing.android.embedded)
     implementation(libs.camerax.camera2)
@@ -79,7 +72,4 @@ dependencies {
     implementation(libs.camerax.view)
     implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.ui.tooling)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

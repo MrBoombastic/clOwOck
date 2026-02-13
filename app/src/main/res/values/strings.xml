@@ -115,7 +115,6 @@
     <string name="alarm_management_title">Alarms</string>
     <string name="alarm_updated_msg" tools:ignore="PluralsCandidate">Alarm %1$d updated</string>
     <string name="alarm_deleted_msg" tools:ignore="PluralsCandidate">Alarm %1$d deleted</string>
-    <string name="enable_bluetooth_msg">Please enable Bluetooth</string>
     <string name="bluetooth_perms_msg">Bluetooth permissions required</string>
     <string name="connect_first_msg">Please connect to the device from the main screen first</string>
     <string name="no_alarms_msg">No alarms found</string>
@@ -204,7 +203,6 @@
     <string name="disconnect_reason_link_lost">Link lost.</string>
     <string name="disconnect_reason_user_requested">User requested disconnect.</string>
     <string name="disconnect_reason_unknown">Disconnected (status: %1$d).</string>
-    <string name="hint_unpair_instructions">You may need to unpair the device in app.</string>
     <string name="hint_check_nearby">Make sure the device is nearby.</string>
     <string name="hint_restart_bluetooth">Try restarting Bluetooth or unpairing the device.</string>
     <string name="unknown_error">Unknown error</string>
