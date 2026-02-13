@@ -14,12 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -90,6 +84,7 @@ import com.mrboombastic.buwudzik.ui.screens.RingtoneUploadScreen
 import com.mrboombastic.buwudzik.ui.screens.SettingsScreen
 import com.mrboombastic.buwudzik.ui.theme.BuwudzikTheme
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
+import com.mrboombastic.buwudzik.ui.utils.NavigationAnimations
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
@@ -316,30 +311,11 @@ class MainActivity : AppCompatActivity() {
                         NavHost(
                             navController = navController,
                             startDestination = startDestination,
-                            enterTransition = {
-                                slideInHorizontally(
-                                    initialOffsetX = { fullWidth -> fullWidth },
-                                    animationSpec = tween(300, easing = FastOutSlowInEasing)
-                                ) + fadeIn(animationSpec = tween(300))
-                            },
-                            exitTransition = {
-                                slideOutHorizontally(
-                                    targetOffsetX = { fullWidth -> -fullWidth / 4 },
-                                    animationSpec = tween(300, easing = FastOutSlowInEasing)
-                                ) + fadeOut(animationSpec = tween(150))
-                            },
-                            popEnterTransition = {
-                                slideInHorizontally(
-                                    initialOffsetX = { fullWidth -> -fullWidth / 4 },
-                                    animationSpec = tween(300, easing = FastOutSlowInEasing)
-                                ) + fadeIn(animationSpec = tween(300))
-                            },
-                            popExitTransition = {
-                                slideOutHorizontally(
-                                    targetOffsetX = { fullWidth -> fullWidth },
-                                    animationSpec = tween(300, easing = FastOutSlowInEasing)
-                                ) + fadeOut(animationSpec = tween(150))
-                            }) {
+                            enterTransition = NavigationAnimations.enterTransition(),
+                            exitTransition = NavigationAnimations.exitTransition(),
+                            popEnterTransition = NavigationAnimations.popEnterTransition(),
+                            popExitTransition = NavigationAnimations.popExitTransition()
+                        ) {
                             composable("setup") { DeviceSetupScreen(navController) }
                             composable("home") { HomeScreen(viewModel, navController) }
                             composable("settings") {

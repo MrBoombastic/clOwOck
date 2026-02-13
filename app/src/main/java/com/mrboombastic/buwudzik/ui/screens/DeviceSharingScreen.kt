@@ -1,28 +1,43 @@
 package com.mrboombastic.buwudzik.ui.screens
 
 import android.graphics.Bitmap
+import android.graphics.Bitmap.createBitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.navigation.NavController
 import com.google.zxing.BarcodeFormat
@@ -32,9 +47,11 @@ import com.mrboombastic.buwudzik.data.AlarmTitleRepository
 import com.mrboombastic.buwudzik.data.DeviceShareData
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.data.TokenStorage
-import com.mrboombastic.buwudzik.ui.components.ContentCard
+import com.mrboombastic.buwudzik.ui.components.InstructionCard
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +60,7 @@ fun DeviceSharingScreen(navController: NavController) {
     val settingsRepo = remember { SettingsRepository(context) }
     val tokenStorage = remember { TokenStorage(context) }
     val alarmTitleRepository = remember { AlarmTitleRepository(context) }
+
 
     val mac = settingsRepo.targetMacAddress
     val tokenHex = tokenStorage.getTokenHex(mac)
@@ -74,7 +92,7 @@ fun DeviceSharingScreen(navController: NavController) {
                     color = MaterialTheme.colorScheme.error
                 )
             } else {
-                // Generate QR code
+                // Generate QR code in background
                 val shareData = DeviceShareData(
                     mac = mac,
                     token = tokenHex,
@@ -82,36 +100,87 @@ fun DeviceSharingScreen(navController: NavController) {
                     alarmTitles = alarmTitles
                 )
                 val qrContent = shareData.toQrContent()
-                val qrBitmap = remember(qrContent) { generateQrCode(qrContent) }
 
-                ContentCard {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
+                var isLoading by remember { mutableStateOf(true) }
+
+                // Generate QR code in background to avoid blocking UI thread
+                LaunchedEffect(qrContent) {
+                    isLoading = true
+                    qrBitmap = withContext(Dispatchers.IO) {
+                        generateQrCode(qrContent)
+                    }
+                    isLoading = false
+                }
+
+                InstructionCard(
+                    icon = Icons.Default.QrCode2,
+                    title = stringResource(R.string.share_device_title),
+                    subtitle = stringResource(R.string.share_qr_instruction),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (isLoading) {
+                        Surface(
+                            modifier = Modifier.size(280.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    } else if (qrBitmap != null) {
+                        Surface(
+                            modifier = Modifier
+                                .size(280.dp)
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            color = Color.White,
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    bitmap = qrBitmap!!.asImageBitmap(),
+                                    contentDescription = stringResource(R.string.share_qr_instruction),
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Small "chip" using Surface (no existing generic chip component in ui/components)
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
                     ) {
-                        if (qrBitmap != null) {
-                            Image(
-                                bitmap = qrBitmap.asImageBitmap(),
-                                contentDescription = stringResource(R.string.share_qr_instruction),
-                                modifier = Modifier.size(280.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = mac,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = stringResource(R.string.share_qr_instruction),
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = mac,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }
