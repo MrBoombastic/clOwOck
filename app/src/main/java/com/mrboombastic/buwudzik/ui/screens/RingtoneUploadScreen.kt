@@ -358,6 +358,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
