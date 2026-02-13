@@ -186,6 +186,8 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                     pm.getApplicationLabel(appInfo).toString()
                 }
                 selectedAppLabel = label
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 selectedAppLabel = selectedAppPackage
             }
