@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,6 +48,7 @@ import com.mrboombastic.buwudzik.data.AlarmTitleRepository
 import com.mrboombastic.buwudzik.data.DeviceShareData
 import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.data.TokenStorage
+import com.mrboombastic.buwudzik.ui.components.ContentCard
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
@@ -122,10 +122,11 @@ fun DeviceImportScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    Card(
+                    ContentCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
+                            .weight(1f),
+                        containerColor = MaterialTheme.colorScheme.surface
                     ) {
                         QrScannerView { content ->
                             isScanning = false

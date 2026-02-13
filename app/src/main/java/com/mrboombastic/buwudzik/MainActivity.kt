@@ -21,7 +21,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,24 +28,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Alarm
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PhonelinkSetup
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +63,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -85,7 +77,10 @@ import com.mrboombastic.buwudzik.data.SettingsRepository
 import com.mrboombastic.buwudzik.device.BluetoothScanner
 import com.mrboombastic.buwudzik.device.SensorData
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.InstructionCard
 import com.mrboombastic.buwudzik.ui.components.MenuTile
+import com.mrboombastic.buwudzik.ui.components.NumberedStep
+import com.mrboombastic.buwudzik.ui.components.SmallButton
 import com.mrboombastic.buwudzik.ui.screens.AlarmManagementScreen
 import com.mrboombastic.buwudzik.ui.screens.DeviceImportScreen
 import com.mrboombastic.buwudzik.ui.screens.DeviceSettingsScreen
@@ -598,195 +593,68 @@ fun Dashboard(
                 )
             } else if (!deviceConnected) {
                 if (!isPaired) {
-                    ElevatedCard(
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth(0.92f)
-                            .padding(bottom = 24.dp),
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                    InstructionCard(
+                        icon = Icons.Default.PhonelinkSetup,
+                        title = stringResource(R.string.setup_new_device),
+                        subtitle = stringResource(R.string.pairing_subtitle),
+                        modifier = Modifier.padding(bottom = 24.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // Header with icon
-                            Icon(
-                                Icons.Default.PhonelinkSetup,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                stringResource(R.string.setup_new_device),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                stringResource(R.string.pairing_subtitle),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
+                        NumberedStep(
+                            number = "1",
+                            title = stringResource(R.string.pairing_step1_title),
+                            description = stringResource(R.string.pairing_step1_desc)
+                        )
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                            // Step 1
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            "1",
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        stringResource(R.string.pairing_step1_title),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        stringResource(R.string.pairing_step1_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                        NumberedStep(
+                            number = "2",
+                            title = stringResource(R.string.pairing_step2_title),
+                            description = stringResource(R.string.pairing_step2_desc)
+                        )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                            // Step 2
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            "2",
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        stringResource(R.string.pairing_step2_title),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        stringResource(R.string.pairing_step2_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Step 3
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            "3",
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        stringResource(R.string.pairing_step3_title),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        stringResource(R.string.pairing_step3_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        NumberedStep(
+                            number = "3",
+                            title = stringResource(R.string.pairing_step3_title),
+                            description = stringResource(R.string.pairing_step3_desc)
+                        )
                     }
                 }
 
-                Button(
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Big Connect/Pair button
+                MenuTile(
+                    title = if (isPaired) stringResource(R.string.connect_to_device) else stringResource(
+                        R.string.pair_and_connect
+                    ),
+                    icon = Icons.Default.PhonelinkSetup,
                     onClick = { viewModel.connectToDevice() },
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                ) {
-                    Text(
-                        if (isPaired) stringResource(R.string.connect_to_device) else stringResource(
-                            R.string.pair_and_connect
-                        )
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                )
+
+                // Small buttons for Share and Unpair
+                if (isPaired) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SmallButton(
+                        title = stringResource(R.string.share_device_button),
+                        icon = Icons.Default.Share,
+                        onClick = { navController.navigate("device-sharing") }
                     )
-                }
 
-                if (isPaired) {
-                    TextButton(
-                        onClick = { navController.navigate("device-sharing") },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.Share,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.share_device_button))
-                    }
-                }
-
-                if (isPaired) {
-                    @Suppress("AssignedValueIsNeverRead") TextButton(
+                    @Suppress("AssignedValueIsNeverRead")
+                    SmallButton(
+                        title = stringResource(R.string.unpair_device),
+                        icon = Icons.Default.Warning,
                         onClick = { showUnpairDialog = true },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.unpair_device))
-                    }
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
+                // Big buttons for main actions
                 Column(
                     modifier = Modifier.fillMaxWidth(0.9f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -806,16 +674,18 @@ fun Dashboard(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                     )
+                }
 
-                    if (isPaired) {
-                        @Suppress("AssignedValueIsNeverRead") MenuTile(
-                            title = stringResource(R.string.unpair_device),
-                            icon = Icons.Default.Warning,
-                            onClick = { showUnpairDialog = true },
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        )
-                    }
+                // Small unpair button
+                if (isPaired) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    @Suppress("AssignedValueIsNeverRead")
+                    SmallButton(
+                        title = stringResource(R.string.unpair_device),
+                        icon = Icons.Default.Warning,
+                        onClick = { showUnpairDialog = true },
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }

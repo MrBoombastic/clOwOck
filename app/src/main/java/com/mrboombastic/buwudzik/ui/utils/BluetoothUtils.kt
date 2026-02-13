@@ -37,12 +37,12 @@ object BluetoothUtils {
 
     /**
      * Convert RSSI (dBm) to signal strength percentage
-     * Range: -100 dBm (0%) to -31 dBm (100%)
+     * Range: -90 dBm (0%) to -40 dBm (100%)
      */
     fun rssiToPercentage(rssi: Int): Int = when {
-        rssi >= -31 -> 100
-        rssi <= -100 -> 0
-        else -> ((rssi + 100) * 100) / 69 //nice
+        rssi >= -40 -> 100
+        rssi <= -90 -> 0
+        else -> ((rssi + 90) * 100) / 50
     }
 
     /**

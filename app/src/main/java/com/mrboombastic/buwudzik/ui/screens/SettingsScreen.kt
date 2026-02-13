@@ -561,9 +561,6 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
                 Text(stringResource(R.string.github_label))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-
             // Check for Updates
             Spacer(modifier = Modifier.height(8.dp))
             Button(
