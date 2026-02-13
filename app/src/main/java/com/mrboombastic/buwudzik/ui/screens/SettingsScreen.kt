@@ -202,7 +202,11 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     val languages = mapOf(
         "system" to stringResource(R.string.language_system),
         "en" to stringResource(R.string.language_english),
-        "pl" to stringResource(R.string.language_polish)
+        "pl" to stringResource(R.string.language_polish),
+        "de" to stringResource(R.string.language_german),
+        "fr" to stringResource(R.string.language_french),
+        "it" to stringResource(R.string.language_italian),
+        "zh" to stringResource(R.string.language_chinese)
     )
 
     val intervals = mapOf(

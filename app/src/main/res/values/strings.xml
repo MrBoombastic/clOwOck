@@ -21,6 +21,10 @@
     <string name="language_system">system</string>
     <string name="language_english" translatable="false">English</string>
     <string name="language_polish" translatable="false">polski</string>
+    <string name="language_german" translatable="false">Deutsch (AI)</string>
+    <string name="language_french" translatable="false">français (AI)</string>
+    <string name="language_italian" translatable="false">italiano (AI)</string>
+    <string name="language_chinese" translatable="false">简体中文 (AI)</string>
     <string name="widget_update_interval_label">Widget update interval</string>
     <string name="minutes_15">15 minutes (default)</string>
     <string name="minutes_30">30 minutes</string>
