@@ -3,6 +3,7 @@ package com.mrboombastic.buwudzik.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -94,7 +95,7 @@ fun NumberedStep(
     description: String,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {

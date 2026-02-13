@@ -104,8 +104,7 @@ fun DeviceImportScreen(
     Scaffold(
         topBar = {
             StandardTopBar(
-                title = stringResource(R.string.import_device_title),
-                navController = navController
+                title = stringResource(R.string.import_device_title), navController = navController
             )
         }) { padding ->
         Column(
@@ -151,7 +150,9 @@ fun DeviceImportScreen(
                     InstructionCard(
                         icon = Icons.Default.QrCodeScanner,
                         title = stringResource(R.string.import_qr_instruction)
-                    ) { }
+                    ) {
+                        // No additional content is needed for this instruction card.
+                    }
 
                     // Camera preview card
                     Card(
@@ -175,8 +176,7 @@ fun DeviceImportScreen(
                                         width = 2.dp,
                                         color = MaterialTheme.colorScheme.primary,
                                         shape = RoundedCornerShape(12.dp)
-                                    ),
-                                shape = RoundedCornerShape(12.dp)
+                                    ), shape = RoundedCornerShape(12.dp)
                             ) {
                                 QrScannerView { content ->
                                     isScanning = false
@@ -204,11 +204,8 @@ fun DeviceImportScreen(
                                         viewModel.checkPairingStatus()
 
                                         Toast.makeText(
-                                            context,
-                                            importSuccessMsg,
-                                            Toast.LENGTH_SHORT
-                                        )
-                                            .show()
+                                            context, importSuccessMsg, Toast.LENGTH_SHORT
+                                        ).show()
                                         navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
                                         }
