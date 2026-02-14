@@ -69,7 +69,7 @@
     <string name="setup_rescan">重新扫描</string>
     <string name="setup_skip">暂时跳过</string>
     <string name="setup_select_device">选择设备</string>
-    <string name="manage_alarms_label">管理闹钟</string>
+    <string name="manage_alarms_label">闹钟</string>
     <string name="add_alarm_desc">添加闹钟</string>
     <string name="max_alarms_message">已达到最大闹钟数量（16个）。</string>
     <string name="cancel">取消</string>
@@ -171,7 +171,7 @@
     <string name="pairing_step3_title">连接</string>
     <string name="pairing_step3_desc">点击下方按钮进行配对。</string>
     <string name="pair_and_connect">配对并连接</string>
-    <string name="unpair_device">忘记设备</string>
+    <string name="unpair_device">忘记</string>
     <string name="unpair_confirm_title">忘记设备？</string>
     <string name="unpair_confirm_message">再次连接前需要重新配对时钟。</string>
     <string name="unpair_confirm">忘记</string>
@@ -184,7 +184,7 @@
     <string name="import_success">设备导入成功！</string>
     <string name="import_error">二维码无效</string>
     <string name="no_device_to_share">没有已配对的设备可分享</string>
-    <string name="share_device_button">分享设备</string>
+    <string name="share_device_button">分享</string>
     <string name="import_device_button">导入设备</string>
     <string name="camera_permission_required">需要相机权限才能扫描二维码。</string>
     <string name="widget_refresh_description">刷新传感器数据</string>

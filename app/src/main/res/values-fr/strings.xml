@@ -69,7 +69,7 @@
     <string name="setup_rescan">Scanner à nouveau</string>
     <string name="setup_skip">Passer pour l\'instant</string>
     <string name="setup_select_device">Sélectionner l\'appareil</string>
-    <string name="manage_alarms_label">Gérer les alarmes</string>
+    <string name="manage_alarms_label">Alarmes</string>
     <string name="add_alarm_desc">Ajouter une alarme</string>
     <string name="max_alarms_message">Nombre maximum d\'alarmes (16) atteint.</string>
     <string name="cancel">Annuler</string>
@@ -171,7 +171,7 @@
     <string name="pairing_step3_title">Connecter</string>
     <string name="pairing_step3_desc">Appuyez sur le bouton ci-dessous pour jumeler.</string>
     <string name="pair_and_connect">Jumeler et connecter</string>
-    <string name="unpair_device">Oublier l\'appareil</string>
+    <string name="unpair_device">Oublier</string>
     <string name="unpair_confirm_title">Oublier l\'appareil ?</string>
     <string name="unpair_confirm_message">Vous devrez jumeler à nouveau l\'horloge avant de vous reconnecter.</string>
     <string name="unpair_confirm">Oublier</string>
@@ -184,7 +184,7 @@
     <string name="import_success">Appareil importé avec succès !</string>
     <string name="import_error">Code QR invalide</string>
     <string name="no_device_to_share">Aucun appareil jumelé à partager</string>
-    <string name="share_device_button">Partager l\'appareil</string>
+    <string name="share_device_button">Partager</string>
     <string name="import_device_button">Importer l\'appareil</string>
     <string name="camera_permission_required">L\'autorisation de la caméra est requise pour scanner les codes QR.</string>
     <string name="widget_refresh_description">Actualiser les données du capteur</string>

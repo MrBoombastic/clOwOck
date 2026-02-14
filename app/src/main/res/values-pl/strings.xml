@@ -69,7 +69,7 @@
     <string name="setup_rescan">Skanuj ponownie</string>
     <string name="setup_skip">Pomiń</string>
     <string name="setup_select_device">Wybierz urządzenie</string>
-    <string name="manage_alarms_label">Zarządzaj budzikami</string>
+    <string name="manage_alarms_label">Alarmy</string>
     <string name="add_alarm_desc">Dodaj budzik</string>
     <string name="max_alarms_message">Osiągnięto maksymalną liczbę budzików (16).</string>
     <string name="cancel">Anuluj</string>
@@ -163,7 +163,7 @@
     <string name="pairing_step3_title">Połącz</string>
     <string name="pairing_step3_desc">Stuknij przycisk poniżej, aby sparować.</string>
     <string name="pair_and_connect">Sparuj i połącz</string>
-    <string name="unpair_device">Zapomnij urządzenie</string>
+    <string name="unpair_device">Zapomnij</string>
     <string name="unpair_confirm_title">Zapomnieć urządzenie?</string>
     <string name="unpair_confirm_message">Przed ponownym połączeniem będziesz musiał znowu sparować urządzenie.</string>
     <string name="unpair_confirm">Zapomnij</string>
@@ -176,7 +176,7 @@
     <string name="import_success">Urządzenie zaimportowane pomyślnie!</string>
     <string name="import_error">Nieprawidłowy kod QR</string>
     <string name="no_device_to_share">Brak sparowanego urządzenia do udostępnienia</string>
-    <string name="share_device_button">Udostępnij urządzenie</string>
+    <string name="share_device_button">Udostępnij</string>
     <string name="import_device_button">Importuj urządzenie</string>
     <string name="camera_permission_required">Wymagane jest uprawnienie do aparatu, aby skanować kody QR.</string>
     <string name="channel_left">lewy</string>

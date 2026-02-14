@@ -1,5 +1,6 @@
 package com.mrboombastic.buwudzik.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,7 +32,8 @@ fun MenuTile(
     icon: ImageVector,
     onClick: () -> Unit,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    arrangementH: Arrangement.Horizontal = Arrangement.Start
 ) {
     ElevatedCard(
         onClick = onClick,
@@ -46,7 +48,8 @@ fun MenuTile(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = arrangementH
         ) {
             Icon(
                 imageVector = icon, contentDescription = null, modifier = Modifier.size(28.dp)

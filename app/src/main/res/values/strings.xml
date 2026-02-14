@@ -78,7 +78,7 @@
     <string name="setup_rescan">Scan again</string>
     <string name="setup_skip">Skip for now</string>
     <string name="setup_select_device">Select device</string>
-    <string name="manage_alarms_label">Manage alarms</string>
+    <string name="manage_alarms_label">Alarms</string>
     <string name="add_alarm_desc">Add alarm</string>
     <string name="max_alarms_message">Maximum number of alarms (16) reached.</string>
     <string name="ok" translatable="false">OK</string>
@@ -183,7 +183,7 @@
     <string name="pairing_step3_title">Connect</string>
     <string name="pairing_step3_desc">Tap the button below to pair.</string>
     <string name="pair_and_connect">Pair and connect</string>
-    <string name="unpair_device">Forget device</string>
+    <string name="unpair_device">Forget</string>
     <string name="unpair_confirm_title">Forget device?</string>
     <string name="unpair_confirm_message">You will need to re-pair the clock before connecting again.</string>
     <string name="unpair_confirm">Forget</string>
@@ -196,7 +196,7 @@
     <string name="import_success">Device imported successfully!</string>
     <string name="import_error">Invalid QR code</string>
     <string name="no_device_to_share">No device paired to share</string>
-    <string name="share_device_button">Share device</string>
+    <string name="share_device_button">Share</string>
     <string name="import_device_button">Import device</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes.</string>
     <string name="widget_refresh_description">Refresh sensor data</string>

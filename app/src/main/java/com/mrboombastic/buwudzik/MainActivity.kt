@@ -27,10 +27,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PhonelinkSetup
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -456,6 +456,33 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavController) {
 }
 
 @Composable
+fun ShareAndUnpairButtons(
+    navController: NavController,
+    onUnpairClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SmallButton(
+            title = stringResource(R.string.share_device_button),
+            icon = Icons.Default.Share,
+            onClick = { navController.navigate("device-sharing") },
+            modifier = Modifier.weight(1f)
+        )
+
+        SmallButton(
+            title = stringResource(R.string.unpair_device),
+            icon = Icons.Default.Delete,
+            onClick = onUnpairClick,
+            contentColor = MaterialTheme.colorScheme.error,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
 fun Dashboard(
     sensorData: SensorData?,
     isBluetoothEnabled: Boolean,
@@ -608,32 +635,19 @@ fun Dashboard(
                     ),
                     icon = Icons.Default.PhonelinkSetup,
                     onClick = { viewModel.connectToDevice() },
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    arrangementH = Arrangement.Center
                 )
 
                 // Small buttons for Share and Unpair
+                @Suppress("AssignedValueIsNeverRead")
                 if (isPaired) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(0.9f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SmallButton(
-                            title = stringResource(R.string.share_device_button),
-                            icon = Icons.Default.Share,
-                            onClick = { navController.navigate("device-sharing") },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        @Suppress("AssignedValueIsNeverRead")
-                        SmallButton(
-                            title = stringResource(R.string.unpair_device),
-                            icon = Icons.Default.Warning,
-                            onClick = { showUnpairDialog = true },
-                            contentColor = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    ShareAndUnpairButtons(
+                        navController = navController,
+                        onUnpairClick = { showUnpairDialog = true },
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    )
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -659,15 +673,13 @@ fun Dashboard(
                     )
                 }
 
-                // Small unpair button
+                // Small buttons for Share and Unpair
+                @Suppress("AssignedValueIsNeverRead")
                 if (isPaired) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    @Suppress("AssignedValueIsNeverRead")
-                    SmallButton(
-                        title = stringResource(R.string.unpair_device),
-                        icon = Icons.Default.Warning,
-                        onClick = { showUnpairDialog = true },
-                        contentColor = MaterialTheme.colorScheme.error,
+                    ShareAndUnpairButtons(
+                        navController = navController,
+                        onUnpairClick = { showUnpairDialog = true },
                         modifier = Modifier.fillMaxWidth(0.9f)
                     )
                 }

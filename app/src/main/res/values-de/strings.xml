@@ -69,7 +69,7 @@
     <string name="setup_rescan">Erneut scannen</string>
     <string name="setup_skip">Jetzt überspringen</string>
     <string name="setup_select_device">Gerät auswählen</string>
-    <string name="manage_alarms_label">Alarme verwalten</string>
+    <string name="manage_alarms_label">Alarme</string>
     <string name="add_alarm_desc">Alarm hinzufügen</string>
     <string name="max_alarms_message">Maximale Anzahl von Alarmen (16) erreicht.</string>
     <string name="cancel">Abbrechen</string>
@@ -171,7 +171,7 @@
     <string name="pairing_step3_title">Verbinden</string>
     <string name="pairing_step3_desc">Tippen Sie auf die Schaltfläche unten zum Koppeln.</string>
     <string name="pair_and_connect">Koppeln und verbinden</string>
-    <string name="unpair_device">Gerät vergessen</string>
+    <string name="unpair_device">Vergessen</string>
     <string name="unpair_confirm_title">Gerät vergessen?</string>
     <string name="unpair_confirm_message">Sie müssen die Uhr erneut koppeln, bevor Sie sich wieder verbinden.</string>
     <string name="unpair_confirm">Vergessen</string>
@@ -184,7 +184,7 @@
     <string name="import_success">Gerät erfolgreich importiert!</string>
     <string name="import_error">Ungültiger QR-Code</string>
     <string name="no_device_to_share">Kein gekoppeltes Gerät zum Teilen vorhanden</string>
-    <string name="share_device_button">Gerät teilen</string>
+    <string name="share_device_button">Teilen</string>
     <string name="import_device_button">Gerät importieren</string>
     <string name="camera_permission_required">Kameraberechtigung ist zum Scannen von QR-Codes erforderlich.</string>
     <string name="widget_refresh_description">Sensordaten aktualisieren</string>
