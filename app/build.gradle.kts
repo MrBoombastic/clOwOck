@@ -50,7 +50,6 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
@@ -65,7 +64,6 @@ dependencies {
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.androidx.profileinstaller)
     implementation(libs.zxing.android.embedded)
     implementation(libs.camerax.camera2)
     implementation(libs.camerax.lifecycle)
