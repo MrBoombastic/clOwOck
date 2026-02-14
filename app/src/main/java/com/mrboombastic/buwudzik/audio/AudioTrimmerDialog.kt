@@ -547,25 +547,17 @@ fun AudioTrimmerDialog(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Time labels
+                // Duration label
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = TimeFormatUtils.formatTime(selectionStartMs),
-                        style = MaterialTheme.typography.bodySmall
-                    )
                     Text(
                         text = stringResource(R.string.duration_label) + ": " + TimeFormatUtils.formatTime(
                             selectionDurationMs
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
+                        ) + " s",
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = TimeFormatUtils.formatTime(selectionEndMs),
-                        style = MaterialTheme.typography.bodySmall
                     )
                 }
 

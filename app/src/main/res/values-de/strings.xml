@@ -146,9 +146,9 @@
     <string name="duration_label">Dauer</string>
     <string name="estimated_size_label">Geschätzte Größe</string>
     <string name="file_too_large_warning">Datei zu groß! Max. ~12 Sekunden (98 KB).</string>
-    <string name="trim_and_upload">Zuschneiden und hochladen</string>
+    <string name="trim_and_upload">Trimmen und hochladen</string>
     <string name="start_label">Start</string>
-    <string name="drag_to_adjust_hint">Ziehen, um Auswahl zu verschieben.</string>
+    <string name="drag_to_adjust_hint">Ziehen, um die Auswahl zu verschieben.</string>
     <string name="custom_ringtone_name">Benutzerdefiniert</string>
     <string name="downloading_ringtone">Klingelton wird heruntergeladen…</string>
     <string name="downloading_list">Liste wird heruntergeladen…</string>
@@ -164,7 +164,7 @@
     <string name="error_download_failed">Download fehlgeschlagen</string>
     <string name="error_manifest_load_failed">Fehler beim Laden des Klingelton-Manifests: %1$s</string>
     <string name="setup_new_device">Neues Gerät einrichten</string>
-    <string name="pairing_subtitle">Befolgen Sie diese Schritte, um Ihr Gerät zu koppeln</string>
+    <string name="pairing_subtitle">Befolgen Sie diese Schritte, um Ihr Gerät zu koppeln.</string>
     <string name="pairing_step1_title">Kopplungsmodus aktivieren</string>
     <string name="pairing_step1_desc">Drücken Sie die Gerätetaste 2 Sekunden lang.</string>
     <string name="pairing_step2_title">Auf Signal warten</string>
@@ -181,7 +181,7 @@
     <string name="share_device_title">Gerät teilen</string>
     <string name="import_device_title">Gerät importieren</string>
     <string name="share_qr_instruction">Scannen Sie diesen QR-Code auf einem anderen Gerät, um Einstellungen zu importieren.</string>
-    <string name="import_qr_instruction">Richten Sie die Kamera auf den QR-Code.</string>
+    <string name="import_qr_instruction">Richten Sie die Kamera auf den QR-Code</string>
     <string name="import_success">Gerät erfolgreich importiert!</string>
     <string name="import_error">Ungültiger QR-Code</string>
     <string name="no_device_to_share">Kein gekoppeltes Gerät zum Teilen vorhanden</string>

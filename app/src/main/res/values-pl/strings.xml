@@ -146,7 +146,7 @@
     <string name="duration_label">Czas trwania</string>
     <string name="estimated_size_label">Szacowany rozmiar</string>
     <string name="file_too_large_warning">Plik za duży! Maks. ~12 sekund (98 KB).</string>
-    <string name="trim_and_upload">Przytnij i wgraj</string>
+    <string name="trim_and_upload">Przytnij i prześlij</string>
     <string name="start_label">Początek</string>
     <string name="drag_to_adjust_hint">Przeciągnij, by przesunąć zaznaczenie.</string>
     <string name="custom_ringtone_name">Własny</string>
@@ -157,7 +157,7 @@
     <string name="error_download_failed">Pobieranie się nie powiodło</string>
     <string name="error_manifest_load_failed">Nie udało się załadować manifestu dzwonków: %1$s</string>
     <string name="setup_new_device">Skonfiguruj nowe urządzenie</string>
-    <string name="pairing_subtitle">Wykonaj te kroki, aby sparować urządzenie</string>
+    <string name="pairing_subtitle">Wykonaj te kroki, aby sparować urządzenie.</string>
     <string name="pairing_step1_title">Włącz tryb parowania</string>
     <string name="pairing_step1_desc">Wciśnij przycisk urządzenia na 2 sekundy.</string>
     <string name="pairing_step2_title">Poczekaj na sygnał</string>
@@ -174,7 +174,7 @@
     <string name="share_device_title">Udostępnij urządzenie</string>
     <string name="import_device_title">Importuj urządzenie</string>
     <string name="share_qr_instruction">Zeskanuj ten kod QR na innym urządzeniu, aby zaimportować ustawienia.</string>
-    <string name="import_qr_instruction">Skieruj aparat na kod QR.</string>
+    <string name="import_qr_instruction">Skieruj aparat na kod QR</string>
     <string name="import_success">Urządzenie zaimportowane pomyślnie!</string>
     <string name="import_error">Nieprawidłowy kod QR</string>
     <string name="no_device_to_share">Brak sparowanego urządzenia do udostępnienia</string>

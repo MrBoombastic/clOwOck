@@ -164,7 +164,7 @@
     <string name="error_download_failed">Download fallito</string>
     <string name="error_manifest_load_failed">Impossibile caricare il manifest della suoneria: %1$s</string>
     <string name="setup_new_device">Configura nuovo dispositivo</string>
-    <string name="pairing_subtitle">Segui questi passaggi per accoppiare il dispositivo</string>
+    <string name="pairing_subtitle">Segui questi passaggi per accoppiare il dispositivo.</string>
     <string name="pairing_step1_title">Entra in modalità accoppiamento</string>
     <string name="pairing_step1_desc">Premi il pulsante del dispositivo per 2 secondi.</string>
     <string name="pairing_step2_title">Attendi il segnale</string>
@@ -181,7 +181,7 @@
     <string name="share_device_title">Condividi dispositivo</string>
     <string name="import_device_title">Importa dispositivo</string>
     <string name="share_qr_instruction">Scansiona questo codice QR su un altro dispositivo per importare le impostazioni.</string>
-    <string name="import_qr_instruction">Punta la fotocamera verso il codice QR.</string>
+    <string name="import_qr_instruction">Punta la fotocamera verso il codice QR</string>
     <string name="import_success">Dispositivo importato con successo!</string>
     <string name="import_error">Codice QR non valido</string>
     <string name="no_device_to_share">Nessun dispositivo accoppiato da condividere</string>
