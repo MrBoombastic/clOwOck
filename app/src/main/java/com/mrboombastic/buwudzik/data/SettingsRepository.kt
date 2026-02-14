@@ -21,7 +21,6 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_TARGET_MAC = "target_mac"
         private const val KEY_SCAN_MODE = "scan_mode"
 
-        const val DEFAULT_MAC = "21:37:13:37:04:20"
         const val DEFAULT_SCAN_MODE = android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED
 
         private const val KEY_LANGUAGE = "language"
@@ -90,13 +89,13 @@ class SettingsRepository(private val context: Context) {
 
     var targetMacAddress: String
         get() {
-            val mac = prefs.getString(KEY_TARGET_MAC, DEFAULT_MAC) ?: DEFAULT_MAC
-            return mac.trim().ifEmpty { DEFAULT_MAC }
+            val mac = prefs.getString(KEY_TARGET_MAC, "") ?: ""
+            return mac.trim()
         }
         set(value) {
-            // Normalize the MAC address before validation
-            val macToSave = value.trim().uppercase(java.util.Locale.ROOT).ifEmpty { DEFAULT_MAC }
-            if (BluetoothAdapter.checkBluetoothAddress(macToSave)) {
+            // Normalize and validate the MAC address
+            val macToSave = value.trim().uppercase(java.util.Locale.ROOT)
+            if (macToSave.isNotEmpty() && BluetoothAdapter.checkBluetoothAddress(macToSave)) {
                 prefs.edit { putString(KEY_TARGET_MAC, macToSave) }
             } else {
                 // Log warning and ignore invalid input

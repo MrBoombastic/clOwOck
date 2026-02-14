@@ -180,7 +180,6 @@ fun DeviceImportScreen(
                             ) {
                                 QrScannerView { content ->
                                     isScanning = false
-                                    // DeviceShareData.fromQrContent(qrContent)
                                     val shareData = DeviceShareData.fromQrContent(content)
                                     if (shareData != null) {
                                         // Import the device
@@ -188,16 +187,30 @@ fun DeviceImportScreen(
                                         val tokenStorage = TokenStorage(context)
                                         val alarmTitleRepository = AlarmTitleRepository(context)
 
-                                        settingsRepo.targetMacAddress = shareData.mac
-                                        settingsRepo.batteryType = shareData.batteryType
-                                        settingsRepo.isSetupCompleted = true
+                                        // Update only if different
+                                        if (settingsRepo.targetMacAddress != shareData.mac) {
+                                            settingsRepo.targetMacAddress = shareData.mac
+                                        }
+
+                                        if (settingsRepo.batteryType != shareData.batteryType) {
+                                            settingsRepo.batteryType = shareData.batteryType
+                                        }
+
+                                        if (!settingsRepo.isSetupCompleted) {
+                                            settingsRepo.isSetupCompleted = true
+                                        }
+
+                                        // Store token for the imported device
                                         tokenStorage.storeToken(
                                             shareData.mac, tokenStorage.hexToBytes(shareData.token)
                                         )
 
                                         // Import alarm titles
                                         shareData.alarmTitles.forEach { (id, title) ->
-                                            alarmTitleRepository.setTitle(id, title)
+                                            val currentTitle = alarmTitleRepository.getTitle(id)
+                                            if (currentTitle != title) {
+                                                alarmTitleRepository.setTitle(id, title)
+                                            }
                                         }
 
                                         viewModel.restartScanning()

@@ -176,7 +176,8 @@ fun DeviceSetupScreen(navController: NavController) {
                 if (discoveredDevices.isEmpty() && !isScanning && hasPermissions && isBluetoothEnabled) {
                     StatusCard(
                         message = stringResource(R.string.setup_no_devices),
-                        type = StatusType.INFO
+                        type = StatusType.INFO,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
@@ -228,8 +229,7 @@ fun DeviceSetupScreen(navController: NavController) {
                 TextButton(
                     onClick = {
                         isScanning = false
-                        // Use default MAC address when skipping setup
-                        settingsRepository.targetMacAddress = SettingsRepository.DEFAULT_MAC
+                        // Mark setup as completed even when skipping
                         settingsRepository.isSetupCompleted = true
 
                         // Navigate back or to home if this is initial setup

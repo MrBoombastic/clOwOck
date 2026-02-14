@@ -235,8 +235,9 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
     Scaffold(snackbarHost = { CustomSnackbarHost(snackbarHostState) }, topBar = {
         TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = {
             BackNavigationButton(navController) {
-                val finalMac = macAddress.trim().ifEmpty { SettingsRepository.DEFAULT_MAC }
-                val isValid = BluetoothAdapter.checkBluetoothAddress(finalMac)
+                val finalMac = macAddress.trim()
+                val isValid =
+                    finalMac.isNotEmpty() && BluetoothAdapter.checkBluetoothAddress(finalMac)
 
                 if (isValid && finalMac != repository.targetMacAddress) {
                     repository.targetMacAddress = finalMac
