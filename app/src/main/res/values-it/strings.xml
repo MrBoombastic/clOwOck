@@ -162,6 +162,7 @@
     <string name="content_desc_fast_forward">Avanti veloce</string>
     <string name="error_no_audio_selected">Nessun audio selezionato</string>
     <string name="error_download_failed">Download fallito</string>
+    <string name="error_manifest_load_failed">Impossibile caricare il manifest della suoneria: %1$s</string>
     <string name="setup_new_device">Configura nuovo dispositivo</string>
     <string name="pairing_subtitle">Segui questi passaggi per accoppiare il dispositivo</string>
     <string name="pairing_step1_title">Entra in modalità accoppiamento</string>

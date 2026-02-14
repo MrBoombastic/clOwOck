@@ -162,6 +162,7 @@
     <string name="content_desc_fast_forward">Avance rapide</string>
     <string name="error_no_audio_selected">Aucun audio sélectionné</string>
     <string name="error_download_failed">Échec du téléchargement</string>
+    <string name="error_manifest_load_failed">Échec du chargement du manifeste de sonnerie : %1$s</string>
     <string name="setup_new_device">Configurer un nouvel appareil</string>
     <string name="pairing_subtitle">Suivez ces étapes pour jumeler votre appareil</string>
     <string name="pairing_step1_title">Entrer en mode d\'appairage</string>

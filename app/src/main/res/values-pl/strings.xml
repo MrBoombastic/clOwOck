@@ -153,8 +153,10 @@
     <string name="downloading_ringtone">Pobieranie dzwonka…</string>
     <string name="downloading_list">Pobieranie listy…</string>
     <string name="channel_mode_label">Kanał audio</string>
+    <string name="error_no_audio_selected">Nie wybrano audio</string>
     <string name="error_download_failed">Pobieranie się nie powiodło</string>
-    <string name="setup_new_device">Konfiguracja nowego urządzenia</string>
+    <string name="error_manifest_load_failed">Nie udało się załadować manifestu dzwonków: %1$s</string>
+    <string name="setup_new_device">Skonfiguruj nowe urządzenie</string>
     <string name="pairing_subtitle">Wykonaj te kroki, aby sparować urządzenie</string>
     <string name="pairing_step1_title">Włącz tryb parowania</string>
     <string name="pairing_step1_desc">Wciśnij przycisk urządzenia na 2 sekundy.</string>
@@ -186,7 +188,6 @@
     <string name="content_desc_play_preview">Odtwórz podgląd</string>
     <string name="content_desc_rewind">Przewiń</string>
     <string name="content_desc_fast_forward">Przeskocz wprzód</string>
-    <string name="error_no_audio_selected">Nie wybrano audio</string>
     <string name="widget_refresh_description">Odśwież dane z czujników</string>
     <string name="auth_hint">Może być konieczne zapomnienie urządzenia w ustawieniach, a następnie ponowne sparowanie.</string>
     <string name="invalid_mac_format">Nieprawidłowy format adresu MAC (XX:XX:XX:XX:XX:XX)!</string>

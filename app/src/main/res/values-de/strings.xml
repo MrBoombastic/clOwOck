@@ -160,8 +160,9 @@
     <string name="content_desc_play_preview">Vorschau abspielen</string>
     <string name="content_desc_rewind">Zurückspulen</string>
     <string name="content_desc_fast_forward">Vorspulen</string>
-    <string name="error_no_audio_selected">Kein Audio ausgewählt</string>
+    <string name="error_no_audio_selected">Keine Audio ausgewählt</string>
     <string name="error_download_failed">Download fehlgeschlagen</string>
+    <string name="error_manifest_load_failed">Fehler beim Laden des Klingelton-Manifests: %1$s</string>
     <string name="setup_new_device">Neues Gerät einrichten</string>
     <string name="pairing_subtitle">Befolgen Sie diese Schritte, um Ihr Gerät zu koppeln</string>
     <string name="pairing_step1_title">Kopplungsmodus aktivieren</string>

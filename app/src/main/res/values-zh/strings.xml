@@ -162,6 +162,7 @@
     <string name="content_desc_fast_forward">快进</string>
     <string name="error_no_audio_selected">未选择音频</string>
     <string name="error_download_failed">下载失败</string>
+    <string name="error_manifest_load_failed">无法加载铃声清单：%1$s</string>
     <string name="setup_new_device">设置新设备</string>
     <string name="pairing_subtitle">按照以下步骤配对您的设备</string>
     <string name="pairing_step1_title">进入配对模式</string>

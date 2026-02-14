@@ -151,6 +151,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
     val downloadingListText = stringResource(R.string.downloading_list)
     val noAudioText = stringResource(R.string.error_no_audio_selected)
     val downloadFailedText = stringResource(R.string.error_download_failed)
+    val errorManifestLoadFailedText = stringResource(R.string.error_manifest_load_failed)
 
     fun showError(message: String) {
         coroutineScope.launch {
@@ -214,7 +215,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
             )
             // Keep list empty on failure
             onlineRingtones = emptyList()
-            showError("Failed to load ringtone manifest: ${e.message}")
+            showError(errorManifestLoadFailedText.format(e.message ?: ""))
         } finally {
             isLoadingManifest = false
         }
