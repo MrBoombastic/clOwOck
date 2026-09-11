@@ -66,6 +66,7 @@ object BleConstants {
         const val LANG_ENGLISH = 0x01
         const val TIME_FORMAT_12H = 0x02
         const val TEMP_UNIT_F = 0x04
+        const val MANUAL_TIME_SYNC = 0x08
         const val MASTER_ALARM_DISABLE = 0x10
     }
 

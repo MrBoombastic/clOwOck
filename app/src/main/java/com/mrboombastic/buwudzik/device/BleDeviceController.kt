@@ -365,10 +365,11 @@ class BleDeviceController(private val context: Context) : DeviceController {
 
             when (characteristic.uuid) {
                 UUID_AUTH_NOTIFY -> {
-                    if (value.isNotEmpty() && value[0] == Header.FIRMWARE_DATA) {
+                    if (value.size >= 3 && (value[1] == Command.GET_FIRMWARE.toByte() || value[0] == Header.FIRMWARE_DATA)) {
                         try {
-                            val length = if (value.size > 1) value[1].toInt() and 0xFF else 0
-                            val version = String(value, 2, minOf(length, value.size - 2))
+                            val payloadLen = (value[0].toInt() and 0xFF) - 1
+                            val length = maxOf(0, minOf(payloadLen, value.size - 2))
+                            val version = String(value, 2, length)
                             AppLogger.d(TAG, "Received firmware version: $version")
                             firmwareVersionReadContinuation?.resume(version)
                             firmwareVersionReadContinuation = null
