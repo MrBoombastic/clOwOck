@@ -5,28 +5,49 @@ internal data class BleAck(
     val command: Int,
     val payloadSize: Int,
     val status: Int,
-    val firstPayloadByte: Int?
+    val subIndex: Int = 0,
+    val firstPayloadByte: Int? = null
 )
 
 /**
- * Parses the ACK sent by the device: `04 ff [command] [status] [payload]`.
+ * Parses the ACK sent by the device: `04 ff [command] 00 [status]`.
  *
- * The leading `04` is a length byte counting the four bytes that follow it, so an ACK is always
- * exactly five bytes long: the status sits at index 3 and index 4 holds a single command specific
- * payload byte, e.g. `04 ff 01 00 06` means "command 01 succeeded" with the payload byte `06`.
- * Shorter or longer frames are still accepted in case some firmware deviates from that layout.
+ * Standard ACK notification layout (always 5 bytes):
+ * - Byte 0: `0x04` (length of the 4 bytes that follow)
+ * - Byte 1: `0xff` (ACK response opcode)
+ * - Byte 2: `[command]` (echoed command identifier)
+ * - Byte 3: `0x00` (fixed sub-index/separator)
+ * - Byte 4: `[status]` (return/error code: 0x00 = success, non-zero = error)
+ *
+ * If extra payload follows (size > 5), it is captured in `firstPayloadByte`.
+ * If a truncated 4-byte frame is received (`04 ff [command] [status]`), index 3 is taken as status.
  */
 internal fun parseBleAck(value: ByteArray): BleAck? {
     if (value.size < 4 || value[0] != 0x04.toByte() || value[1] != 0xff.toByte()) return null
 
-    return BleAck(
-        command = value[2].toInt() and 0xff,
-        payloadSize = maxOf(0, value.size - 4),
-        status = value[3].toInt() and 0xff,
-        firstPayloadByte = value.getOrNull(4)?.toInt()?.and(0xff)
-    )
+    val command = value[2].toInt() and 0xff
+    return if (value.size >= 5) {
+        val subIndex = value[3].toInt() and 0xff
+        val status = value[4].toInt() and 0xff
+        BleAck(
+            command = command,
+            payloadSize = maxOf(0, value.size - 5),
+            status = status,
+            subIndex = subIndex,
+            firstPayloadByte = value.getOrNull(5)?.toInt()?.and(0xff)
+        )
+    } else {
+        // Fallback for truncated 4-byte frame
+        val status = value[3].toInt() and 0xff
+        BleAck(
+            command = command,
+            payloadSize = 0,
+            status = status,
+            subIndex = 0,
+            firstPayloadByte = null
+        )
+    }
 }
 
 internal fun BleAck.isSuccessfulAuthConfirm(): Boolean =
-    status == BleConstants.Status.SUCCESS &&
-            (firstPayloadByte == null || firstPayloadByte == BleConstants.Status.SUCCESS)
+    status == BleConstants.Status.SUCCESS

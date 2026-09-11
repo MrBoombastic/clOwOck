@@ -225,13 +225,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
         val cmdId = ack.command
         val status = ack.status
         val isAuthNotification = characteristicUuid == UUID_AUTH_NOTIFY
-        val authConfirmResult = ack.firstPayloadByte?.takeIf {
-            isAuthNotification && cmdId == Command.AUTH_CONFIRM
-        }
-        val isAuthConfirm = isAuthNotification && cmdId == Command.AUTH_CONFIRM
-        val commandSucceeded = if (isAuthConfirm) ack.isSuccessfulAuthConfirm() else {
-            status == Status.SUCCESS
-        }
+        val commandSucceeded = status == Status.SUCCESS
 
         val cmdName = when (cmdId) {
             Command.AUTH_INIT -> if (isAuthNotification) "Auth Init" else "Set Settings"
@@ -247,8 +241,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
         AppLogger.d(
             TAG,
             "Received ACK for command '$cmdName' (ID: ${cmdId.toHexString()}). " +
-                    "Length: ${ack.payloadSize}. Status: ${status.toHexString()}" +
-                    (authConfirmResult?.let { ". Result: ${it.toHexString()}" } ?: "")
+                    "Length: ${ack.payloadSize}. Status: ${status.toHexString()}"
         )
 
         if (cmdId == Command.AUDIO_BLOCK || cmdId == Command.AUDIO_INIT) {
@@ -261,7 +254,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
                 authInitAckReceived = true
                 maybeSendAuthConfirm()
             } else if (isAuthNotification && cmdId == Command.AUTH_CONFIRM) {
-                AppLogger.d(TAG, "Authentication seems successful, but syncing time will tell the truth")
+                AppLogger.d(TAG, "Authentication successful, proceeding to time sync")
                 isAuthenticated = true
                 pendingAuthWriteChar = null
             }
@@ -273,17 +266,18 @@ class BleDeviceController(private val context: Context) : DeviceController {
             val isAuthenticationCommand =
                 isAuthNotification &&
                         (cmdId == Command.AUTH_INIT || cmdId == Command.AUTH_CONFIRM)
+            val pairingModeRequired = isAuthNotification && (
+                    (cmdId == Command.AUTH_INIT && status == Status.ERR_BOND_MODE_REQUIRED) ||
+                            (cmdId == Command.AUTH_CONFIRM && isPendingPairing)
+                    )
             val tokenRejected =
-                isAuthConfirm &&
-                        authConfirmResult != null &&
-                        authConfirmResult != Status.SUCCESS
-            val pairingModeRequired = tokenRejected && isPendingPairing
+                isAuthNotification && cmdId == Command.AUTH_CONFIRM && !pairingModeRequired
             val errorSuffix = if (isAuthenticationCommand && !pairingModeRequired) {
                 " " + context.getString(com.mrboombastic.buwudzik.R.string.auth_hint)
             } else {
                 ""
             }
-            val failureCode = if (tokenRejected) authConfirmResult else status
+            val failureCode = status
             val failureMessage = if (pairingModeRequired) {
                 context.getString(com.mrboombastic.buwudzik.R.string.pairing_mode_required)
             } else if (tokenRejected) {
@@ -297,8 +291,9 @@ class BleDeviceController(private val context: Context) : DeviceController {
                 "[$characteristicUuid] $cmdName failed with code $failureCode$errorSuffix " +
                         "(Full: ${value.toHexString()})"
             )
-            pendingAckContinuations.remove(cmdId)
-                ?.resumeWithException(Exception("$failureMessage$errorSuffix"))
+            val continuation = pendingAckContinuations.remove(cmdId)
+                ?: if (isAuthenticationCommand) pendingAckContinuations.remove(Command.AUTH_CONFIRM) else null
+            continuation?.resumeWithException(Exception("$failureMessage$errorSuffix"))
         }
     }
 
@@ -547,12 +542,32 @@ class BleDeviceController(private val context: Context) : DeviceController {
             when (descriptor?.characteristic?.uuid) {
                 UUID_AUTH_NOTIFY -> {
                     pendingAuthWrite?.let { char ->
-                        AppLogger.d(TAG, "Descriptor write complete, sending Auth Init (11 01)...")
                         pendingAuthWriteChar = char
-                        authInitAckReceived = false
-                        authInitWriteCompleted = false
-                        authConfirmSent = false
-                        gatt?.let { writeCharacteristicCompat(it, char, buildAuthInitPacket()) }
+                        if (isPendingPairing) {
+                            AppLogger.d(
+                                TAG,
+                                "Descriptor write complete, pairing new device: sending Auth Init (11 01)..."
+                            )
+                            authInitAckReceived = false
+                            authInitWriteCompleted = false
+                            authConfirmSent = false
+                            gatt?.let { writeCharacteristicCompat(it, char, buildAuthInitPacket()) }
+                        } else {
+                            AppLogger.d(
+                                TAG,
+                                "Descriptor write complete, reconnecting paired device: sending Auth Confirm (11 02)..."
+                            )
+                            authInitAckReceived = true
+                            authInitWriteCompleted = true
+                            authConfirmSent = true
+                            gatt?.let {
+                                writeCharacteristicCompat(
+                                    it,
+                                    char,
+                                    buildAuthConfirmPacket()
+                                )
+                            }
+                        }
                         pendingAuthWrite = null
                     }
                 }

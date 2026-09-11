@@ -8,17 +8,17 @@ import kotlin.test.assertTrue
 
 class BleProtocolParserTest {
     @Test
-    fun `five byte ack uses index 3 status byte`() {
+    fun `five byte ack extracts status at index 4`() {
         assertEquals(
-            BleAck(command = 1, payloadSize = 1, status = 0, firstPayloadByte = 2),
+            BleAck(command = 1, payloadSize = 0, status = 2, subIndex = 0, firstPayloadByte = null),
             parseBleAck(hex("04 ff 01 00 02"))
         )
     }
 
     @Test
-    fun `auth init ack with payload byte is successful`() {
+    fun `auth init ack with pairing mode error reports code 6`() {
         assertEquals(
-            BleAck(command = 1, payloadSize = 1, status = 0, firstPayloadByte = 6),
+            BleAck(command = 1, payloadSize = 0, status = 6, subIndex = 0, firstPayloadByte = null),
             parseBleAck(hex("04 ff 01 00 06"))
         )
     }
@@ -30,23 +30,10 @@ class BleProtocolParserTest {
                 command = 0x10,
                 payloadSize = 0,
                 status = 6,
+                subIndex = 0,
                 firstPayloadByte = null
             ),
-            parseBleAck(hex("04 ff 10 06"))
-        )
-    }
-
-    @Test
-    fun `five byte error frame reports non-zero status`() {
-        // 04 ff 10 06 00 — command 0x10, status 0x06 (error), one payload byte
-        assertEquals(
-            BleAck(
-                command = 0x10,
-                payloadSize = 1,
-                status = 6,
-                firstPayloadByte = 0
-            ),
-            parseBleAck(hex("04 ff 10 06 00"))
+            parseBleAck(hex("04 ff 10 00 06"))
         )
     }
 
@@ -57,6 +44,7 @@ class BleProtocolParserTest {
                 command = 9,
                 payloadSize = 0,
                 status = 0,
+                subIndex = 0,
                 firstPayloadByte = null
             ),
             parseBleAck(hex("04 ff 09 00"))
@@ -64,14 +52,28 @@ class BleProtocolParserTest {
     }
 
     @Test
-    fun `auth confirm rejects non-zero command result payload`() {
+    fun `ack with extra payload preserves firstPayloadByte`() {
+        assertEquals(
+            BleAck(
+                command = 0x10,
+                payloadSize = 1,
+                status = 0,
+                subIndex = 0,
+                firstPayloadByte = 0x42
+            ),
+            parseBleAck(hex("04 ff 10 00 00 42"))
+        )
+    }
+
+    @Test
+    fun `auth confirm rejects non-zero status`() {
         val ack = parseBleAck(hex("04 ff 02 00 01"))!!
 
         assertFalse(ack.isSuccessfulAuthConfirm())
     }
 
     @Test
-    fun `auth confirm accepts zero command result payload`() {
+    fun `auth confirm accepts zero status`() {
         val ack = parseBleAck(hex("04 ff 02 00 00"))!!
 
         assertTrue(ack.isSuccessfulAuthConfirm())

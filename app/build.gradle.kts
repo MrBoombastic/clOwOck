@@ -18,6 +18,8 @@ configure<com.android.build.api.variant.ApplicationAndroidComponentsExtension> {
 
 var minSDK = 29
 var targetSDK = 37
+var versionCode = 50
+var versionName = "1.11.1"
 
 configure<ApplicationExtension> {
     val canaryBuild = providers.gradleProperty("CANARY_BUILD").orNull
@@ -28,8 +30,8 @@ configure<ApplicationExtension> {
         applicationId = "com.mrboombastic.buwudzik"
         minSdk = minSDK
         targetSdk = targetSDK
-        versionCode = 49
-        versionName = "1.11.0"
+        versionCode = versionCode
+        versionName = versionName
         buildConfigField(
             "String",
             "WIDGET_UPDATE_ACTION",

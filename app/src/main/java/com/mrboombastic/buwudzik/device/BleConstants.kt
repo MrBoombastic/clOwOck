@@ -71,6 +71,14 @@ object BleConstants {
 
     object Status {
         const val SUCCESS = 0x00
+        const val AUTH_ERR_TOKEN = 0x01
+        const val ERR_INVALID_STATE = 0x02
+        const val ERR_PARAM = 0x04
+        const val ERR_INVALID_LENGTH = 0x05
+        const val ERR_BOND_MODE_REQUIRED = 0x06
+        const val ERR_FLASH_WRITE = 0x07
+        const val AUTH_ERR_STORAGE = 0x08
+        const val ERR_BUSY = 0x09
     }
 
     object Advertise {
