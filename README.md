@@ -56,8 +56,8 @@ sensors.
 - [Protocol Specification](#protocol-specification)
     - [1. Service & Characteristics Profile](#1-service--characteristics-profile)
     - [2. Protocol Structure](#2-protocol-structure)
-        - [2.1. Known Headers](#21-known-headers)
-        - [2.2. Authentication (Two-Step Token Protocol)](#22-authentication-two-step-token-protocol)
+        - [2.1. Length Byte per Command](#21-length-byte-per-command)
+        - [2.2. Authentication & Pairing (Token Protocol)](#22-authentication--pairing-token-protocol)
         - [2.3. Time Synchronization](#23-time-synchronization)
     - [3. Managing Alarms](#3-managing-alarms)
         - [3.1. Set Alarm](#31-set-alarm)
@@ -78,6 +78,7 @@ sensors.
         - [Upload Protocol](#upload-protocol)
     - [10. Known Command IDs Summary](#10-known-command-ids-summary)
     - [11. GATT Disconnection Status Codes](#11-gatt-disconnection-status-codes)
+  - [12. ProductTest Mode and Hardware ID](#12-producttest-mode-and-hardware-id)
 
 </details>
 
@@ -95,7 +96,7 @@ so it's only semi-slop, but you have been warned, etc., etc.
 - Management of up to 16 device alarms, including custom alarm names stored in the app
 - Global alarm switch to enable or disable all device alarms at once
 - **Custom ringtones support**
-    - Upload any audio file from the phone, or pick one from an online manifest
+    - Upload any audio file from the phone or pick one from an online manifest
     - Built-in trimmer with waveform preview (device limit is ~12 s / 98 KB of audio)
     - Channel selection for stereo sources: left, right or both mixed down
 - Bluetooth state monitoring with automatic prompts to enable it
@@ -134,14 +135,19 @@ versions.
 
 ### Firmware Compatibility
 
-| Version      | Status  | Notes                                                          |
-|--------------|---------|----------------------------------------------------------------|
-| `1.0.1_0046` | Unknown |                                                                |
-| `1.0.1_0063` | Unknown |                                                                |
-| `1.0.1_0067` | Unknown |                                                                |
-| `1.0.1_0126` | Unknown |                                                                |
-| `1.0.1_0130` | Working | *Marked as the latest for some devices, perhaps different HW?* |
-| `1.0.1_0132` | Working | *Marked as the latest for some devices, perhaps different HW?* |
+| Version      | Status  | Release Date         | Notes                                                                                                                                                                                                                                                                                         |
+|--------------|---------|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `1.0.1_0046` | Unknown | Unknown / 02.12.2019 | RTM? Sources: me, vacuum.mindsolo.net                                                                                                                                                                                                                                                         |
+| `1.0.1_0063` | Unknown | Unknown              | Source: https://community.openmqttgateway.com/                                                                                                                                                                                                                                                |
+| `1.0.1_0067` | Unknown | 23.12.2020           | Source: https://vacuum.mindsolo.net                                                                                                                                                                                                                                                           |
+| `1.0.1.0074` | Unknown | 22.05.2020 (?)       | Alpha, source: https://vacuum.mindsolo.net                                                                                                                                                                                                                                                    |
+| `1.0.1_0125` | Unknown | 22.07.2021           | "Improved the stability", alpha, sources: me, https://vacuum.mindsolo.net                                                                                                                                                                                                                     |
+| `1.0.1_0126` | Unknown | 14.10.2021           | "The procedure for restoring factory settings has been modified.<br/>The new method is as follows: remove the battery,<br/>press and hold the product's button while reinserting the battery,<br/>and continue holding the button for 12 seconds to restore factory settings."<br/>Source: me |
+| `1.0.1_0127` | Unknown | 26.11.2021           | Alpha, source: https://vacuuum.mindsolo.net                                                                                                                                                                                                                                                   |
+| `1.0.1_0130` | Working | 13.12.2021           | "Fixed some bugs". *Marked as the latest for some devices, perhaps different HW?* Source: me                                                                                                                                                                                                  |
+| `1.0.1.0131` | Unknown | 28.09.2024           | Alpha, source: https://vacuuum.mindsolo.net                                                                                                                                                                                                                                                   |
+| `1.0.1_0132` | Working | ~2023/2024           | *Marked as the latest for some devices, perhaps different HW?* Source: me                                                                                                                                                                                                                     |
+| `1.0.1_0133` | Unknown | 9.10.2025            | "Fixed a bug where double-tapping caused the device to ring after being bound to the app. <br/>The firmware version will still display as 1.0.1_0130 after the update; this is normal, so please disregard it."<br/>Source: me                                                                |
 
 ## Protocol Specification
 
@@ -173,7 +179,7 @@ filter used for scanning.
 Every frame follows the same shape: a **length byte**, a **command byte** and a payload.
 
 **Request Format:** `[Length] [Command] [Payload...]`  
-**ACK Format (Notify):** `04 ff [Command] [Status] [Payload 1B]`
+**ACK Format (Notify):** `04 ff [Command] 00 [Status]`
 
 The first byte counts the bytes that follow it — it is a length, not a per-command identifier:
 
@@ -185,20 +191,38 @@ The first byte counts the bytes that follow it — it is a length, not a per-com
 | `08 10 [Size 3B] [Signature 4B]` | `0x08` = 8   | `10` + 7 = 8                        |
 | `81 08 [Audio 128B]`             | `0x81` = 129 | `08` + 128 = 129                    |
 | `11 06 [Base] [3 × 5B]` (alarms) | `0x11` = 17  | `06` + 1 + 15 = 17 (18-byte packet) |
-| `04 ff [Cmd] [Status] [Payload]` | `0x04` = 4   | `ff` + 3 = 4 (5-byte packet)        |
+| `04 ff [Cmd] 00 [Status]`        | `0x04` = 4   | `ff` + 3 = 4 (5-byte packet)        |
 
 That is why the same leading value shows up for unrelated commands (`0x02` for both the brightness
 preview and the two-byte ringtone preview, `0x01` for every two-byte read request): they simply have
 the same length.
 
-Consequently an **ACK is always exactly 5 bytes**: `04 ff [Command] [Status] [Payload 1B]`. The
-status sits at index 3 and the single trailing byte is a command-specific payload. For example the
-Auth Init reply `04 ff 01 00 06` means "command `01` succeeded" and carries the payload byte `06`.
+Consequently, an **ACK is always exactly 5 bytes**: `04 ff [Command] 00 [Status]`. The structure is:
 
-| Status   | Meaning                                           |
-|----------|---------------------------------------------------|
-| `00`     | Success                                           |
-| non-`00` | Failure; the exact meaning depends on the command |
+- **Byte 0 (`0x04`):** Length of the following packet (4 bytes).
+- **Byte 1 (`0xFF`):** Response / ACK indicator opcode.
+- **Byte 2 (`[Command]`):** Echoed command identifier (e.g. `01`, `02`, `03`, `05`, `08`, `09`,
+  `10`).
+- **Byte 3 (`0x00`):** Fixed separator / sub-index (always `0x00` for command responses).
+- **Byte 4 (`[Status]`):** Actual status / return code of the operation (`0x00` = Success,
+  non-zero = Error).
+
+*(Note: In earlier captures, byte 3 (`0x00`) was easily mistaken for a success code and byte 4 for a
+secondary payload. Firmware decompilation reveals byte 3 is a fixed delimiter while byte 4 is the
+definitive status code — e.g. `04 ff 01 00 06` is not a success with payload `06`, but error
+code `0x06` indicating pairing mode was not active.)*
+
+| Status | Meaning                                                              |
+|--------|----------------------------------------------------------------------|
+| `00`   | Success (`OK`)                                                       |
+| `01`   | Authentication failure (token mismatch)                              |
+| `02`   | Invalid state machine context (`ERR_INVALID_STATE`)                  |
+| `04`   | Parameter error (e.g. invalid alarm payload or audio block sequence) |
+| `05`   | Invalid length / payload size                                        |
+| `06`   | Pairing mode required (physical top button not held on fw ≥ 0130)    |
+| `07`   | SPI Flash memory write failure                                       |
+| `08`   | Storage error / device not bonded                                    |
+| `09`   | Busy / transfer rejected                                             |
 
 #### 2.1. Length Byte per Command
 
@@ -217,37 +241,54 @@ values as named constants:
 | `0x08`        | `Header.AUDIO_INIT`     | Audio upload initialization                     |
 | `0x81`        | `Header.AUDIO_PACKET`   | Audio data stream packets                       |
 
-#### 2.2. Authentication (Two-Step Token Protocol)
+#### 2.2. Authentication & Pairing (Token Protocol)
 
-The device uses a two-step authentication protocol with a 16-byte random token. Once paired, the
-same token must be used for all future connections.
+The device uses a 16-byte random token for authentication. Firmwares handle token provisioning (
+bonding) and session authentication as two distinct operations:
 
-**Flow:**
+- **Auth Init (`11 01 [Token 16B]`):** Flash Token Provisioning / Bonding.  
+  Writes the 16-byte token to persistent SPI Flash. On firmware ≥ `1.0.1_0130`, the device checks
+  the hardware button state and **rejects** token provisioning with status `0x06` unless the clock
+  has been put into pairing mode by pressing and holding the top button.
+- **Auth Confirm (`11 02 [Token 16B]`):** Session Authentication.  
+  Compares the provided token with the one stored in SPI Flash. If they match, the firmware unlocks
+  the connection and authorizes privileged commands.
 
-1. Connect to the device and discover services
-2. Enable Notifications on **Auth Notify** (`...0002`)
-3. Send **Auth Init** to **Auth Write** (`...0001`): `11 01 [Token 16B]`
-4. Wait for ACK on **Auth Notify**: `04 ff 01 00 [Payload 1B]` (status `00` = success, proceed to
-   step 5). The payload byte is non-zero here (`02` or `06`, depending on firmware); its meaning is
-   unknown and it can be ignored.
-5. Send **Auth Confirm** to **Auth Write**: `11 02 [Token 16B]`
-6. Wait for final ACK: `04 ff 02 00 [Result]`. Status `00` means the command was handled; the
-   command-specific result byte decides whether authentication succeeded:
-    - `00` = token accepted
-    - non-zero (observed: `01`) = token rejected
+**Pairing Flow (New / Unpaired Device):**
+
+1. Enter physical pairing mode: press and hold the top button on the clock for ~2-3 seconds until
+   the Bluetooth icon blinks.
+2. Connect to the device and discover services.
+3. Enable Notifications on **Auth Notify** (`...0002`).
+4. Send **Auth Init (Provision Token)** to **Auth Write** (`...0001`): `11 01 [Token 16B]`.
+5. Wait for ACK on **Auth Notify**: `04 ff 01 00 [Status]`.
+    - `00` = `BOND_OK` (Token stored in Flash; proceed to step 6).
+    - `06` = `ERR_BOND_MODE_REQUIRED` (Pairing mode not active; top button was not held).
+    - `02` = `ERR_INVALID_STATE` (Invalid state machine context).
+    - `05` = `ERR_INVALID_LENGTH` (Token length != 16 bytes).
+    - `07` = `ERR_FLASH_WRITE` (Hardware Flash write failure).
+6. Send **Auth Confirm (Authorize Session)** to **Auth Write**: `11 02 [Token 16B]`.
+7. Wait for ACK on **Auth Notify**: `04 ff 02 00 [Status]`.
+    - `00` = `AUTH_OK` (Token verified; session authenticated).
+    - `01` = `AUTH_ERR_TOKEN` (Token mismatch / rejected).
+    - `08` = `AUTH_ERR_STORAGE` (No bond stored in Flash / storage failure).
+
+**Reconnection Flow (Already Paired Device):**
+
+When reconnecting with a previously established token, **only Auth Confirm (`11 02`) is needed**:
+
+1. Connect and enable notifications on **Auth Notify** (`...0002`).
+2. Send **Auth Confirm**: `11 02 [Token 16B]`.
+3. Wait for ACK: `04 ff 02 00 00` (Success).  
+   *(Sending `11 01` on reconnects is redundant and will fail with status `0x06` on
+   firmware `≥ 0130` because the device is not in physical pairing mode.)*
 
 **Token Management:**
 
-- For new devices: Generate a random 16-byte token
-- For paired devices: Use the stored token from the previous pairing
-- Token must match what the device expects (first successful pairing establishes the token)
-- Accept a token only when Auth Confirm returns result `00`. The app completes its automatic time
-  synchronization before persisting a newly generated token.
-
-**ACK Response Format:** `04 ff [CmdID] [Status] [Payload 1B]`
-
-- Status `00` = Success (any other value means the command was rejected)
-- The last byte is command-specific payload.
+- For new devices: Generate a random 16-byte token.
+- For paired devices: Re-use the token stored during initial pairing.
+- Persist a newly generated token only after **Auth Confirm** returns status `00` and the clock
+  successfully responds to time synchronization (`05 09`).
 
 #### 2.3. Time Synchronization
 
@@ -308,7 +349,7 @@ To delete an alarm, overwrite it with `FF` values (marking it as empty/unused).
 **Note:** A reply packet is 18 bytes long and carries **3 alarms** (the leading `0x11` = 17 bytes
 after it: command + base index + 3 × 5). All 16 slots are returned, so the device sends 6 packets
 in a row; empty slots have `FF FF FF FF FF` values. The app parses as many 5-byte entries as the
-packet happens to contain, so a firmware using a different packing would still be read correctly.
+packet happens to contain, so firmware using different packing would still be read correctly.
 
 - **ACK (after Set/Delete):** `04 ff 05 00 00` (Success)
 
@@ -529,10 +570,11 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
 **Step 2 - Wait for Init ACK (Data Notify):**
 
 ```
-04 ff 10 [Status] [Payload 1B]
+04 ff 10 00 [Status]
 ```
 
-- Status `00` = success, proceed with the upload (the byte after it is payload, not a second status)
+- Status `00` = success, proceed with upload (non-zero indicates failure, e.g. `05` = invalid size,
+  `09` = rejected/busy)
 
 **Step 3 - Send Audio Data:**
 
@@ -540,8 +582,9 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
 - A trailing packet shorter than 128 bytes is padded with `FF`
 - Packets per block: 4 (512 bytes of audio per block)
 - After the 4th packet of a block (or after the very last packet), wait for the block ACK
-  `04 ff 08 [Status] [Payload 1B]` before continuing; status `00` = keep going
-- Write every packet with *write-with-response* and wait for the write callback; short delays
+  `04 ff 08 00 [Status]` before continuing; status `00` = keep going (error codes: `04` = block
+  sequence error, `07` = Flash write failure)
+- Write every packet with *write-with-response* and wait for the writing callback; short delays
   between packets keep the device from falling behind
 
 **Step 4 - Completion:**
@@ -574,8 +617,8 @@ The first column is the length byte, the second one the actual command:
 | 08  | 10  | Data Write     | Audio Upload Init                       |
 | 81  | 08  | Data Write     | Audio packet (+ 128B padded audio)      |
 
-**ACK Format (Notify characteristics):** `04 ff [CmdSub] [Status] [Payload 1B]` - always 5 bytes,
-status at index 3, `00` means success.
+**ACK Format (Auth/Data Notify characteristics):** `04 ff [Command] 00 [Status]` - always 5
+bytes, fixed separator `00` at index 3, status/return code at index 4 (`00` means success).
 
 ### 11. GATT Disconnection Status Codes
 
@@ -587,3 +630,7 @@ When the device disconnects, the GATT status indicates the reason:
 | 8      | `GATT_CONN_TIMEOUT`         | Connection timeout                 |
 | 19     | `GATT_CONN_TERMINATE_PEER`  | Device terminated connection       |
 | 22     | `GATT_CONN_TERMINATE_LOCAL` | Link lost / local host terminated  |
+
+### 12. ProductTest Mode and Hardware ID
+
+To be released...
