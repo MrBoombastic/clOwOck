@@ -357,15 +357,15 @@ packet happens to contain, so firmware using different packing would still be re
 
 Managed via a single comprehensive payload on **Data Write**.
 
-- **Command:** Start with `13` (Set Settings) or `01 02` (Read Settings)
+- **Command:** Start with `13 01` (Set Settings) or `01 02` (Read Settings)
 - **Set Settings Payload (20 bytes):**
 
   `13 01 [Vol] [Hdr1] [Hdr2] [Flags] [Timezone] [Duration] [Brightness] [NightStartH] [NightStartM] [NightEndH] [NightEndM] [TzSign] [NightEn] [Reserved] [Sig 4B]`
 
 | Byte  | Value           | Description                                                                                                    |
 |-------|-----------------|----------------------------------------------------------------------------------------------------------------|
-| 0     | `0x13`          | Command ID                                                                                                     |
-| 1     | `0x01` / `0x02` | Set / Read Response                                                                                            |
+| 0     | `0x13`          | Packet Length (19 bytes follow)                                                                                |
+| 1     | `0x01` / `0x02` | Command ID (`0x01` = Set Settings, `0x02` = Read Settings Response)                                            |
 | 2     | `1-5`           | Sound Volume                                                                                                   |
 | 3-4   | `58 02`         | Fixed Header / Version (???)                                                                                   |
 | 5     | Bitmask         | Mode Flags: See the **Mode Flags Breakdown** table below.                                                      |
@@ -396,7 +396,7 @@ This byte acts as a **bitfield** where individual bits control specific boolean 
 > When set to `0` (default), the clock operates in automatic background time synchronization mode (
 > intended for Bluetooth Gateways / background sync). Setting this bit to `1` switches to manual sync
 > mode. Regardless of this setting, the clock always accepts manual time sync writes (
-`01 09 [timestamp]`).
+> `05 09 [Timestamp 4B LE]`).
 
 **Workaround:** Disabling night mode is being done via setting 1-minute night mode (i.e.
 `00:00 - 00:01`). Yup, it's that stupid; even official app does this.
@@ -559,7 +559,10 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
 - Decode/resample the source file to 8-bit unsigned PCM, 8000 Hz, mono (stereo sources can be
   mixed down or taken from a single channel)
 - Pad the result to a multiple of **512 bytes**: the first padding byte is `00` (end-of-audio
-  marker), the remaining ones are `FF`
+  marker), the remaining ones are `FF`. **This alignment is mandatory:** the firmware's fast audio
+  receiver strictly expects 128-byte packets and only commits data and sends a block ACK every 4
+  packets (512 bytes). If the total stream is not an exact multiple of 512 bytes, the clock will
+  never acknowledge the final incomplete block and the upload will time out.
 - Keep the whole payload under ~**98 KB** (roughly 12 seconds at 8 kHz); the device rejects or
   truncates anything longer
 
@@ -586,9 +589,11 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
 - Packet size: 128 bytes of audio, prepended with the `81 08` header (130 bytes on the wire)
 - A trailing packet shorter than 128 bytes is padded with `FF`
 - Packets per block: 4 (512 bytes of audio per block)
-- After the 4th packet of a block (or after the very last packet), wait for the block ACK
-  `04 ff 08 00 [Status]` before continuing; status `00` = keep going (error codes: `04` = block
-  sequence error, `07` = Flash write failure)
+- After the 4th packet of each 512-byte block, wait for the block ACK `04 ff 08 00 [Status]` before
+  continuing; status `00` = keep going (error codes: `04` = block sequence error, `07` = Flash write
+  failure). Because the firmware only emits an ACK every 4 packets, the entire stream must be
+  512-byte
+  aligned.
 - Write every packet with *write-with-response* and wait for the writing callback; short delays
   between packets keep the device from falling behind
 
@@ -606,21 +611,21 @@ screen on and the link alive until it finishes.
 
 The first column is the length byte, the second one the actual command:
 
-| Len | Cmd | Characteristic | Description                             |
-|-----|-----|----------------|-----------------------------------------|
-| 11  | 01  | Auth Write     | Auth Init (+ 16B token)                 |
-| 11  | 02  | Auth Write     | Auth Confirm (+ 16B token)              |
-| 05  | 09  | Auth Write     | Time Sync (+ 4B timestamp LE)           |
-| 01  | 0D  | Auth Write     | Read Firmware Version                   |
-| 13  | 01  | Data Write     | Set Settings (Volume, Brightness, etc.) |
-| 01  | 02  | Data Write     | Read Settings                           |
-| 02  | 03  | Data Write     | Set Immediate Brightness                |
-| 01  | 04  | Data Write     | Preview Ringtone (current volume)       |
-| 02  | 04  | Data Write     | Preview Ringtone (+ 1B volume)          |
-| 07  | 05  | Data Write     | Set Alarm                               |
-| 01  | 06  | Data Write     | Read Alarms                             |
-| 08  | 10  | Data Write     | Audio Upload Init                       |
-| 81  | 08  | Data Write     | Audio packet (+ 128B padded audio)      |
+| Len | Cmd | Characteristic | Description                              |
+|-----|-----|----------------|------------------------------------------|
+| 11  | 01  | Auth Write     | Auth Init (+ 16B token)                  |
+| 11  | 02  | Auth Write     | Auth Confirm (+ 16B token)               |
+| 05  | 09  | Auth Write     | Time Sync (+ 4B timestamp LE)            |
+| 01  | 0D  | Auth Write     | Read Firmware Version                    |
+| 13  | 01  | Data Write     | Set Settings (Volume, Brightness, etc.)  |
+| 01  | 02  | Data Write     | Read Settings                            |
+| 02  | 03  | Data Write     | Set Immediate Brightness                 |
+| 01  | 04  | Data Write     | Preview Ringtone (current volume)        |
+| 02  | 04  | Data Write     | Preview Ringtone (+ 1B volume?, ignored) |
+| 07  | 05  | Data Write     | Set Alarm                                |
+| 01  | 06  | Data Write     | Read Alarms                              |
+| 08  | 10  | Data Write     | Audio Upload Init                        |
+| 81  | 08  | Data Write     | Audio packet (+ 128B padded audio)       |
 
 **ACK Format (Auth/Data Notify characteristics):** `04 ff [Command] 00 [Status]` - always 5
 bytes, fixed separator `00` at index 3, status/return code at index 4 (`00` means success).

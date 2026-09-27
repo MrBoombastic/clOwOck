@@ -52,6 +52,8 @@ object BleConstants {
 
         val ACK = byteArrayOf(0x04.toByte(), 0xFF.toByte())
         val ALARM_DATA = byteArrayOf(0x11.toByte(), 0x06.toByte())
+
+        // Settings packet headers: 0x13 = Length (19), 0x01 = Set Settings, 0x02 = Read Settings Response
         val SETTINGS_DATA_V1 = byteArrayOf(0x13.toByte(), 0x01.toByte())
         val SETTINGS_DATA_V2 = byteArrayOf(0x13.toByte(), 0x02.toByte())
         const val SENSOR_DATA = 0x00.toByte()

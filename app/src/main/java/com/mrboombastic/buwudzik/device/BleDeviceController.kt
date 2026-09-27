@@ -1052,7 +1052,20 @@ class BleDeviceController(private val context: Context) : DeviceController {
             AppLogger.e(TAG, "Audio upload aborted: data characteristics not found")
             return false
         }
-        AppLogger.d(TAG, "Starting audio upload: ${audioData.size} bytes, signature ${signature.toHexString()}")
+        val blockSize = AUDIO_PACKET_SIZE * AUDIO_PACKETS_PER_BLOCK
+        val uploadData = if (audioData.size % blockSize != 0) {
+            val paddingNeeded = blockSize - (audioData.size % blockSize)
+            audioData + ByteArray(paddingNeeded) { i ->
+                if (i == 0) 0x00.toByte() else 0xFF.toByte()
+            }
+        } else {
+            audioData
+        }
+
+        AppLogger.d(
+            TAG,
+            "Starting audio upload: ${uploadData.size} bytes (raw: ${audioData.size}), signature ${signature.toHexString()}"
+        )
 
         if (!enabledNotifications.contains(UUID_DATA_NOTIFY)) {
             currentGatt.setCharacteristicNotification(dataNotifyChar, true)
@@ -1066,7 +1079,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
 
         // Send Init
         val targetSignature = signature
-        val sizeBytes = audioData.size
+        val sizeBytes = uploadData.size
         val initPayload = byteArrayOf(Header.AUDIO_INIT, Command.AUDIO_INIT.toByte(), (sizeBytes and 0xFF).toByte(), ((sizeBytes shr 8) and 0xFF).toByte(), ((sizeBytes shr 16) and 0xFF).toByte(), targetSignature[0], targetSignature[1], targetSignature[2], targetSignature[3])
 
         uploadInitAckStatus = null
@@ -1083,15 +1096,16 @@ class BleDeviceController(private val context: Context) : DeviceController {
         val packetSize = AUDIO_PACKET_SIZE
         val packetsPerBlock = AUDIO_PACKETS_PER_BLOCK
         var offset = 0
-        while (offset < audioData.size) {
+        while (offset < uploadData.size) {
             for (pktIdx in 0 until packetsPerBlock) {
-                if (offset >= audioData.size) break
-                val remaining = audioData.size - offset
+                if (offset >= uploadData.size) break
+                val remaining = uploadData.size - offset
                 val audioLen = minOf(packetSize, remaining)
-                val audioChunk = audioData.copyOfRange(offset, offset + audioLen)
+                val audioChunk = uploadData.copyOfRange(offset, offset + audioLen)
                 val paddedAudio = if (audioChunk.size < packetSize) audioChunk + ByteArray(packetSize - audioChunk.size) { 0xFF.toByte() } else audioChunk
                 val packet = byteArrayOf(Header.AUDIO_PACKET, Command.AUDIO_BLOCK.toByte()) + paddedAudio
-                val isLastInBlock = (pktIdx == packetsPerBlock - 1) || (offset + audioLen >= audioData.size)
+                val isLastInBlock =
+                    (pktIdx == packetsPerBlock - 1) || (offset + audioLen >= uploadData.size)
 
                 if (isLastInBlock) {
                     uploadBlockAckStatus = null
@@ -1113,9 +1127,9 @@ class BleDeviceController(private val context: Context) : DeviceController {
                 }
                 offset += audioLen
             }
-            onProgress(minOf(1.0f, offset.toFloat() / audioData.size))
+            onProgress(minOf(1.0f, offset.toFloat() / uploadData.size))
         }
-        AppLogger.d(TAG, "Audio upload finished successfully (${audioData.size} bytes)")
+        AppLogger.d(TAG, "Audio upload finished successfully (${uploadData.size} bytes)")
         return true
     }
 
