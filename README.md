@@ -360,7 +360,7 @@ Managed via a single comprehensive payload on **Data Write**.
 - **Command:** Start with `13 01` (Set Settings) or `01 02` (Read Settings)
 - **Set Settings Payload (20 bytes):**
 
-  `13 01 [Vol] [Hdr1] [Hdr2] [Flags] [Timezone] [Duration] [Brightness] [NightStartH] [NightStartM] [NightEndH] [NightEndM] [TzSign] [NightEn] [Reserved] [Sig 4B]`
+  `13 01 [Vol] [Hdr1] [Hdr2] [Flags] [Timezone] [Duration] [Brightness] [NightStartH] [NightStartM] [NightEndH] [NightEndM] [TzSign] [NightEn] [Unknown] [Sig 4B]`
 
 | Byte  | Value           | Description                                                                                                    |
 |-------|-----------------|----------------------------------------------------------------------------------------------------------------|
@@ -376,27 +376,24 @@ Managed via a single comprehensive payload on **Data Write**.
 | 11-12 | HH:MM           | Night End Time                                                                                                 |
 | 13    | `0/1`           | Timezone Sign (1=Positive, 0=Negative)                                                                         |
 | 14    | `0/1`           | Night Mode Enabled                                                                                             |
-| 15    | `0x00`          | Reserved (always `0x00` in HCI captures and official app; preserved from device response)                      |
+| 15    | Byte            | Meaning unknown; accepted, stored, and returned by firmware; preserve the device response value.               |
 | 16-19 | `Sig 4B`        | Ringtone signature (4 bytes). Identifies the device ringtone — see the "Known Ringtone Signatures" list below. |
 
 #### Mode Flags Breakdown (Byte 5)
 
 This byte acts as a **bitfield** where individual bits control specific boolean settings.
 
-| Bit | Value (Hex) | Description              | 0 (Off/Default) | 1 (On/Active) |
-|-----|-------------|--------------------------|-----------------|---------------|
-| 0   | `0x01`      | Language                 | Chinese         | English       |
-| 1   | `0x02`      | Time Format              | 24-hour         | 12-hour       |
-| 2   | `0x04`      | Temp Unit                | Celsius         | Fahrenheit    |
-| 3   | `0x08`      | Time Calibration Mode    | Auto (Default)  | Manual        |
-| 4   | `0x10`      | Master Alarm Disable (!) | Enabled         | Disabled      |
-| 5-7 | -           | Reserved                 | -               | -             |
+| Bit | Value (Hex) | Description               | 0 (Off/Default) | 1 (On/Active) |
+|-----|-------------|---------------------------|-----------------|---------------|
+| 0   | `0x01`      | Language                  | Chinese         | English       |
+| 1   | `0x02`      | Time Format               | 24-hour         | 12-hour       |
+| 2   | `0x04`      | Temp Unit                 | Celsius         | Fahrenheit    |
+| 3   | `0x08`      | Time Synchronization Mode | Auto (Default)  | Manual        |
+| 4   | `0x10`      | Master Alarm Disable (!)  | Enabled         | Disabled      |
+| 5-7 | -           | Reserved                  | -               | -             |
 
-> **Note on Bit 3 (`0x08` - Time Calibration Mode):**
-> When set to `0` (default), the clock operates in automatic background time synchronization mode (
-> intended for Bluetooth Gateways / background sync). Setting this bit to `1` switches to manual sync
-> mode. Regardless of this setting, the clock always accepts manual time sync writes (
-> `05 09 [Timestamp 4B LE]`).
+> Bit 3 (`0x08`) stores the auto/manual time synchronization setting; no functional use was found in
+> the analyzed firmware paths.
 
 **Workaround:** Disabling night mode is being done via setting 1-minute night mode (i.e.
 `00:00 - 00:01`). Yup, it's that stupid; even official app does this.
@@ -459,9 +456,8 @@ For example, a common 17-byte payload is:
 - **Command (Auth Write):** `01 0d`
 - **Response (Auth Notify):** `[Length] 0d [ASCII String]`
 
-The leading byte is the length of following bytes (`strlen + 1`, e.g. `0x0b` = 11 for standard
-10-character versions like `1.0.1_0130`). The second byte is the echoed command ID `0x0d` (
-`Command.GET_FIRMWARE`), followed directly by the raw ASCII version string.
+The response is `0b 0d [ASCII 10B]`: `0x0b` counts the following 11 bytes, `0x0d` is the command ID,
+and the version string occupies 10 bytes.
 
 ### 9. Audio Transfer Protocol (Ringtone Upload)
 
@@ -590,12 +586,17 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
 - A trailing packet shorter than 128 bytes is padded with `FF`
 - Packets per block: 4 (512 bytes of audio per block)
 - After the 4th packet of each 512-byte block, wait for the block ACK `04 ff 08 00 [Status]` before
-  continuing; status `00` = keep going (error codes: `04` = block sequence error, `07` = Flash write
-  failure). Because the firmware only emits an ACK every 4 packets, the entire stream must be
-  512-byte
+  continuing.
+- The fast receiver handles four 128-byte packets per block, so transmitted audio must be 512-byte
   aligned.
 - Write every packet with *write-with-response* and wait for the writing callback; short delays
-  between packets keep the device from falling behind
+  between packets keep the device from falling behind.
+
+| Status | Meaning                                                                                                                                |
+|--------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `00`   | Block acknowledged; does not independently verify the Flash write.                                                                     |
+| `04`   | Configuration-save failure branch; the write helper returns success unconditionally, so this branch is not reached in the traced path. |
+| `07`   | Transfer is inactive.                                                                                                                  |
 
 **Step 4 - Completion:**
 
