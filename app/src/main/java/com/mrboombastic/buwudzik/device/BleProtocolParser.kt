@@ -51,3 +51,11 @@ internal fun parseBleAck(value: ByteArray): BleAck? {
 
 internal fun BleAck.isSuccessfulAuthConfirm(): Boolean =
     status == BleConstants.Status.SUCCESS
+
+internal fun BleAck.isAuthenticationFailure(isAuthNotification: Boolean): Boolean =
+    isAuthNotification && status != BleConstants.Status.SUCCESS &&
+            (command == BleConstants.Command.AUTH_INIT || command == BleConstants.Command.AUTH_CONFIRM)
+
+/** Keep the first upload error even if a later ACK reports success. */
+internal fun mergeUploadAckStatus(current: Int?, incoming: Int): Int =
+    if (current != null && current != BleConstants.Status.SUCCESS) current else incoming

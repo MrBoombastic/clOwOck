@@ -69,6 +69,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mrboombastic.buwudzik.R
+import com.mrboombastic.buwudzik.device.BleConstants.MAX_AUDIO_SIZE
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.utils.TimeFormatUtils
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +81,6 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val MAX_OUTPUT_SIZE = 98_000 // 98KB limit for device
 private const val TAG = "AudioTrimmer"
 
 
@@ -279,9 +279,9 @@ fun AudioTrimmerDialog(
     // Text input state
     var startTimeText by remember { mutableStateOf("0:00") }
 
-    // Max duration based on a 98 KB limit at 8kHz
+    // The size limit is already block-aligned; no extra padding allowance is needed.
     val maxDurationMs =
-        ((MAX_OUTPUT_SIZE - AudioConverter.PADDING_BOUNDARY).toFloat() / AudioConverter.SAMPLE_RATE * 1000).toLong()
+        MAX_AUDIO_SIZE * 1000L / AudioConverter.SAMPLE_RATE
 
     // User-adjustable duration (1s to max)
     var userDurationMs by remember { mutableLongStateOf(maxDurationMs) }
@@ -298,7 +298,7 @@ fun AudioTrimmerDialog(
     val paddingNeeded = if (rawSize % AudioConverter.PADDING_BOUNDARY == 0) 0
     else AudioConverter.PADDING_BOUNDARY - (rawSize % AudioConverter.PADDING_BOUNDARY)
     val estimatedSize = rawSize + paddingNeeded
-    val isValidSize = estimatedSize <= MAX_OUTPUT_SIZE && selectionDurationMs > 0
+    val isValidSize = estimatedSize <= MAX_AUDIO_SIZE && selectionDurationMs > 0
 
     // Cleanup media player on disposal
     DisposableEffect(Unit) {
@@ -643,7 +643,7 @@ fun AudioTrimmerDialog(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "${estimatedSize / 1000} KB / ${MAX_OUTPUT_SIZE / 1000} KB",
+                            text = "${estimatedSize / 1024} KiB / ${MAX_AUDIO_SIZE / 1024} KiB",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (isValidSize) MaterialTheme.colorScheme.onSurfaceVariant

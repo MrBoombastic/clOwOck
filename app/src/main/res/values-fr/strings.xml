@@ -157,7 +157,7 @@
     <string name="loading_audio">Chargement de l\'audio…</string>
     <string name="duration_label">Durée</string>
     <string name="estimated_size_label">Taille estimée</string>
-    <string name="file_too_large_warning">Fichier trop volumineux ! Max ~12 secondes (98 Ko).</string>
+    <string name="file_too_large_warning">Fichier trop volumineux ! Max ~12 secondes.</string>
     <string name="trim_and_upload">Découper et télécharger</string>
     <string name="start_label">Début</string>
     <string name="drag_to_adjust_hint">Faites glisser pour déplacer la sélection.</string>

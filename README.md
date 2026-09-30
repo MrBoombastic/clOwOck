@@ -97,7 +97,8 @@ so it's only semi-slop, but you have been warned, etc., etc.
 - Global alarm switch to enable or disable all device alarms at once
 - **Custom ringtones support**
     - Upload any audio file from the phone or pick one from an online manifest
-    - Built-in trimmer with waveform preview (device limit is ~12 s / 98 KB of audio)
+  - Built-in trimmer with waveform preview (device limit is 96 KiB of padded PCM audio, roughly 12
+    s)
     - Channel selection for stereo sources: left, right or both mixed down
 - Bluetooth state monitoring with automatic prompts to enable it
 - Interactive real-time previews for brightness and volume settings
@@ -559,8 +560,8 @@ app uses an additional `"pcm"` field, but this app takes the Wave and converts i
   receiver strictly expects 128-byte packets and only commits data and sends a block ACK every 4
   packets (512 bytes). If the total stream is not an exact multiple of 512 bytes, the clock will
   never acknowledge the final incomplete block and the upload will time out.
-- Keep the whole payload under ~**98 KB** (roughly 12 seconds at 8 kHz); the device rejects or
-  truncates anything longer
+- The PCM payload, including padding, must not exceed **98,304 bytes (96 KiB)**; at 8 kHz mono
+  unsigned 8-bit PCM, this permits up to **12.288 seconds**. Larger declared sizes are rejected.
 
 **Step 1 - Init Command (Data Write):**
 

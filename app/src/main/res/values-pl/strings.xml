@@ -157,7 +157,7 @@
     <string name="loading_audio">Ładowanie audio…</string>
     <string name="duration_label">Czas trwania</string>
     <string name="estimated_size_label">Szacowany rozmiar</string>
-    <string name="file_too_large_warning">Plik za duży! Maks. ~12 sekund (98 KB).</string>
+    <string name="file_too_large_warning">Plik za duży! Maks. ~12 sekund.</string>
     <string name="trim_and_upload">Przytnij i prześlij</string>
     <string name="start_label">Początek</string>
     <string name="drag_to_adjust_hint">Przeciągnij, by przesunąć zaznaczenie.</string>

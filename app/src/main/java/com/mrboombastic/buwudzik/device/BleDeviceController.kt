@@ -15,6 +15,7 @@ import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.device.BleConstants.Command
 import com.mrboombastic.buwudzik.device.BleConstants.Flags
 import com.mrboombastic.buwudzik.device.BleConstants.Header
+import com.mrboombastic.buwudzik.device.BleConstants.MAX_AUDIO_SIZE
 import com.mrboombastic.buwudzik.device.BleConstants.Status
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_AUTH_NOTIFY
 import com.mrboombastic.buwudzik.device.BleConstants.UUID_AUTH_WRITE
@@ -244,8 +245,12 @@ class BleDeviceController(private val context: Context) : DeviceController {
                     "Length: ${ack.payloadSize}. Status: ${status.toHexString()}"
         )
 
-        if (cmdId == Command.AUDIO_BLOCK || cmdId == Command.AUDIO_INIT) {
-            handleUploadAck(value)
+        if (characteristicUuid == UUID_DATA_NOTIFY &&
+            (cmdId == Command.AUDIO_BLOCK || cmdId == Command.AUDIO_INIT)
+        ) {
+            // Audio ACKs are five-byte frames; a truncated frame must not report success.
+            if (value.size == 5 && ack.subIndex == 0) handleUploadAck(ack)
+            return
         }
 
         if (commandSucceeded) {
@@ -260,8 +265,10 @@ class BleDeviceController(private val context: Context) : DeviceController {
             }
             pendingAckContinuations.remove(cmdId)?.resume(true)
         } else {
-            isAuthenticated = false
-            pendingAuthWriteChar = null
+            if (ack.isAuthenticationFailure(isAuthNotification)) {
+                isAuthenticated = false
+                pendingAuthWriteChar = null
+            }
 
             val isAuthenticationCommand =
                 isAuthNotification &&
@@ -277,18 +284,17 @@ class BleDeviceController(private val context: Context) : DeviceController {
             } else {
                 ""
             }
-            val failureCode = status
             val failureMessage = if (pairingModeRequired) {
                 context.getString(com.mrboombastic.buwudzik.R.string.pairing_mode_required)
             } else if (tokenRejected) {
                 currentDeviceMac?.let(tokenStorage::removeToken)
                 context.getString(com.mrboombastic.buwudzik.R.string.auth_token_rejected)
             } else {
-                "$cmdName failed: $failureCode"
+                "$cmdName failed: $status"
             }
             AppLogger.e(
                 TAG,
-                "[$characteristicUuid] $cmdName failed with code $failureCode$errorSuffix " +
+                "[$characteristicUuid] $cmdName failed with code $status$errorSuffix " +
                         "(Full: ${value.toHexString()})"
             )
             val continuation = pendingAckContinuations.remove(cmdId)
@@ -1038,6 +1044,10 @@ class BleDeviceController(private val context: Context) : DeviceController {
         }
 
     private suspend fun performAudioUpload(audioData: ByteArray, signature: ByteArray, onProgress: (Float) -> Unit): Boolean {
+        if (audioData.isEmpty() || audioData.size > MAX_AUDIO_SIZE || signature.size != 4) {
+            AppLogger.e(TAG, "Audio upload aborted: invalid audio size or signature length")
+            return false
+        }
         val currentGatt = gatt ?: run {
             AppLogger.e(TAG, "Audio upload aborted: GATT not connected")
             return false
@@ -1097,6 +1107,8 @@ class BleDeviceController(private val context: Context) : DeviceController {
         val packetsPerBlock = AUDIO_PACKETS_PER_BLOCK
         var offset = 0
         while (offset < uploadData.size) {
+            // Preserve errors received before the fourth packet instead of clearing them later.
+            uploadBlockAckStatus = null
             for (pktIdx in 0 until packetsPerBlock) {
                 if (offset >= uploadData.size) break
                 val remaining = uploadData.size - offset
@@ -1108,7 +1120,6 @@ class BleDeviceController(private val context: Context) : DeviceController {
                     (pktIdx == packetsPerBlock - 1) || (offset + audioLen >= uploadData.size)
 
                 if (isLastInBlock) {
-                    uploadBlockAckStatus = null
                     if (!writeCharAndWait(dataWriteChar, packet)) {
                         AppLogger.e(TAG, "Audio upload aborted: writing block packet failed at offset $offset")
                         return false
@@ -1124,6 +1135,13 @@ class BleDeviceController(private val context: Context) : DeviceController {
                         return false
                     }
                     delay(DELAY_PACKET_WRITE.milliseconds)
+                }
+                if (uploadBlockAckStatus?.let { it != Status.SUCCESS } == true) {
+                    AppLogger.e(
+                        TAG,
+                        "Audio upload aborted at offset $offset: early block ACK status ${uploadBlockAckStatus?.toHexString()}"
+                    )
+                    return false
                 }
                 offset += audioLen
             }
@@ -1197,11 +1215,13 @@ class BleDeviceController(private val context: Context) : DeviceController {
         return false
     }
 
-    private fun handleUploadAck(value: ByteArray) {
-        val ack = parseBleAck(value) ?: return
+    private fun handleUploadAck(ack: BleAck) {
         when (ack.command) {
-            Command.AUDIO_INIT -> uploadInitAckStatus = ack.status
-            Command.AUDIO_BLOCK -> uploadBlockAckStatus = ack.status
+            Command.AUDIO_INIT -> uploadInitAckStatus =
+                mergeUploadAckStatus(uploadInitAckStatus, ack.status)
+
+            Command.AUDIO_BLOCK -> uploadBlockAckStatus =
+                mergeUploadAckStatus(uploadBlockAckStatus, ack.status)
         }
     }
 

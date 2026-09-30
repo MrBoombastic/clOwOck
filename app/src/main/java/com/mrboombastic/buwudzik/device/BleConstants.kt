@@ -22,6 +22,9 @@ object BleConstants {
     val UUID_SERVICE_ADVERTISING: ParcelUuid =
         ParcelUuid.fromString("0000fdcd-0000-1000-8000-00805f9b34fb")
 
+    // Firmware accepts at most 0x18000 bytes of PCM, including 512-byte block padding.
+    const val MAX_AUDIO_SIZE = 98_304
+
     // Protocol Constants
     object Command {
         const val AUTH_INIT = 0x01
