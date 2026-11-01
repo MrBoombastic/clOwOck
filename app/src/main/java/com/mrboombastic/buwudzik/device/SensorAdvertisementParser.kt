@@ -24,9 +24,11 @@ object SensorAdvertisementParser {
     internal fun parseServiceData(serviceData: ByteArray): ParsedSensorAdvertisement? {
         if (serviceData.size < Advertise.MIN_PAYLOAD_SIZE) return null
 
-        val packetType = serviceData[Advertise.INDEX_PACKET_TYPE].toInt() and 0xff
-        val maskedPacketType = packetType and 0x0F
-        if (maskedPacketType != Advertise.PACKET_TYPE_QINGPING) return null
+        val frameControl = serviceData[Advertise.INDEX_FRAME_CONTROL].toInt() and 0xff
+        val protocolVersion = (frameControl ushr 3) and 0x07
+        if (protocolVersion != Advertise.PROTOCOL_VERSION) return null
+        // Ciphertext must not be interpreted as plaintext sensor objects.
+        if (frameControl and Advertise.FRAME_CONTROL_AES != 0) return null
 
         val deviceId = serviceData[Advertise.INDEX_DEVICE_ID].toInt() and 0xff
         if (deviceId != Advertise.DEVICE_ID_CGD1) return null

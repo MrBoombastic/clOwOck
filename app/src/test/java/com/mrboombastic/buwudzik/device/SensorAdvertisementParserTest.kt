@@ -17,7 +17,7 @@ class SensorAdvertisementParserTest {
     }
 
     @Test
-    fun `parses captured CGD1 payload with 0x88 packet type`() {
+    fun `parses captured CGD1 payload with bound frame control`() {
         val parsed = SensorAdvertisementParser.parseServiceData(
             hex("88 0c bf 65 52 34 2d 58 01 04 f1 00 ad 01 02 01 25")
         )
@@ -58,6 +58,30 @@ class SensorAdvertisementParserTest {
                 hex("08 0c bf 65 52 34 2d 58 01 04 f1 00")
             )
         )
+    }
+
+    @Test
+    fun `binding and event flags do not change the sensor layout`() {
+        for (control in listOf("0a", "8a", "48", "c8")) {
+            val parsed = SensorAdvertisementParser.parseServiceData(
+                hex("$control 0c bf 65 52 34 2d 58 01 04 f1 00 ad 01 02 01 25")
+            )
+            assertEquals(24.1, parsed?.temperature, "frame control $control")
+            assertEquals(42.9, parsed?.humidity, "frame control $control")
+            assertEquals(37, parsed?.battery, "frame control $control")
+        }
+    }
+
+    @Test
+    fun `rejects unsupported versions and encrypted sensor data`() {
+        for (control in listOf("00", "10", "18", "28", "38", "09", "89")) {
+            assertNull(
+                SensorAdvertisementParser.parseServiceData(
+                    hex("$control 0c bf 65 52 34 2d 58 01 04 f1 00 ad 01 02 01 25")
+                ),
+                "frame control $control"
+            )
+        }
     }
 
     private fun hex(value: String): ByteArray =

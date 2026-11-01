@@ -108,6 +108,11 @@
     <string name="display_header">显示</string>
     <string name="day_brightness_label">亮度：%1$d%%</string>
     <string name="backlight_duration_label">背光持续时间：%1$d秒</string>
+    <string name="sound_duration_label">闹钟响铃时长：%1$d 分 %2$d 秒</string>
+    <string name="duration_minutes">分钟</string>
+    <string name="duration_seconds">秒</string>
+    <string name="decrease_value">减少%1$s</string>
+    <string name="increase_value">增加%1$s</string>
     <string name="night_mode_header">夜间模式</string>
     <string name="night_brightness_label">夜间亮度：%1$d%%</string>
     <string name="start_time_label">开始时间</string>

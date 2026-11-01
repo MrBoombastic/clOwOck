@@ -108,6 +108,11 @@
     <string name="display_header">Anzeige</string>
     <string name="day_brightness_label">Helligkeit: %1$d%%</string>
     <string name="backlight_duration_label">Hintergrundbeleuchtung Dauer: %1$ds</string>
+    <string name="sound_duration_label">Alarm-Klingeldauer: %1$d Min. %2$d Sek.</string>
+    <string name="duration_minutes">Minuten</string>
+    <string name="duration_seconds">Sekunden</string>
+    <string name="decrease_value">%1$s verringern</string>
+    <string name="increase_value">%1$s erhöhen</string>
     <string name="night_mode_header">Nachtmodus</string>
     <string name="night_brightness_label">Nachthelligkeit: %1$d%%</string>
     <string name="start_time_label">Startzeit</string>

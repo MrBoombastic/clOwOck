@@ -43,11 +43,13 @@ import androidx.navigation.NavController
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.BatteryType
 import com.mrboombastic.buwudzik.data.SettingsRepository
+import com.mrboombastic.buwudzik.device.BleConstants
 import com.mrboombastic.buwudzik.device.Language
 import com.mrboombastic.buwudzik.device.TempUnit
 import com.mrboombastic.buwudzik.device.TimeFormat
 import com.mrboombastic.buwudzik.ui.components.BinaryToggleChips
 import com.mrboombastic.buwudzik.ui.components.CustomSnackbarHost
+import com.mrboombastic.buwudzik.ui.components.DurationPicker
 import com.mrboombastic.buwudzik.ui.components.LabeledSlider
 import com.mrboombastic.buwudzik.ui.components.PreviewSlider
 import com.mrboombastic.buwudzik.ui.components.SettingsDropdown
@@ -131,6 +133,7 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                 var timeFormat by remember { mutableStateOf(currentSettings.timeFormat) }
                 var language by remember { mutableStateOf(currentSettings.language) }
                 var volume by remember { mutableFloatStateOf(currentSettings.volume.toFloat()) }
+                var soundDuration by remember { mutableIntStateOf(currentSettings.soundDuration) }
 
                 var screenBrightness by remember { mutableFloatStateOf(currentSettings.screenBrightness.toFloat()) }
                 var backlightDuration by remember { mutableFloatStateOf(currentSettings.backlightDuration.toFloat()) }
@@ -149,6 +152,7 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                         timeFormat = timeFormat,
                         language = language,
                         volume = volume.toInt(),
+                        soundDuration = soundDuration,
                         timeZone = TimeZone.getDefault(),
                         nightModeBrightness = nightModeBrightness.toInt(),
                         backlightDuration = backlightDuration.toInt(),
@@ -182,6 +186,7 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                     timeFormat = currentSettings.timeFormat
                     language = currentSettings.language
                     volume = currentSettings.volume.toFloat()
+                    soundDuration = currentSettings.soundDuration
                     screenBrightness = currentSettings.screenBrightness.toFloat()
                     backlightDuration = currentSettings.backlightDuration.toFloat()
                     nightModeBrightness = currentSettings.nightModeBrightness.toFloat()
@@ -277,6 +282,21 @@ fun DeviceSettingsScreen(navController: NavController, viewModel: MainViewModel)
                     }, onValueChangeFinished = {
                         saveSettings()
                     }, valueRange = 1f..5f, steps = 3
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Alarm Sound Duration
+                DurationPicker(
+                    label = stringResource(
+                        R.string.sound_duration_label, soundDuration / 60, soundDuration % 60
+                    ),
+                    totalSeconds = soundDuration,
+                    enabled = isUiEnabled,
+                    onValueChange = { soundDuration = it },
+                    onValueChangeFinished = { saveSettings() },
+                    minTotalSeconds = BleConstants.Settings.SOUND_DURATION_MIN,
+                    maxMinutes = BleConstants.Settings.SOUND_DURATION_MAX / 60
                 )
 
                 Spacer(Modifier.height(8.dp))

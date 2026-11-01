@@ -12,6 +12,7 @@ data class DeviceSettings(
     val timeFormat: TimeFormat = TimeFormat.H24,
     val language: Language = Language.English,
     val volume: Int = 3,
+    val soundDuration: Int = BleConstants.Settings.SOUND_DURATION_DEFAULT,
     val timeZone: TimeZone = TimeZone.GMT_ZONE,
     val nightModeBrightness: Int = 10,
     val backlightDuration: Int = 60,
@@ -31,7 +32,7 @@ data class DeviceSettings(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as DeviceSettings
-        return tempUnit == other.tempUnit && timeFormat == other.timeFormat && language == other.language && volume == other.volume && timeZone == other.timeZone && nightModeBrightness == other.nightModeBrightness && backlightDuration == other.backlightDuration && screenBrightness == other.screenBrightness && nightStartHour == other.nightStartHour && nightStartMinute == other.nightStartMinute && nightEndHour == other.nightEndHour && nightEndMinute == other.nightEndMinute && nightModeEnabled == other.nightModeEnabled && masterAlarmDisabled == other.masterAlarmDisabled && firmwareVersion == other.firmwareVersion && ringtoneSignature.contentEquals(
+        return tempUnit == other.tempUnit && timeFormat == other.timeFormat && language == other.language && volume == other.volume && soundDuration == other.soundDuration && timeZone == other.timeZone && nightModeBrightness == other.nightModeBrightness && backlightDuration == other.backlightDuration && screenBrightness == other.screenBrightness && nightStartHour == other.nightStartHour && nightStartMinute == other.nightStartMinute && nightEndHour == other.nightEndHour && nightEndMinute == other.nightEndMinute && nightModeEnabled == other.nightModeEnabled && masterAlarmDisabled == other.masterAlarmDisabled && firmwareVersion == other.firmwareVersion && ringtoneSignature.contentEquals(
             other.ringtoneSignature
         )
     }
@@ -41,6 +42,7 @@ data class DeviceSettings(
         result = 31 * result + timeFormat.hashCode()
         result = 31 * result + language.hashCode()
         result = 31 * result + volume
+        result = 31 * result + soundDuration
         result = 31 * result + timeZone.hashCode()
         result = 31 * result + nightModeBrightness
         result = 31 * result + backlightDuration
@@ -81,6 +83,23 @@ fun TimeZone.encodeOffset(): Byte {
 fun TimeZone.encodeOffsetSign(): Byte {
     val offsetMillis = this.getOffset(System.currentTimeMillis())
     return if (offsetMillis >= 0) 1 else 0
+}
+
+/**
+ * Firmware applies night brightness purely from the schedule (start inclusive, end exclusive; equal
+ * start and end means all day), so apps "disable" it with a 1-minute window (this app uses
+ * 00:00-00:01, Qingping+ 21:00-21:01). Deriving the state from the window keeps it correct regardless
+ * of which app wrote the settings or how it interpreted the night mode flag byte.
+ */
+fun isNightModeWindowEnabled(
+    startHour: Int,
+    startMinute: Int,
+    endHour: Int,
+    endMinute: Int
+): Boolean {
+    val minutesPerDay = 24 * 60
+    val length = ((endHour * 60 + endMinute) - (startHour * 60 + startMinute)).mod(minutesPerDay)
+    return length != 1
 }
 
 fun createTimeZone(offset: Int, isPositive: Boolean): TimeZone {

@@ -444,6 +444,10 @@ class BleDeviceController(private val context: Context) : DeviceController {
                         lastSettingsPacket = value.copyOf()
                         try {
                             val volume = value[BleConstants.Settings.INDEX_VOLUME].toInt() and 0xFF
+                            val soundDuration = littleEndianUInt16(
+                                value,
+                                BleConstants.Settings.INDEX_SOUND_DURATION
+                            )
                             val flags = value[BleConstants.Settings.INDEX_FLAGS].toInt()
                             val tzOffset = value[BleConstants.Settings.INDEX_TZ_OFFSET].toInt() and 0xFF
                             val duration = value[BleConstants.Settings.INDEX_BACKLIGHT_DUR].toInt() and 0xFF
@@ -451,7 +455,20 @@ class BleDeviceController(private val context: Context) : DeviceController {
                             val screenBri = (packedBrightness shr 4) * 10
                             val nightBri = (packedBrightness and 0x0F) * 10
                             val tzSign = value[BleConstants.Settings.INDEX_TZ_SIGN].toInt() == 1
-                            val nightModeEnabled = value[BleConstants.Settings.INDEX_NIGHT_MODE_EN].toInt() == 1
+                            val nightStartHour =
+                                value[BleConstants.Settings.INDEX_NIGHT_START_H].toInt() and 0xFF
+                            val nightStartMinute =
+                                value[BleConstants.Settings.INDEX_NIGHT_START_M].toInt() and 0xFF
+                            val nightEndHour =
+                                value[BleConstants.Settings.INDEX_NIGHT_END_H].toInt() and 0xFF
+                            val nightEndMinute =
+                                value[BleConstants.Settings.INDEX_NIGHT_END_M].toInt() and 0xFF
+                            val nightModeEnabled = isNightModeWindowEnabled(
+                                nightStartHour,
+                                nightStartMinute,
+                                nightEndHour,
+                                nightEndMinute
+                            )
 
                             val ringtoneSig = if (value.size >= BleConstants.Settings.INDEX_RINGTONE_SIG + 4) {
                                 byteArrayOf(value[BleConstants.Settings.INDEX_RINGTONE_SIG], value[BleConstants.Settings.INDEX_RINGTONE_SIG + 1], value[BleConstants.Settings.INDEX_RINGTONE_SIG + 2], value[BleConstants.Settings.INDEX_RINGTONE_SIG + 3])
@@ -464,14 +481,15 @@ class BleDeviceController(private val context: Context) : DeviceController {
                                 timeFormat = if (flags and Flags.TIME_FORMAT_12H != 0) TimeFormat.H12 else TimeFormat.H24,
                                 language = if (flags and Flags.LANG_ENGLISH != 0) Language.English else Language.Chinese,
                                 volume = volume,
+                                soundDuration = soundDuration,
                                 timeZone = createTimeZone(tzOffset, tzSign),
                                 nightModeBrightness = nightBri,
                                 backlightDuration = duration,
                                 screenBrightness = screenBri,
-                                nightStartHour = value[BleConstants.Settings.INDEX_NIGHT_START_H].toInt() and 0xFF,
-                                nightStartMinute = value[BleConstants.Settings.INDEX_NIGHT_START_M].toInt() and 0xFF,
-                                nightEndHour = value[BleConstants.Settings.INDEX_NIGHT_END_H].toInt() and 0xFF,
-                                nightEndMinute = value[BleConstants.Settings.INDEX_NIGHT_END_M].toInt() and 0xFF,
+                                nightStartHour = nightStartHour,
+                                nightStartMinute = nightStartMinute,
+                                nightEndHour = nightEndHour,
+                                nightEndMinute = nightEndMinute,
                                 nightModeEnabled = nightModeEnabled,
                                 masterAlarmDisabled = (flags and Flags.MASTER_ALARM_DISABLE) != 0,
                                 ringtoneSignature = ringtoneSig
@@ -784,12 +802,18 @@ class BleDeviceController(private val context: Context) : DeviceController {
                     pendingAckContinuations[Command.SET_SETTINGS] = continuation
                     val payload = lastSettingsPacket?.copyOf() ?: ByteArray(20).apply {
                         this[0] = Header.SET_SETTINGS
-                        this[3] = Header.SETTINGS_FIXED_BYTE_3
-                        this[4] = Header.SETTINGS_FIXED_BYTE_4
                     }
                     payload[0] = Header.SET_SETTINGS
                     payload[1] = Command.SET_SETTINGS.toByte()
                     payload[BleConstants.Settings.INDEX_VOLUME] = settings.volume.coerceIn(1, 5).toByte()
+                    val soundDuration = settings.soundDuration.coerceIn(
+                        BleConstants.Settings.SOUND_DURATION_MIN,
+                        BleConstants.Settings.SOUND_DURATION_MAX
+                    )
+                    payload[BleConstants.Settings.INDEX_SOUND_DURATION] =
+                        (soundDuration and 0xFF).toByte()
+                    payload[BleConstants.Settings.INDEX_SOUND_DURATION + 1] =
+                        (soundDuration shr 8).toByte()
                     var flags = payload.getOrNull(BleConstants.Settings.INDEX_FLAGS)?.toInt()?.and(0xFF) ?: 0
                     flags = if (settings.language == Language.English) flags or Flags.LANG_ENGLISH else flags and Flags.LANG_ENGLISH.inv()
                     flags = if (settings.timeFormat == TimeFormat.H12) flags or Flags.TIME_FORMAT_12H else flags and Flags.TIME_FORMAT_12H.inv()
@@ -811,7 +835,8 @@ class BleDeviceController(private val context: Context) : DeviceController {
                         payload[BleConstants.Settings.INDEX_NIGHT_END_M] = 1
                     }
                     payload[BleConstants.Settings.INDEX_TZ_SIGN] = settings.timeZone.encodeOffsetSign()
-                    payload[BleConstants.Settings.INDEX_NIGHT_MODE_EN] = (if (settings.nightModeEnabled) 1 else 0).toByte()
+                    payload[BleConstants.Settings.INDEX_NIGHT_MODE_DISABLED] =
+                        (if (settings.nightModeEnabled) 0 else 1).toByte()
                     val sig = settings.ringtoneSignature
                     if (sig.size >= 4) {
                         payload[BleConstants.Settings.INDEX_RINGTONE_SIG] = sig[0]
@@ -1269,8 +1294,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
     private suspend fun enableSensorNotifications(): Boolean {
         // Already streaming (e.g. the link was reused on reconnect): a second request would only
         // add another write to the queue.
-        if (enabledNotifications.contains(UUID_SENSOR_NOTIFY)) return true
-        return enableSensorNotificationsLocked()
+        return enabledNotifications.contains(UUID_SENSOR_NOTIFY) || enableSensorNotificationsLocked()
     }
 
     private suspend fun enableSensorNotificationsLocked(): Boolean = gattMutex.withLock {
@@ -1299,14 +1323,19 @@ class BleDeviceController(private val context: Context) : DeviceController {
                     continuation.resume(true)
                     return@suspendCancellableCoroutine
                 }
-                if (!writeDescriptorCompat(currentGatt, descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-                    // The write never reached the stack, so onDescriptorWrite will not arrive;
-                    // failing right away beats blocking the GATT queue until the timeout.
-                    sensorNotificationContinuation = null
-                    continuation.resumeWithException(Exception("GATT busy, sensor notification request rejected"))
-                    return@suspendCancellableCoroutine
-                }
                 continuation.invokeOnCancellation { sensorNotificationContinuation = null }
+                scope.launch {
+                    // Right after authentication the stack may still be finishing the previous
+                    // operation, so retry instead of giving up on the first "GATT busy".
+                    if (!writeDescriptorWithRetry(currentGatt, descriptor) &&
+                        sensorNotificationContinuation === continuation
+                    ) {
+                        // The write never reached the stack, so onDescriptorWrite will not arrive;
+                        // failing now beats blocking the GATT queue until the timeout.
+                        sensorNotificationContinuation = null
+                        continuation.resumeWithException(Exception("GATT busy, sensor notification request rejected"))
+                    }
+                }
             }
         }
     }

@@ -227,7 +227,7 @@ code `0x06` indicating pairing mode was not active.)*
 
 #### 2.1. Length Byte per Command
 
-Since every command has a fixed payload size, its length byte is constant too. The app keeps these
+Since every command has a fixed payload size, its length byte is constant too. clOwOck keeps these
 values as named constants:
 
 | Value         | Constant                | Used for                                        |
@@ -293,7 +293,7 @@ When reconnecting with a previously established token, **only Auth Confirm (`11 
 
 #### 2.3. Time Synchronization
 
-After successful authentication, the app synchronizes the clock automatically. The user does not
+After successful authentication, clOwOck synchronizes the clock automatically. The user does not
 need to trigger a separate time-sync step.
 
 - **Command (Auth Write):** `05 09 [Timestamp 4B LE]`
@@ -349,7 +349,7 @@ To delete an alarm, overwrite it with `FF` values (marking it as empty/unused).
 
 **Note:** A reply packet is 18 bytes long and carries **3 alarms** (the leading `0x11` = 17 bytes
 after it: command + base index + 3 × 5). All 16 slots are returned, so the device sends 6 packets
-in a row; empty slots have `FF FF FF FF FF` values. The app parses as many 5-byte entries as the
+in a row; empty slots have `FF FF FF FF FF` values. clOwOck parses as many 5-byte entries as the
 packet happens to contain, so firmware using different packing would still be read correctly.
 
 - **ACK (after Set/Delete):** `04 ff 05 00 00` (Success)
@@ -361,14 +361,14 @@ Managed via a single comprehensive payload on **Data Write**.
 - **Command:** Start with `13 01` (Set Settings) or `01 02` (Read Settings)
 - **Set Settings Payload (20 bytes):**
 
-  `13 01 [Vol] [Hdr1] [Hdr2] [Flags] [Timezone] [Duration] [Brightness] [NightStartH] [NightStartM] [NightEndH] [NightEndM] [TzSign] [NightEn] [Unknown] [Sig 4B]`
+  `13 01 [Vol] [SoundDur 2B] [Flags] [Timezone] [Duration] [Brightness] [NightStartH] [NightStartM] [NightEndH] [NightEndM] [TzSign] [NightDis] [Reserved] [Sig 4B]`
 
 | Byte  | Value           | Description                                                                                                    |
 |-------|-----------------|----------------------------------------------------------------------------------------------------------------|
 | 0     | `0x13`          | Packet Length (19 bytes follow)                                                                                |
 | 1     | `0x01` / `0x02` | Command ID (`0x01` = Set Settings, `0x02` = Read Settings Response)                                            |
 | 2     | `1-5`           | Sound Volume                                                                                                   |
-| 3-4   | `58 02`         | Fixed Header / Version (???)                                                                                   |
+| 3-4   | uint16 LE       | Alarm sound duration in seconds (`1-5999`, default `58 02` = 600). Ringtone always plays at least once.        |
 | 5     | Bitmask         | Mode Flags: See the **Mode Flags Breakdown** table below.                                                      |
 | 6     | Integer         | Timezone Offset (Units of 6 minutes). Device does not handle DST automatically.                                |
 | 7     | Seconds         | Backlight Duration (0=Off)                                                                                     |
@@ -376,8 +376,8 @@ Managed via a single comprehensive payload on **Data Write**.
 | 9-10  | HH:MM           | Night Start Time                                                                                               |
 | 11-12 | HH:MM           | Night End Time                                                                                                 |
 | 13    | `0/1`           | Timezone Sign (1=Positive, 0=Negative)                                                                         |
-| 14    | `0/1`           | Night Mode Enabled                                                                                             |
-| 15    | Byte            | Meaning unknown; accepted, stored, and returned by firmware; preserve the device response value.               |
+| 14    | `0/1`           | Night Mode Disabled flag (1 = disabled, as in Qingping+). Stored and returned only; firmware never acts on it. |
+| 15    | Byte            | Reserved; stored and returned only (Qingping+ writes `0`). Preserve the device response value.                 |
 | 16-19 | `Sig 4B`        | Ringtone signature (4 bytes). Identifies the device ringtone — see the "Known Ringtone Signatures" list below. |
 
 #### Mode Flags Breakdown (Byte 5)
@@ -397,7 +397,10 @@ This byte acts as a **bitfield** where individual bits control specific boolean 
 > the analyzed firmware paths.
 
 **Workaround:** Disabling night mode is being done via setting 1-minute night mode (i.e.
-`00:00 - 00:01`). Yup, it's that stupid; even official app does this.
+`00:00 - 00:01`). Yup, it's that stupid; even an official app does this (it uses `21:00 - 21:01`).
+Firmware has no night mode on/off switch: it picks the night brightness whenever the current time
+is within `[start, end)` (equal start and end means all day). clOwOck therefore treats a
+1-minute window exactly as disabled when reading settings, regardless of byte 14.
 
 #### 4.1. Set Immediate Brightness (Preview)
 
@@ -428,11 +431,28 @@ The device also broadcasts sensor data in its BLE advertisement packets via Serv
 - **Service UUID:** `0000fdcd-0000-1000-8000-00805f9b34fb` (ClearGrass/Qingping Service)
 - **Format (Service Data):** An 8-byte header followed by type-length-value (TLV) objects.
 
-| Byte | Value            | Description                                                           |
-|------|------------------|-----------------------------------------------------------------------|
-| 0    | `0x08` or `0x88` | Qingping packet type (0x88 has bit 7 set to indicate MAC is embedded) |
-| 1    | `0x0c`           | Model ID (`0x0C` = CGD1)                                              |
-| 2-7  | MAC              | Device MAC address (6 bytes, reversed)                                |
+| Byte | Value            | Description                                                              |
+|------|------------------|--------------------------------------------------------------------------|
+| 0    | `0x08` or `0x88` | Frame control; `0x08` = version 1, `0x88` = version 1 with `hasBind` set |
+| 1    | `0x0c`           | Model ID (`0x0C` = CGD1)                                                 |
+| 2-7  | MAC              | Device MAC address (6 bytes, reversed)                                   |
+
+Frame-control fields, as decoded by `parseAdvertisingBytes` in the Qingping+ app:
+
+| Bits | Field       | Meaning                                                                      |
+|------|-------------|------------------------------------------------------------------------------|
+| 0    | `aes`       | Encryption flag                                                              |
+| 1    | `binding`   | Binding-mode flag                                                            |
+| 2    | `isBooting` | Booting flag                                                                 |
+| 3–5  | `version`   | Protocol version: `(frameControl >> 3) & 0x07`                               |
+| 6    | `isEvent`   | Event-packet flag                                                            |
+| 7    | `hasBind`   | Device marked as already bound; does not authenticate the current connection |
+
+For `0x88` (`10001000`), `version = 1` and `hasBind = true`; the remaining flags are clear.
+The MAC occupies bytes 2–7 in both example frames (`0x08` and `0x88`); bit 7 does not indicate its
+presence.
+clOwOck parses version 1 plaintext sensor objects and rejects unsupported versions or frames with
+`aes` set (Qingping+ decodes the flags but does not reject such frames).
 
 Known objects after byte 7:
 
@@ -449,7 +469,7 @@ For example, a common 17-byte payload is:
 - **Service UUID:** `0x180f`, **Char UUID:** `0x2a19`
 - **Format:** 1 byte (percentage)
 - Tested CGD1 firmware versions `1.0.1_0130` and `1.0.1_0132` expose this characteristic but return
-  an unreliable `99%` while advertising reports the actual battery level. The app therefore uses
+  an unreliable `99%` while advertising reports the actual battery level. clOwOck therefore uses
   the passive advertising value documented above and does not read `0x2a19`.
 
 ### 8. Firmware Version
@@ -480,7 +500,7 @@ Official apps are using these 4-byte signatures to identify ringtones:
 
 #### Custom Ringtone Slots
 
-For uploading custom ringtones, this app is using these alternating slot signatures:
+For uploading custom ringtones, clOwOck uses these alternating slot signatures:
 
 | Slot     | Signature (Hex) |
 |----------|-----------------|
@@ -495,13 +515,13 @@ from the one you are uploading.
 #### Custom Ringtone JSON Manifest
 
 If you want to host your own ringtone repository, you can create a JSON manifest file. Just point to
-a JSON file (e.g., `https://example.com/rings/index.json`), and the app will parse the manifest for
+a JSON file (e.g., `https://example.com/rings/index.json`), and clOwOck will parse the manifest for
 ringtone URLs
 
 **Manifest Format:**
 
 The JSON file should map hex signatures to objects containing at least a `"wav"` URL. The official
-app uses an additional `"pcm"` field, but this app takes the Wave and converts it on its own.
+app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it on its own.
 
 ```json
 {
@@ -606,7 +626,7 @@ it as the active ringtone by writing the same signature in the settings payload 
 
 **Note:** Android serializes GATT operations, so the transfer must own the connection: alarm or
 settings reads, RSSI polling or notification (re)subscriptions issued in parallel fail with
-"GATT busy" and can abort the upload. This app holds a mutex for the whole transfer and keeps the
+"GATT busy" and can abort the upload. clOwOck holds a mutex for the whole transfer and keeps the
 screen on and the link alive until it finishes.
 
 ### 10. Known Command IDs Summary

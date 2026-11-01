@@ -61,10 +61,6 @@ object BleConstants {
         val SETTINGS_DATA_V2 = byteArrayOf(0x13.toByte(), 0x02.toByte())
         const val SENSOR_DATA = 0x00.toByte()
         const val FIRMWARE_DATA = 0x0b.toByte()
-
-        // Fixed bytes in the settings payload
-        const val SETTINGS_FIXED_BYTE_3 = 0x58.toByte()
-        const val SETTINGS_FIXED_BYTE_4 = 0x02.toByte()
     }
 
     object Flags {
@@ -88,7 +84,8 @@ object BleConstants {
     }
 
     object Advertise {
-        const val PACKET_TYPE_QINGPING = 0x08
+        const val PROTOCOL_VERSION = 1
+        const val FRAME_CONTROL_AES = 0x01
         const val DEVICE_ID_CGD1 = 0x0C
 
         const val OBJECT_TEMPERATURE_HUMIDITY = 0x01
@@ -97,7 +94,7 @@ object BleConstants {
         const val BATTERY_LENGTH = 1
 
         // Fixed header indices. Sensor values after the header use type-length-value objects.
-        const val INDEX_PACKET_TYPE = 0
+        const val INDEX_FRAME_CONTROL = 0
         const val INDEX_DEVICE_ID = 1
         const val HEADER_SIZE = 8
         const val MIN_PAYLOAD_SIZE = HEADER_SIZE + 2
@@ -112,8 +109,14 @@ object BleConstants {
     object Settings {
         const val MIN_PAYLOAD_SIZE = 15
 
+        // Alarm sound duration in seconds (uint16 LE). Firmware rejects values outside 1..5999.
+        const val SOUND_DURATION_MIN = 1
+        const val SOUND_DURATION_MAX = 5999
+        const val SOUND_DURATION_DEFAULT = 600
+
         // Payload indices
         const val INDEX_VOLUME = 2
+        const val INDEX_SOUND_DURATION = 3
         const val INDEX_FLAGS = 5
         const val INDEX_TZ_OFFSET = 6
         const val INDEX_BACKLIGHT_DUR = 7
@@ -123,7 +126,9 @@ object BleConstants {
         const val INDEX_NIGHT_END_H = 11
         const val INDEX_NIGHT_END_M = 12
         const val INDEX_TZ_SIGN = 13
-        const val INDEX_NIGHT_MODE_EN = 14
+
+        // App-side flag only (1 = disabled, as in Qingping+);
+        const val INDEX_NIGHT_MODE_DISABLED = 14
         const val INDEX_RINGTONE_SIG = 16
     }
 
