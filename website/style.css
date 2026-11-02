@@ -289,8 +289,11 @@ h3 {
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    /* At most 3 columns, so the 6 cards always form full rows (3+3, 2+2+2 or 1 per row) */
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
     gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .feature-card {
@@ -356,6 +359,130 @@ h3 {
 
 .carousel-img:hover {
     transform: scale(1.05);
+}
+
+.carousel-img {
+    cursor: zoom-in;
+}
+
+.carousel-img:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 4px;
+}
+
+/* Screenshot Lightbox */
+body:has(.lightbox[open]) {
+    overflow: hidden;
+}
+
+.lightbox {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+}
+
+.lightbox[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox::backdrop {
+    background: rgba(5, 8, 15, 0.92);
+    backdrop-filter: blur(6px);
+}
+
+.lightbox-figure {
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 4rem 6rem 2rem;
+}
+
+.lightbox-img {
+    max-width: 100%;
+    max-height: calc(100dvh - 9rem);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-caption {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.lightbox-prev {
+    left: 2%;
+}
+
+.lightbox-next {
+    right: 2%;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    background: var(--glass-bg);
+    color: var(--text-main);
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 11;
+    transition: var(--transition);
+}
+
+.lightbox-close:hover {
+    background: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .lightbox-figure {
+        padding: 4rem 1rem 5.5rem;
+    }
+
+    .lightbox-img {
+        max-height: calc(100dvh - 12rem);
+    }
+
+    /* Move the arrows below the image so they don't cover the screenshot.
+       The .lightbox prefix outranks the .carousel-btn rules defined later in this file. */
+    .lightbox .lightbox-prev,
+    .lightbox .lightbox-next {
+        top: auto;
+        bottom: 1.25rem;
+        transform: none;
+    }
+
+    .lightbox .lightbox-prev:hover,
+    .lightbox .lightbox-next:hover {
+        transform: scale(1.1);
+    }
+
+    .lightbox .lightbox-prev {
+        left: calc(50% - 56px);
+    }
+
+    .lightbox .lightbox-next {
+        right: calc(50% - 56px);
+    }
 }
 
 /* Privacy Policy Page */

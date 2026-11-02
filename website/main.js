@@ -88,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Keyboard Navigation for Carousel
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            // Arrow keys belong to the lightbox while it is open
+            if (document.querySelector('.lightbox[open]')) return;
             if (e.key === 'ArrowLeft') {
                 track.scrollBy({
                     left: -scrollAmount,
@@ -99,6 +101,79 @@ document.addEventListener('DOMContentLoaded', () => {
                     behavior: 'smooth'
                 });
             }
+        });
+    }
+
+    // Screenshot Lightbox
+    const lightbox = document.querySelector('.lightbox');
+    const screenshots = Array.from(document.querySelectorAll('.carousel-img'));
+
+    if (lightbox && screenshots.length) {
+        const lightboxImg = lightbox.querySelector('.lightbox-img');
+        const lightboxCaption = lightbox.querySelector('.lightbox-caption');
+        let current = 0;
+
+        const show = (index) => {
+            current = (index + screenshots.length) % screenshots.length;
+            const shot = screenshots[current];
+            lightboxImg.src = shot.currentSrc || shot.src;
+            lightboxImg.alt = shot.alt;
+            lightboxCaption.textContent = `${shot.alt} - ${current + 1} / ${screenshots.length}`;
+        };
+
+        const open = (index) => {
+            show(index);
+            lightbox.showModal();
+        };
+
+        screenshots.forEach((shot, index) => {
+            shot.tabIndex = 0;
+            shot.setAttribute('role', 'button');
+            shot.setAttribute('aria-label', `Open preview: ${shot.alt}`);
+            shot.addEventListener('click', () => open(index));
+            shot.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    open(index);
+                }
+            });
+        });
+
+        lightbox.querySelector('.lightbox-close').addEventListener('click', () => lightbox.close());
+        lightbox.querySelector('.lightbox-prev').addEventListener('click', () => show(current - 1));
+        lightbox.querySelector('.lightbox-next').addEventListener('click', () => show(current + 1));
+
+        // Clicking the dark backdrop (outside the image and buttons) closes the preview
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox || e.target.classList.contains('lightbox-figure')) lightbox.close();
+        });
+
+        lightbox.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') show(current - 1);
+            else if (e.key === 'ArrowRight') show(current + 1);
+        });
+
+        // Swipe left/right on touch screens
+        let touchStartX = null;
+        lightbox.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, {passive: true});
+        lightbox.addEventListener('touchend', (e) => {
+            if (touchStartX === null) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            touchStartX = null;
+            if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+        });
+
+        // Bring the screenshot that was shown last into view, so the carousel follows the preview.
+        // Scroll only the track: scrollIntoView would also shift the page, whose overflow-x is hidden.
+        lightbox.addEventListener('close', () => {
+            const track = screenshots[current].parentElement;
+            const shot = screenshots[current];
+            track.scrollTo({
+                left: shot.offsetLeft - track.offsetLeft - (track.clientWidth - shot.clientWidth) / 2,
+                behavior: 'smooth'
+            });
         });
     }
 });

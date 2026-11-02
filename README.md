@@ -89,17 +89,24 @@ so it's only semi-slop, but you have been warned, etc., etc.
 
 ## Features
 
+### ✨ Not available in the official apps
+
+- **Custom ringtones** – put your own sound on the clock instead of picking from the stock ones
+    - Upload any audio file from the phone or pick one from an online manifest
+    - Built-in trimmer with waveform preview (device limit is 96 KiB of padded PCM audio, roughly
+      12 s)
+    - Channel selection for stereo sources: left, right or both mixed down
+- **Adjustable alarm ringing duration** – from 1 s up to 99 min 59 s, accurate to the second (the
+  clock rings for 10 minutes by default)
+
+### Everything else
+
 - Initial setup screen to guide the user through finding and selecting their device
 - Multiple saved device profiles with quick switching between them
 - Share a saved device with others using a QR code, or import one by scanning it
 - Parses and displays sensor data
 - Management of up to 16 device alarms, including custom alarm names stored in the app
 - Global alarm switch to enable or disable all device alarms at once
-- **Custom ringtones support**
-    - Upload any audio file from the phone or pick one from an online manifest
-  - Built-in trimmer with waveform preview (device limit is 96 KiB of padded PCM audio, roughly 12
-    s)
-    - Channel selection for stereo sources: left, right or both mixed down
 - Bluetooth state monitoring with automatic prompts to enable it
 - Interactive real-time previews for brightness and volume settings
 - Widget for displaying sensor data on the home screen
