@@ -368,6 +368,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
                     }
                 }
                 selectedCustomUri = null
+                selectedOnlineRingtone = null
             })
     }
 
