@@ -71,7 +71,9 @@ import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.device.BleConstants.MAX_AUDIO_SIZE
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.utils.TimeFormatUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -273,6 +275,7 @@ fun AudioTrimmerDialog(
     var isPreviewLoading by remember { mutableStateOf(false) }
     var playbackPosition by remember { mutableFloatStateOf(0f) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var previewJob by remember { mutableStateOf<Job?>(null) }
 
     // Text input state
     var startTimeText by remember { mutableStateOf("0:00") }
@@ -359,9 +362,10 @@ fun AudioTrimmerDialog(
     }
 
     fun playPreview() {
-        coroutineScope.launch {
+        previewJob = coroutineScope.launch {
             try {
                 mediaPlayer?.release()
+                mediaPlayer = null
                 isPreviewLoading = true
 
                 // Convert selection to PCM
@@ -395,6 +399,8 @@ fun AudioTrimmerDialog(
                 isPlaying = true
                 playbackPosition = 0f
                 isPreviewLoading = false
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error playing preview", e)
                 isPlaying = false
@@ -404,6 +410,9 @@ fun AudioTrimmerDialog(
     }
 
     fun stopPreview() {
+        // A preview still converting would otherwise start playing the old selection.
+        previewJob?.cancel()
+        isPreviewLoading = false
         mediaPlayer?.pause()
         isPlaying = false
         playbackPosition = 0f
