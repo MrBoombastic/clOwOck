@@ -69,6 +69,8 @@ import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.ui.utils.AdaptiveScreen
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 private val qrReader = MultiFormatReader().apply {
     setHints(
@@ -318,6 +320,15 @@ private fun QrScannerView(
 
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var scanned by remember { mutableStateOf(false) }
+
+    // This view stays on screen only when a code was rejected. Resume scanning after a pause,
+    // so a rejected code still in front of the camera does not repeat the error on every frame.
+    LaunchedEffect(scanned) {
+        if (scanned) {
+            delay(3.seconds)
+            scanned = false
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {
