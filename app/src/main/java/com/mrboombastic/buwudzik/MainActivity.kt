@@ -242,9 +242,10 @@ class MainActivity : AppCompatActivity() {
                     val navController = rememberNavController()
                     LocalContext.current
                     val resources = LocalResources.current
-                    val deviceProfileRepo = DeviceProfileRepository(applicationContext)
-                    val startDestination =
-                        if (deviceProfileRepo.getActiveDeviceId() != null) "home" else "setup"
+                    // Decided once: changing it later would rebuild the graph and reset navigation.
+                    val startDestination = remember {
+                        if (deviceProfileRepository.getActiveDeviceId() != null) "home" else "setup"
+                    }
                     var startupUpdateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
                     var showStartupUpdateDialog by remember { mutableStateOf(false) }
 
