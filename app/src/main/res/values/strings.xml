@@ -80,7 +80,6 @@
     <string name="setup_enable_bluetooth">Please enable Bluetooth</string>
     <string name="setup_scan">Scan</string>
     <string name="setup_skip">Skip for now</string>
-    <string name="setup_import_hint">Already have a QR code from another phone? Use it here.</string>
     <string name="setup_select_device">Select device</string>
     <string name="setup_selected_device">Selected new device</string>
     <string name="setup_token_optional_label">Authentication token (optional)</string>
@@ -215,17 +214,12 @@
     <string name="share_qr_instruction">Scan this QR code on another device to import settings.</string>
     <string name="import_qr_instruction">Point camera at QR code</string>
     <string name="import_token_label">Authentication token</string>
-    <string name="import_token_button">Import token</string>
-    <string name="import_token_show">Paste auth token</string>
-    <string name="import_token_hide">Hide</string>
-    <string name="import_token_no_active_device">Select a device first, then import token.</string>
     <string name="import_token_invalid">Invalid token format.</string>
     <string name="import_success">Device imported successfully!</string>
     <string name="import_error">Invalid QR code</string>
     <string name="import_selected_device">Selected device: %1$s</string>
     <string name="import_qr_device_mismatch">This QR code belongs to another device.</string>
     <string name="share_device_button">Share</string>
-    <string name="import_device_button">Import device</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes.</string>
     <string name="widget_refresh_description">Refresh sensor data</string>
     <string name="widget_refresh_channel_name">Widget refresh</string>

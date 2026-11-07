@@ -65,7 +65,6 @@ import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel) {
     val context = LocalContext.current

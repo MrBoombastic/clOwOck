@@ -72,7 +72,6 @@
     <string name="setup_enable_bluetooth">请启用蓝牙</string>
     <string name="setup_scan">扫描</string>
     <string name="setup_skip">暂时跳过</string>
-    <string name="setup_import_hint">已有其他手机上的二维码？在此使用。</string>
     <string name="setup_select_device">选择设备</string>
     <string name="setup_selected_device">已选择的新设备</string>
     <string name="setup_token_optional_label">身份验证令牌（可选）</string>
@@ -199,17 +198,12 @@
     <string name="share_qr_instruction">在另一台设备上扫描此二维码以导入设置。</string>
     <string name="import_qr_instruction">将相机对准二维码。</string>
     <string name="import_token_label">认证令牌</string>
-    <string name="import_token_button">导入令牌</string>
-    <string name="import_token_show">粘贴认证令牌</string>
-    <string name="import_token_hide">收起</string>
-    <string name="import_token_no_active_device">请先选择设备，再导入令牌。</string>
     <string name="import_token_invalid">令牌格式无效。</string>
     <string name="import_success">设备导入成功！</string>
     <string name="import_error">二维码无效</string>
     <string name="import_selected_device">已选择设备：%1$s</string>
     <string name="import_qr_device_mismatch">此二维码属于其他设备。</string>
     <string name="share_device_button">分享</string>
-    <string name="import_device_button">导入设备</string>
     <string name="camera_permission_required">需要相机权限才能扫描二维码。</string>
     <string name="widget_refresh_description">刷新传感器数据</string>
     <string name="widget_refresh_channel_name">小组件刷新</string>

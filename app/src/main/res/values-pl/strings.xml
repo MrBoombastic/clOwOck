@@ -72,7 +72,6 @@
     <string name="setup_enable_bluetooth">Włącz Bluetooth</string>
     <string name="setup_scan">Skanuj</string>
     <string name="setup_skip">Pomiń</string>
-    <string name="setup_import_hint">Masz już kod QR z innego telefonu? Użyj go tutaj.</string>
     <string name="setup_select_device">Wybierz urządzenie</string>
     <string name="setup_selected_device">Wybrane nowe urządzenie</string>
     <string name="setup_token_optional_label">Token uwierzytelniania (opcjonalnie)</string>
@@ -192,17 +191,12 @@
     <string name="share_qr_instruction">Zeskanuj ten kod QR na innym urządzeniu, aby zaimportować ustawienia.</string>
     <string name="import_qr_instruction">Skieruj aparat na kod QR</string>
     <string name="import_token_label">Token uwierzytelniania</string>
-    <string name="import_token_button">Importuj token</string>
-    <string name="import_token_show">Wklej token uwierzytelniania</string>
-    <string name="import_token_hide">Ukryj</string>
-    <string name="import_token_no_active_device">Najpierw wybierz urządzenie, potem zaimportuj token.</string>
     <string name="import_token_invalid">Nieprawidłowy format tokenu.</string>
     <string name="import_success">Urządzenie zaimportowane pomyślnie!</string>
     <string name="import_error">Nieprawidłowy kod QR</string>
     <string name="import_selected_device">Wybrane urządzenie: %1$s</string>
     <string name="import_qr_device_mismatch">Ten kod QR należy do innego urządzenia.</string>
     <string name="share_device_button">Udostępnij</string>
-    <string name="import_device_button">Importuj urządzenie</string>
     <string name="camera_permission_required">Wymagane jest uprawnienie do aparatu, aby skanować kody QR.</string>
     <string name="channel_left">lewy</string>
     <string name="channel_mix">oba</string>

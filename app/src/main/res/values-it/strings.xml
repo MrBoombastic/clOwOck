@@ -72,7 +72,6 @@
     <string name="setup_enable_bluetooth">Attiva il Bluetooth</string>
     <string name="setup_scan">Scansiona</string>
     <string name="setup_skip">Salta per ora</string>
-    <string name="setup_import_hint">Hai già un codice QR da un altro telefono? Usalo qui.</string>
     <string name="setup_select_device">Seleziona dispositivo</string>
     <string name="setup_selected_device">Nuovo dispositivo selezionato</string>
     <string name="setup_token_optional_label">Token di autenticazione (facoltativo)</string>
@@ -199,17 +198,12 @@
     <string name="share_qr_instruction">Scansiona questo codice QR su un altro dispositivo per importare le impostazioni.</string>
     <string name="import_qr_instruction">Punta la fotocamera verso il codice QR</string>
     <string name="import_token_label">Token di autenticazione</string>
-    <string name="import_token_button">Importa token</string>
-    <string name="import_token_show">Incolla token di autenticazione</string>
-    <string name="import_token_hide">Nascondi</string>
-    <string name="import_token_no_active_device">Seleziona prima un dispositivo, poi importa il token.</string>
     <string name="import_token_invalid">Formato token non valido.</string>
     <string name="import_success">Dispositivo importato con successo!</string>
     <string name="import_error">Codice QR non valido</string>
     <string name="import_selected_device">Dispositivo selezionato: %1$s</string>
     <string name="import_qr_device_mismatch">Questo codice QR appartiene a un altro dispositivo.</string>
     <string name="share_device_button">Condividi</string>
-    <string name="import_device_button">Importa dispositivo</string>
     <string name="camera_permission_required">L\'autorizzazione della fotocamera è necessaria per scansionare i codici QR.</string>
     <string name="widget_refresh_description">Aggiorna dati sensori</string>
     <string name="widget_refresh_channel_name">Aggiornamento widget</string>

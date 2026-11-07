@@ -72,7 +72,6 @@
     <string name="setup_enable_bluetooth">Bitte Bluetooth aktivieren</string>
     <string name="setup_scan">Scannen</string>
     <string name="setup_skip">Jetzt überspringen</string>
-    <string name="setup_import_hint">Haben Sie schon einen QR-Code von einem anderen Telefon? Hier verwenden.</string>
     <string name="setup_select_device">Gerät auswählen</string>
     <string name="setup_selected_device">Ausgewähltes neues Gerät</string>
     <string name="setup_token_optional_label">Authentifizierungstoken (optional)</string>
@@ -199,17 +198,12 @@
     <string name="share_qr_instruction">Scannen Sie diesen QR-Code auf einem anderen Gerät, um Einstellungen zu importieren.</string>
     <string name="import_qr_instruction">Richten Sie die Kamera auf den QR-Code</string>
     <string name="import_token_label">Authentifizierungstoken</string>
-    <string name="import_token_button">Token importieren</string>
-    <string name="import_token_show">Auth-Token einfügen</string>
-    <string name="import_token_hide">Ausblenden</string>
-    <string name="import_token_no_active_device">Wählen Sie zuerst ein Gerät aus und importieren Sie dann den Token.</string>
     <string name="import_token_invalid">Ungültiges Token-Format.</string>
     <string name="import_success">Gerät erfolgreich importiert!</string>
     <string name="import_error">Ungültiger QR-Code</string>
     <string name="import_selected_device">Ausgewähltes Gerät: %1$s</string>
     <string name="import_qr_device_mismatch">Dieser QR-Code gehört zu einem anderen Gerät.</string>
     <string name="share_device_button">Teilen</string>
-    <string name="import_device_button">Gerät importieren</string>
     <string name="camera_permission_required">Kameraberechtigung ist zum Scannen von QR-Codes erforderlich.</string>
     <string name="widget_refresh_description">Sensordaten aktualisieren</string>
     <string name="widget_refresh_channel_name">Widget-Aktualisierung</string>

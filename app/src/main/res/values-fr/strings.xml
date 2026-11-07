@@ -72,7 +72,6 @@
     <string name="setup_enable_bluetooth">Veuillez activer le Bluetooth</string>
     <string name="setup_scan">Scanner</string>
     <string name="setup_skip">Passer pour l\'instant</string>
-    <string name="setup_import_hint">Vous avez déjà un code QR depuis un autre téléphone ? Utilisez-le ici.</string>
     <string name="setup_select_device">Sélectionner l\'appareil</string>
     <string name="setup_selected_device">Nouvel appareil sélectionné</string>
     <string name="setup_token_optional_label">Jeton d\'authentification (facultatif)</string>
@@ -199,17 +198,12 @@
     <string name="share_qr_instruction">Scannez ce code QR sur un autre appareil pour importer les paramètres.</string>
     <string name="import_qr_instruction">Pointez la caméra vers le code QR</string>
     <string name="import_token_label">Jeton d\'authentification</string>
-    <string name="import_token_button">Importer le jeton</string>
-    <string name="import_token_show">Coller le jeton d\'authentification</string>
-    <string name="import_token_hide">Masquer</string>
-    <string name="import_token_no_active_device">Sélectionnez d\'abord un appareil, puis importez le jeton.</string>
     <string name="import_token_invalid">Format de jeton invalide.</string>
     <string name="import_success">Appareil importé avec succès !</string>
     <string name="import_error">Code QR invalide</string>
     <string name="import_selected_device">Appareil sélectionné : %1$s</string>
     <string name="import_qr_device_mismatch">Ce code QR appartient à un autre appareil.</string>
     <string name="share_device_button">Partager</string>
-    <string name="import_device_button">Importer l\'appareil</string>
     <string name="camera_permission_required">L\'autorisation de la caméra est requise pour scanner les codes QR.</string>
     <string name="widget_refresh_description">Actualiser les données du capteur</string>
     <string name="widget_refresh_channel_name">Actualisation du widget</string>

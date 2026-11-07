@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -95,7 +94,6 @@ data class OnlineRingtone(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel) {
     val context = LocalContext.current
