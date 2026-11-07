@@ -406,12 +406,14 @@ private fun processImageProxy(
     }
 
     try {
-        val buffer = image.planes[0].buffer
+        val plane = image.planes[0]
+        val buffer = plane.buffer
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
 
+        // Rows can be padded beyond the image width, so the data width is the row stride.
         val source = PlanarYUVLuminanceSource(
-            bytes, image.width, image.height, 0, 0, image.width, image.height, false
+            bytes, plane.rowStride, image.height, 0, 0, image.width, image.height, false
         )
 
         val bitmap = BinaryBitmap(HybridBinarizer(source))
