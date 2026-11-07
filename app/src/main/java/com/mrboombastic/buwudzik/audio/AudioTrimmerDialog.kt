@@ -292,7 +292,6 @@ fun AudioTrimmerDialog(
         min(userDurationMs, min(maxDurationMs, totalDurationMs - selectionStartMs)).coerceAtLeast(
             200L
         )
-    val selectionEndMs = selectionStartMs + selectionDurationMs
 
     // Calculate size estimate
     val rawSize = (selectionDurationMs * AudioConverter.SAMPLE_RATE / 1000).toInt()
@@ -340,17 +339,16 @@ fun AudioTrimmerDialog(
         if (isPlaying && mediaPlayer != null) {
             while (isActive && isPlaying && mediaPlayer?.isPlaying == true) {
                 val mp = mediaPlayer ?: break
+                // The preview file holds only the selection, so its position starts at 0.
                 val currentPos = mp.currentPosition.toLong()
 
                 if (selectionDurationMs > 0) {
                     playbackPosition =
-                        ((currentPos - selectionStartMs).toFloat() / selectionDurationMs).coerceIn(
-                            0f, 1f
-                        )
+                        (currentPos.toFloat() / selectionDurationMs).coerceIn(0f, 1f)
                 }
 
                 // Stop when reaching the end of selection
-                if (currentPos >= selectionEndMs) {
+                if (currentPos >= selectionDurationMs) {
                     isPlaying = false
                     mp.pause()
                     playbackPosition = 0f
