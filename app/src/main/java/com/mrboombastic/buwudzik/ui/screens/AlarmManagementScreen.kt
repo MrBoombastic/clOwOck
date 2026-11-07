@@ -96,6 +96,7 @@ fun AlarmManagementScreen(navController: NavController, viewModel: MainViewModel
     selectedAlarm?.let { alarm ->
         AlarmEditDialog(
             alarm = alarm,
+            canDelete = alarms.any { it.id == alarm.id },
             onDismiss = { selectedAlarm = null },
             onSave = { updatedAlarm ->
                 selectedAlarm = null
@@ -453,7 +454,11 @@ fun AlarmCard(alarm: Alarm, enabled: Boolean, onToggle: (Boolean) -> Unit, onEdi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmEditDialog(
-    alarm: Alarm, onDismiss: () -> Unit, onSave: (Alarm) -> Unit, onDelete: () -> Unit
+    alarm: Alarm,
+    canDelete: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (Alarm) -> Unit,
+    onDelete: () -> Unit
 ) {
     var selectedHour by remember { mutableIntStateOf(alarm.hour) }
     var selectedMinute by remember { mutableIntStateOf(alarm.minute) }
@@ -605,12 +610,14 @@ fun AlarmEditDialog(
         },
         dismissButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.delete_alarm_desc),
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                if (canDelete) {
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.delete_alarm_desc),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(R.string.cancel))
