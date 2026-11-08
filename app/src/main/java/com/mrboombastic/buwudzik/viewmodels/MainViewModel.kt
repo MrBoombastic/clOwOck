@@ -6,12 +6,14 @@ import android.content.Context
 import android.icu.util.TimeZone
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.AlarmTitleRepository
 import com.mrboombastic.buwudzik.data.DeviceLocalDataCleaner
 import com.mrboombastic.buwudzik.data.DeviceProfile
 import com.mrboombastic.buwudzik.data.DeviceProfileRepository
 import com.mrboombastic.buwudzik.data.SensorRepository
 import com.mrboombastic.buwudzik.data.SettingsRepository
+import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.data.normalizedBluetoothMac
 import com.mrboombastic.buwudzik.device.Alarm
 import com.mrboombastic.buwudzik.device.BleDeviceController
@@ -27,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -88,7 +91,11 @@ class MainViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setActiveDevice(mac: String) {
-        if (activeMac == mac) {
+        if (deviceProfileRepository.getByMac(mac) == null) {
+            AppLogger.w(TAG, "Ignoring request to activate unsaved device $mac")
+            return
+        }
+        if (activeMac.normalizedBluetoothMac() == mac.normalizedBluetoothMac()) {
             checkPairingStatus()
             return
         }
@@ -96,10 +103,45 @@ class MainViewModel(
         deviceProfileRepository.setActiveDeviceId(mac)
     }
 
-    fun addDevice(profile: DeviceProfile, makeActive: Boolean = false) {
+    fun getSavedDevice(mac: String): DeviceProfile? = deviceProfileRepository.getByMac(mac)
+
+    /**
+     * Saves [profile], makes it the active device and, if it already has a token, connects to it.
+     * Without a token the Home screen guides the user through pairing, which needs the clock
+     * to be put in pairing mode first.
+     *
+     * @param replacedToken the device's token from before it was overwritten for this call.
+     * The clock keeps only the token it was last paired with, so a shared QR code can be out
+     * of date; if the clock rejects the new token, this one is put back.
+     */
+    fun addDevice(profile: DeviceProfile, replacedToken: ByteArray? = null) {
         deviceProfileRepository.addOrUpdate(profile)
-        if (makeActive) {
-            setActiveDevice(profile.mac)
+        val mac = profile.mac.normalizedBluetoothMac()
+        val hasToken = _deviceController.isDevicePaired(mac)
+        tokenBeforeImport = replacedToken?.let { mac to it }
+
+        if (activeMac.normalizedBluetoothMac() != mac) {
+            connectAfterActivation = mac.takeIf { hasToken }
+            setActiveDevice(mac)
+            return
+        }
+
+        // Already active, so the active device flow will not fire. The token may have just
+        // changed, so any existing link has to be replaced.
+        checkPairingStatus()
+        if (hasToken) {
+            stopActiveConnection()
+            connectOrScan(connect = true)
+        }
+    }
+
+    /** Connects when possible, otherwise makes sure the device can at least be seen. */
+    private fun connectOrScan(connect: Boolean) {
+        if (!_isBluetoothEnabled.value) return
+        if (connect && BluetoothUtils.hasBluetoothPermissions(applicationContext)) {
+            connectToDevice()
+        } else {
+            startScanning()
         }
     }
 
@@ -219,7 +261,28 @@ class MainViewModel(
     private var scanJob: Job? = null
     private var rssiPollJob: Job? = null
     private var connectionJob: Job? = null
+
+    /** Device to connect to as soon as it becomes active, set when adding one with a token. */
+    private var connectAfterActivation: String? = null
     private var reconnectOnResume = false
+
+    /** MAC and token to restore if the token that replaced it is rejected; see [addDevice]. */
+    private var tokenBeforeImport: Pair<String, ByteArray>? = null
+
+    /**
+     * Puts back the token a QR import replaced, when the clock has just rejected the imported
+     * one (the controller removes a rejected token). Returns true if a token was restored.
+     */
+    private fun restoreTokenAfterRejectedImport(mac: String): Boolean {
+        val (importedMac, previousToken) = tokenBeforeImport ?: return false
+        if (importedMac != mac.normalizedBluetoothMac() || _deviceController.isDevicePaired(mac)) {
+            return false
+        }
+        tokenBeforeImport = null
+        TokenStorage(applicationContext).storeToken(mac, previousToken)
+        AppLogger.w(TAG, "Imported token for $mac was rejected, restored the previous one")
+        return true
+    }
 
     init {
         _isBluetoothEnabled.value = BluetoothUtils.isBluetoothEnabled(applicationContext)
@@ -243,9 +306,9 @@ class MainViewModel(
                 // Ensure callbacks are attached to the current controller instance
                 attachLiveSensorCallbacks()
 
-                if (mac != null && _isBluetoothEnabled.value) {
-                    startScanning()
-                }
+                val connect = mac != null && mac == connectAfterActivation
+                connectAfterActivation = null
+                if (mac != null) connectOrScan(connect)
             }
             .launchIn(viewModelScope)
     }
@@ -278,7 +341,7 @@ class MainViewModel(
     fun stopActiveConnection() {
         reconnectOnResume = false
         rssiPollJob?.cancel(); rssiPollJob = null
-        connectionJob?.cancel(); connectionJob = null
+        connectionJob?.cancel()
         scanJob?.cancel(); scanJob = null
         _deviceController.disconnect()
         _deviceConnected.value = false
@@ -368,6 +431,11 @@ class MainViewModel(
     }
 
     fun startScanning() {
+        // A running connection attempt restarts the scan itself if it fails.
+        if (_deviceConnecting.value) {
+            AppLogger.v(TAG, "Connection attempt in progress, ignoring scan request.")
+            return
+        }
 
         if (scanJob?.isActive == true) {
             AppLogger.v(TAG, "Scan already active, ignoring start request.")
@@ -422,10 +490,14 @@ class MainViewModel(
 
         _deviceConnecting.value = true
         scanJob?.cancel()
-        connectionJob?.cancel()
+        val previousConnection = connectionJob
+        previousConnection?.cancel()
 
         connectionJob = viewModelScope.launch {
             try {
+                // A cancelled attempt must finish unwinding before this one uses the same link.
+                previousConnection?.join()
+
                 val bluetoothManager =
                     applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
                 val adapter = bluetoothManager.adapter
@@ -434,6 +506,10 @@ class MainViewModel(
                 _deviceController.connectAndAuthenticate(device)
                 _deviceConnected.value = true
                 _connectionError.value = null
+                // The current token works, so there is nothing left to fall back to.
+                if (tokenBeforeImport?.first == targetMac.normalizedBluetoothMac()) {
+                    tokenBeforeImport = null
+                }
                 checkPairingStatus()
 
                 attachLiveSensorCallbacks()
@@ -454,17 +530,28 @@ class MainViewModel(
                     launch { loadDeviceMetadataAfterConnect() }
                 }
             } catch (e: Exception) {
+                // Cancelled on purpose (device switch, app in background): not a connection error.
+                // A BLE timeout also arrives as a cancellation but leaves this job active.
+                ensureActive()
+
                 AppLogger.e(TAG, "Error connecting to clock ($targetMac): ${e.message}", e)
                 _deviceConnected.value = false
-                _connectionError.value = e.message ?: "Connection failed"
+                val restoredToken = restoreTokenAfterRejectedImport(targetMac)
+                _connectionError.value = if (restoredToken) {
+                    applicationContext.getString(R.string.import_token_outdated)
+                } else {
+                    e.message ?: "Connection failed"
+                }
                 checkPairingStatus()
                 // Tear the half-open link down: otherwise the GATT client stays alive, keeps
                 // delivering notifications and collides with the next connection attempt.
                 // A running transfer is the exception - it owns the link and must finish.
                 if (!_deviceController.isBusy.value) _deviceController.disconnect()
-                restartScanning()
+                _deviceConnecting.value = false
+                if (restoredToken) connectToDevice(reloadAlarms) else restartScanning()
             } finally {
-                if (reloadAlarms) {
+                // A newer attempt owns this flag once it has replaced this job.
+                if (reloadAlarms && connectionJob == coroutineContext[Job]) {
                     _deviceConnecting.value = false
                 }
             }

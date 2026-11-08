@@ -72,6 +72,7 @@ import com.mrboombastic.buwudzik.ui.utils.NavigationAnimations
 import com.mrboombastic.buwudzik.ui.utils.ThemeUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
+import com.mrboombastic.buwudzik.viewmodels.StartupUpdateViewModel
 import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -131,13 +132,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
-
-        /**
-         * Release: at most one automatic check per day.
-         * Debug: no throttle, so every cold start re-runs the check (fast manual/CI-style retests).
-         */
-        private val AUTO_UPDATE_CHECK_INTERVAL_MS =
-            if (BuildConfig.DEBUG) 0L else 24L * 60L * 60L * 1000L
 
         /**
          * Schedule periodic widget updates using AlarmManager.
@@ -230,6 +224,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         mainViewModel = viewModel
+        val startupUpdateViewModel: StartupUpdateViewModel by viewModels()
 
         // Handle initial intent
         handleIntent(intent)
@@ -246,8 +241,7 @@ class MainActivity : AppCompatActivity() {
                     val startDestination = remember {
                         if (deviceProfileRepository.getActiveDeviceId() != null) "home" else "setup"
                     }
-                    var startupUpdateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
-                    var showStartupUpdateDialog by remember { mutableStateOf(false) }
+                    val startupUpdate by startupUpdateViewModel.availableUpdate.collectAsState()
 
                     // Handle disconnection events
                     val disconnectionEvent by viewModel.disconnectionEvent.collectAsState()
@@ -370,37 +364,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    LaunchedEffect(Unit) {
-                        if (!BuildConfig.ALLOW_CUSTOM_UPDATES) return@LaunchedEffect
-                        if (!settingsRepository.autoUpdateCheckEnabled) return@LaunchedEffect
-                        val now = System.currentTimeMillis()
-                        if (now - settingsRepository.lastAutoUpdateCheckMs < AUTO_UPDATE_CHECK_INTERVAL_MS) {
-                            return@LaunchedEffect
-                        }
-                        // Enforce at-most-once-per-day attempts even if the request fails.
-                        settingsRepository.lastAutoUpdateCheckMs = now
-                        try {
-                            val updateManager = UpdateManager.create(applicationContext)
-                            val result = try {
-                                updateManager.checkForUpdates()
-                            } finally {
-                                updateManager.close()
-                            }
-                            if (result.updateAvailable) {
-                                startupUpdateResult = result
-                                showStartupUpdateDialog = true
-                            }
-                        } catch (e: Exception) {
-                            AppLogger.w(TAG, "Automatic update check failed: ${e.message}", e)
-                        }
-                    }
-
-                    if (showStartupUpdateDialog && startupUpdateResult != null) {
+                    startupUpdate?.let { update ->
                         AlertDialog(
-                            onDismissRequest = { showStartupUpdateDialog = false },
+                            onDismissRequest = startupUpdateViewModel::dismiss,
                             title = { Text(stringResource(R.string.update_available_title)) },
                             text = {
-                                val update = startupUpdateResult!!
                                 val changelog = update.changelog
                                 Column(
                                     modifier = Modifier
@@ -432,9 +400,8 @@ class MainActivity : AppCompatActivity() {
                             confirmButton = {
                                 TextButton(
                                     onClick = {
-                                        showStartupUpdateDialog = false
-                                        val downloadUrl =
-                                            startupUpdateResult?.downloadUrl ?: return@TextButton
+                                        startupUpdateViewModel.dismiss()
+                                        val downloadUrl = update.downloadUrl ?: return@TextButton
                                         CoroutineScope(Dispatchers.IO).launch {
                                             val updateManager =
                                                 UpdateManager.create(applicationContext)
@@ -447,7 +414,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             },
                             dismissButton = {
-                                TextButton(onClick = { showStartupUpdateDialog = false }) {
+                                TextButton(onClick = startupUpdateViewModel::dismiss) {
                                     Text(stringResource(R.string.later))
                                 }
                             },
@@ -468,7 +435,7 @@ class MainActivity : AppCompatActivity() {
                             composable("setup") {
                                 DeviceSetupScreen(
                                     navController,
-                                    mode = "setup",
+                                    isFirstRun = true,
                                     viewModel = viewModel
                                 )
                             }
@@ -505,13 +472,10 @@ class MainActivity : AppCompatActivity() {
                                     preselectedMac = mac
                                 )
                             }
-                            composable("device-import/{mac}") { backStackEntry ->
+                            composable("device-import") {
                                 DeviceImportScreen(
                                     navController = navController,
-                                    viewModel = viewModel,
-                                    selectedMac = backStackEntry.arguments
-                                        ?.getString("mac")
-                                        .orEmpty()
+                                    viewModel = viewModel
                                 )
                             }
                             composable("devices") {
@@ -520,7 +484,7 @@ class MainActivity : AppCompatActivity() {
                             composable("device-add") {
                                 DeviceSetupScreen(
                                     navController = navController,
-                                    mode = "add",
+                                    isFirstRun = false,
                                     viewModel = viewModel
                                 )
                             }

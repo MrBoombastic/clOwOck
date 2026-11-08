@@ -238,7 +238,8 @@ private fun DeviceQrCard(
             mac = profile.mac,
             token = tokenHex,
             batteryType = profile.batteryType,
-            alarmTitles = alarmTitles
+            alarmTitles = alarmTitles,
+            alias = profile.alias
         )
         qrBitmap = withContext(Dispatchers.IO) { generateQrCode(shareData.toQrContent()) }
         isLoading = false
@@ -305,6 +306,13 @@ private fun DeviceQrCard(
                             )
                         }
                     }
+                } else {
+                    Text(
+                        text = stringResource(R.string.share_qr_too_large),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

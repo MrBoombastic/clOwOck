@@ -3,9 +3,11 @@ package com.mrboombastic.buwudzik.ui.screens
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.content.Context
 import android.content.IntentFilter
-import android.net.Uri
+import android.location.LocationManager
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -27,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -51,9 +56,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavController
 import com.mrboombastic.buwudzik.BluetoothStateReceiver
 import com.mrboombastic.buwudzik.R
@@ -63,13 +71,14 @@ import com.mrboombastic.buwudzik.data.DeviceProfileRepository
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.data.normalizedBluetoothMac
 import com.mrboombastic.buwudzik.device.BluetoothScanner
+import com.mrboombastic.buwudzik.ui.components.AppSettingsButton
+import com.mrboombastic.buwudzik.ui.components.BackNavigationButton
 import com.mrboombastic.buwudzik.ui.components.StatusCard
 import com.mrboombastic.buwudzik.ui.components.StatusType
 import com.mrboombastic.buwudzik.ui.utils.AdaptiveScreen
 import com.mrboombastic.buwudzik.ui.utils.BluetoothUtils
 import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.viewmodels.MainViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.time.Duration.Companion.milliseconds
 
 data class DiscoveredDevice(
@@ -79,17 +88,32 @@ data class DiscoveredDevice(
     val lastSeen: Long = System.currentTimeMillis()
 )
 
+/** Makes Home the only screen on the back stack: every way of adding a device continues there. */
+internal fun NavController.navigateToHomeRoot() {
+    navigate("home") {
+        popUpTo(graph.id) { inclusive = true }
+    }
+}
+
+/** On Android 10 and 11 BLE scans silently return nothing while location is turned off. */
+private fun isLocationOffForBleScan(context: Context): Boolean {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) return false
+    val locationManager = context.getSystemService(LocationManager::class.java) ?: return false
+    return !LocationManagerCompat.isLocationEnabled(locationManager)
+}
+
 /**
- * Screen for discovering and selecting a CGD1 device.
+ * Screen for finding a new CGD1 device nearby, or getting one from another phone by QR code.
  *
- * @param mode "setup" for first-launch flow (skip → home), "add" for adding extra devices.
- * @param viewModel Required when mode == "add" to call addDevice/setActiveDevice.
+ * @param isFirstRun true for the first-launch flow, which can be skipped; false when adding
+ * another device from the device list, which is left with the back button instead.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceSetupScreen(
     navController: NavController,
-    mode: String = "setup",
-    viewModel: MainViewModel? = null
+    isFirstRun: Boolean,
+    viewModel: MainViewModel
 ) {
     val context = LocalContext.current
     val invalidTokenMessage = stringResource(R.string.import_token_invalid)
@@ -105,7 +129,7 @@ fun DeviceSetupScreen(
     DisposableEffect(context) {
         val receiver = BluetoothStateReceiver { enabled ->
             isBluetoothEnabled = enabled
-            viewModel?.updateBluetoothState(enabled)
+            viewModel.updateBluetoothState(enabled)
         }
         val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         ContextCompat.registerReceiver(
@@ -116,18 +140,18 @@ fun DeviceSetupScreen(
         )
         val currentEnabled = BluetoothUtils.isBluetoothEnabled(context)
         isBluetoothEnabled = currentEnabled
-        viewModel?.updateBluetoothState(currentEnabled)
+        viewModel.updateBluetoothState(currentEnabled)
 
         onDispose { context.unregisterReceiver(receiver) }
     }
 
-    DisposableEffect(mode, viewModel) {
-        if (mode == "add") {
-            viewModel?.stopScanning()
+    DisposableEffect(isFirstRun, viewModel) {
+        if (!isFirstRun) {
+            viewModel.stopScanning()
         }
         onDispose {
-            if (mode == "add") {
-                viewModel?.startScanning()
+            if (!isFirstRun) {
+                viewModel.startScanning()
             }
         }
     }
@@ -150,9 +174,7 @@ fun DeviceSetupScreen(
         )
     }
 
-    val emptySavedProfiles =
-        remember { MutableStateFlow<List<DeviceProfile>>(emptyList()) }
-    val savedProfiles by (viewModel?.devices ?: emptySavedProfiles).collectAsState()
+    val savedProfiles by viewModel.devices.collectAsState()
     val savedMacAddresses = remember(savedProfiles) {
         savedProfiles.map { it.mac.normalizedBluetoothMac() }.toSet()
     }
@@ -174,15 +196,18 @@ fun DeviceSetupScreen(
     var hasBluetoothPermissions by remember {
         mutableStateOf(BluetoothUtils.hasBluetoothPermissions(context))
     }
+    var bluetoothPermissionDenied by remember { mutableStateOf(false) }
+    var isLocationOff by remember { mutableStateOf(isLocationOffForBleScan(context)) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
         val hasPerms = BluetoothUtils.hasBluetoothPermissions(context)
         hasBluetoothPermissions = hasPerms
+        bluetoothPermissionDenied = !hasPerms
         val currentEnabled = BluetoothUtils.isBluetoothEnabled(context)
         isBluetoothEnabled = currentEnabled
-        viewModel?.updateBluetoothState(currentEnabled)
+        viewModel.updateBluetoothState(currentEnabled)
     }
 
     LaunchedEffect(Unit) {
@@ -192,8 +217,16 @@ fun DeviceSetupScreen(
         }
     }
 
+    // All of these can change in system settings while this screen is in the background.
+    LifecycleResumeEffect(Unit) {
+        hasBluetoothPermissions = BluetoothUtils.hasBluetoothPermissions(context)
+        isBluetoothEnabled = BluetoothUtils.isBluetoothEnabled(context)
+        isLocationOff = isLocationOffForBleScan(context)
+        onPauseOrDispose { }
+    }
+
     // Start scanning when permissions and Bluetooth are available; stop/cancel when unavailable
-    LaunchedEffect(isBluetoothEnabled, hasBluetoothPermissions, selectedAddress) {
+    LaunchedEffect(isBluetoothEnabled, hasBluetoothPermissions, selectedAddress, isLocationOff) {
         isScanning =
             selectedAddress == null && hasBluetoothPermissions && isBluetoothEnabled
     }
@@ -216,6 +249,16 @@ fun DeviceSetupScreen(
         selectedRssi = device.rssi
         optionalToken = ""
     }
+
+    fun clearSelection() {
+        selectedAddress = null
+        selectedName = null
+        selectedRssi = 0
+        optionalToken = ""
+    }
+
+    // With a device selected, going back returns to the list of found devices.
+    BackHandler(enabled = selectedAddress != null) { clearSelection() }
 
     fun addSelectedDevice(device: DiscoveredDevice) {
         val normalizedToken = normalizeAuthTokenInput(optionalToken)
@@ -241,42 +284,25 @@ fun DeviceSetupScreen(
                 tokenStorage.hexToBytes(normalizedToken)
             )
         }
-        viewModel?.addDevice(profile, makeActive = true)
-        if (normalizedToken.isNotEmpty()) {
-            viewModel?.checkPairingStatus()
-        }
-
-        if (mode == "add" && viewModel != null) {
-            if (navController.previousBackStackEntry?.destination?.route == "devices") {
-                navController.popBackStack()
-            } else {
-                navController.navigate("home") {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-        } else {
-            if (navController.previousBackStackEntry != null) {
-                navController.popBackStack()
-            } else {
-                navController.navigate("home") {
-                    popUpTo("setup") { inclusive = true }
-                }
-            }
-        }
+        viewModel.addDevice(profile)
+        navController.navigateToHomeRoot()
     }
 
-    fun onSkip() {
-        isScanning = false
-        if (navController.previousBackStackEntry != null) {
-            navController.popBackStack()
-        } else {
-            navController.navigate("home") {
-                popUpTo("setup") { inclusive = true }
+    Scaffold(
+        topBar = {
+            if (!isFirstRun) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.add_device_label)) },
+                    navigationIcon = {
+                        BackNavigationButton(
+                            navController = navController,
+                            onClick = if (selectedAddress != null) ::clearSelection else null
+                        )
+                    }
+                )
             }
         }
-    }
-
-    Scaffold { padding ->
+    ) { padding ->
         AdaptiveScreen(
             modifier = Modifier
                 .fillMaxSize()
@@ -293,14 +319,16 @@ fun DeviceSetupScreen(
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = stringResource(R.string.setup_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+                if (isFirstRun) {
+                    Text(
+                        text = stringResource(R.string.setup_title),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 Text(
                     text = stringResource(R.string.setup_subtitle),
@@ -313,6 +341,19 @@ fun DeviceSetupScreen(
 
                 if (selectedDevice == null) {
                     when {
+                        // Checked first: without the permission, the Bluetooth state cannot be
+                        // read and is reported as disabled, whatever it really is.
+                        !hasBluetoothPermissions -> {
+                            StatusCard(
+                                message = stringResource(R.string.permissions_required),
+                                type = StatusType.WARNING
+                            )
+                            if (bluetoothPermissionDenied) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                AppSettingsButton(modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+
                         !isBluetoothEnabled -> {
                             StatusCard(
                                 message = stringResource(R.string.setup_enable_bluetooth),
@@ -320,9 +361,9 @@ fun DeviceSetupScreen(
                             )
                         }
 
-                        !hasBluetoothPermissions -> {
+                        isLocationOff -> {
                             StatusCard(
-                                message = stringResource(R.string.permissions_required),
+                                message = stringResource(R.string.setup_enable_location),
                                 type = StatusType.WARNING
                             )
                         }
@@ -339,7 +380,7 @@ fun DeviceSetupScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    if (discoveredDevices.isEmpty() && !isScanning &&
+                    if (discoveredDevices.isEmpty() && !isScanning && !isLocationOff &&
                         hasBluetoothPermissions && isBluetoothEnabled
                     ) {
                         StatusCard(
@@ -382,6 +423,11 @@ fun DeviceSetupScreen(
                             Text(stringResource(R.string.setup_token_optional_label))
                         },
                         singleLine = true,
+                        // Password type keeps the keyboard from learning or "correcting" the token.
+                        keyboardOptions = KeyboardOptions(
+                            autoCorrectEnabled = false,
+                            keyboardType = KeyboardType.Password
+                        ),
                         textStyle = MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = FontFamily.Monospace
                         ),
@@ -394,31 +440,8 @@ fun DeviceSetupScreen(
                     ) {
                         Text(stringResource(R.string.setup_add_device))
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = {
-                            val mac = Uri.encode(
-                                selectedDevice.address.normalizedBluetoothMac()
-                            )
-                            navController.navigate("device-import/$mac")
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.setup_import_selected))
-                    }
                     TextButton(
-                        onClick = {
-                            selectedAddress = null
-                            selectedName = null
-                            selectedRssi = 0
-                            optionalToken = ""
-                        },
+                        onClick = { clearSelection() },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.setup_choose_another))
@@ -430,29 +453,56 @@ fun DeviceSetupScreen(
             }
 
             if (selectedDevice == null) {
-                Row(
+                val canScan = hasBluetoothPermissions && isBluetoothEnabled
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (hasBluetoothPermissions && isBluetoothEnabled) {
-                        OutlinedButton(
-                            onClick = {
-                                isScanning = true
-                            },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isScanning
-                        ) {
-                            Text(stringResource(R.string.setup_scan))
-                        }
+                    // Needs neither Bluetooth permissions nor the clock in range.
+                    OutlinedButton(
+                        onClick = { navController.navigate("device-import") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.setup_scan_qr))
                     }
 
-                    TextButton(
-                        onClick = { onSkip() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.setup_skip))
+                    if (canScan || isFirstRun) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (canScan) {
+                                OutlinedButton(
+                                    onClick = {
+                                        isScanning = true
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    enabled = !isScanning
+                                ) {
+                                    Text(stringResource(R.string.setup_scan))
+                                }
+                            }
+
+                            if (isFirstRun) {
+                                TextButton(
+                                    onClick = {
+                                        isScanning = false
+                                        navController.navigateToHomeRoot()
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(stringResource(R.string.setup_skip))
+                                }
+                            }
+                        }
                     }
                 }
             }

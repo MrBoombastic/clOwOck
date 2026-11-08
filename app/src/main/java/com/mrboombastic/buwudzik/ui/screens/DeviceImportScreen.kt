@@ -1,7 +1,8 @@
 package com.mrboombastic.buwudzik.ui.screens
 
 import android.Manifest
-import android.net.Uri
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,10 +45,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.google.zxing.BarcodeFormat
@@ -60,10 +60,10 @@ import com.google.zxing.PlanarYUVLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.AlarmTitleRepository
-import com.mrboombastic.buwudzik.data.DeviceProfile
 import com.mrboombastic.buwudzik.data.DeviceShareData
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.data.normalizedBluetoothMac
+import com.mrboombastic.buwudzik.ui.components.AppSettingsButton
 import com.mrboombastic.buwudzik.ui.components.ContentCard
 import com.mrboombastic.buwudzik.ui.components.StandardTopBar
 import com.mrboombastic.buwudzik.ui.utils.AdaptiveScreen
@@ -82,85 +82,85 @@ private val qrReader = MultiFormatReader().apply {
 }
 
 
+/**
+ * Adds a device from the QR code shown on another phone. The code says which device it is for,
+ * so the clock does not have to be in range. Scanning a code for a device already on this phone
+ * refreshes its token, which is how a rejected token gets replaced without losing the device.
+ */
 @Composable
 fun DeviceImportScreen(
     navController: NavController,
-    viewModel: MainViewModel,
-    selectedMac: String
+    viewModel: MainViewModel
 ) {
     val context = LocalContext.current
-    val targetMac = remember(selectedMac) {
-        Uri.decode(selectedMac).normalizedBluetoothMac()
-    }
-    var hasCameraPermission by remember { mutableStateOf(false) }
-    var isScanning by remember { mutableStateOf(true) }
+    fun isCameraGranted() = context.checkSelfPermission(
+        Manifest.permission.CAMERA
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    var hasCameraPermission by remember { mutableStateOf(isCameraGranted()) }
+    var cameraPermissionDenied by remember { mutableStateOf(false) }
     val defaultAlias = stringResource(R.string.default_device_alias)
     val importSuccessMsg = stringResource(R.string.import_success)
     val importErrorMsg = stringResource(R.string.import_error)
     val importTokenInvalidMsg = stringResource(R.string.import_token_invalid)
-    val qrDeviceMismatchMsg = stringResource(R.string.import_qr_device_mismatch)
 
-    fun completeImport(
-        tokenText: String,
-        batteryType: String,
-        alarmTitles: Map<Int, String> = emptyMap()
-    ): Boolean {
-        val normalizedToken = normalizeAuthTokenInput(tokenText)
-        if (targetMac.isBlank() || !isValidAuthTokenInput(normalizedToken)) {
-            Toast.makeText(
-                context,
-                importTokenInvalidMsg,
-                Toast.LENGTH_SHORT
-            ).show()
-            return false
+    fun showError(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    fun importSharedDevice(qrContent: String) {
+        val shareData = DeviceShareData.fromQrContent(qrContent)
+        val mac = shareData?.mac?.normalizedBluetoothMac()
+            ?.takeIf(BluetoothAdapter::checkBluetoothAddress)
+        if (shareData == null || mac == null) {
+            showError(importErrorMsg)
+            return
+        }
+
+        val normalizedToken = normalizeAuthTokenInput(shareData.token)
+        if (!isValidAuthTokenInput(normalizedToken)) {
+            showError(importTokenInvalidMsg)
+            return
         }
 
         try {
             val tokenStorage = TokenStorage(context)
-            val profile = DeviceProfile(
-                mac = targetMac,
-                alias = defaultAlias,
-                batteryType = batteryType
-            )
-
-            tokenStorage.storeToken(
-                profile.mac,
-                tokenStorage.hexToBytes(normalizedToken)
-            )
-            viewModel.addDevice(profile, makeActive = true)
-            alarmTitles.forEach { (id, title) ->
-                AlarmTitleRepository(context, profile.mac).setTitle(id, title)
+            val newToken = tokenStorage.hexToBytes(normalizedToken)
+            val replacedToken = tokenStorage.getToken(mac)
+                ?.takeUnless { it.contentEquals(newToken) }
+            tokenStorage.storeToken(mac, newToken)
+            val alarmTitleRepository = AlarmTitleRepository(context, mac)
+            shareData.alarmTitles.forEach { (id, title) ->
+                alarmTitleRepository.setTitle(id, title)
             }
-            viewModel.checkPairingStatus()
+            viewModel.addDevice(
+                shareData.toProfile(viewModel.getSavedDevice(mac), defaultAlias),
+                replacedToken
+            )
 
             Toast.makeText(context, importSuccessMsg, Toast.LENGTH_SHORT).show()
-            navController.navigate("home") {
-                popUpTo(navController.graph.id) { inclusive = true }
-            }
-            return true
+            navController.navigateToHomeRoot()
         } catch (_: Exception) {
-            Toast.makeText(
-                context,
-                importTokenInvalidMsg,
-                Toast.LENGTH_SHORT
-            ).show()
-            return false
+            showError(importTokenInvalidMsg)
         }
     }
 
     val permissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            hasCameraPermission = it
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            hasCameraPermission = granted
+            cameraPermissionDenied = !granted
         }
 
     LaunchedEffect(Unit) {
-        hasCameraPermission = context.checkSelfPermission(
-            Manifest.permission.CAMERA
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
+    }
+
+    // The permission may have been granted in system settings in the meantime.
+    LifecycleResumeEffect(Unit) {
+        hasCameraPermission = isCameraGranted()
+        onPauseOrDispose { }
     }
 
     Scaffold(
@@ -172,8 +172,7 @@ fun DeviceImportScreen(
         AdaptiveScreen(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .imePadding(),
+                .padding(padding),
             columnModifier = Modifier
                 .padding(16.dp)
         ) {
@@ -182,13 +181,7 @@ fun DeviceImportScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.import_selected_device, targetMac),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center
-                )
-
-                if (hasCameraPermission && isScanning) {
+                if (hasCameraPermission) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -214,40 +207,7 @@ fun DeviceImportScreen(
                                     ),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                QrScannerView { content ->
-                                    isScanning = false
-                                    val shareData = DeviceShareData.fromQrContent(content)
-                                    when {
-                                        shareData == null -> {
-                                            Toast.makeText(
-                                                context,
-                                                importErrorMsg,
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            isScanning = true
-                                        }
-
-                                        shareData.mac.normalizedBluetoothMac() != targetMac -> {
-                                            Toast.makeText(
-                                                context,
-                                                qrDeviceMismatchMsg,
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                            isScanning = true
-                                        }
-
-                                        else -> {
-                                            if (!completeImport(
-                                                    tokenText = shareData.token,
-                                                    batteryType = shareData.batteryType,
-                                                    alarmTitles = shareData.alarmTitles
-                                                )
-                                            ) {
-                                                isScanning = true
-                                            }
-                                        }
-                                    }
-                                }
+                                QrScannerView(onQrCodeScanned = ::importSharedDevice)
                             }
                             Surface(
                                 modifier = Modifier
@@ -280,7 +240,7 @@ fun DeviceImportScreen(
                             }
                         }
                     }
-                } else if (!hasCameraPermission) {
+                } else {
                     ContentCard(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     ) {
@@ -304,6 +264,9 @@ fun DeviceImportScreen(
                             )
                         }
                     }
+                    if (cameraPermissionDenied) {
+                        AppSettingsButton(modifier = Modifier.fillMaxWidth())
+                    }
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
@@ -321,8 +284,8 @@ private fun QrScannerView(
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var scanned by remember { mutableStateOf(false) }
 
-    // This view stays on screen only when a code was rejected. Resume scanning after a pause,
-    // so a rejected code still in front of the camera does not repeat the error on every frame.
+    // An accepted code leaves this screen, so this only runs for a rejected one. Resume after a
+    // pause, so a rejected code still in front of the camera does not repeat the error every frame.
     LaunchedEffect(scanned) {
         if (scanned) {
             delay(3.seconds)
@@ -356,9 +319,7 @@ private fun QrScannerView(
                                     surfaceProvider = previewView.surfaceProvider
                                 }
 
-                                val imageAnalysis = ImageAnalysis.Builder()
-                                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+                                val imageAnalysis = qrImageAnalysisBuilder()
                                     .build()
                                     .also { analysis ->
                                         analysis.setAnalyzer(ctx.mainExecutor) { imageProxy ->
@@ -395,6 +356,23 @@ private fun QrScannerView(
     )
 }
 
+
+/**
+ * On some models, such as MotoG3, CameraX corrects frames by shifting them one pixel in place.
+ * Custom ROMs for those phones can deliver frames that cannot be written to, and the write then
+ * crashes the app. Finding a QR code does not depend on one pixel, so the correction stays off.
+ *
+ * Affected models (YuvImageOnePixelShiftQuirk):
+ * https://github.com/androidx/androidx/blob/a24a86d80ca427ad77e7cda7d36d37fe13d399c6/camera/camera-camera2/src/main/java/androidx/camera/camera2/compat/quirk/YuvImageOnePixelShiftQuirk.kt#L27-L62
+ *
+ * Where ImageAnalysis applies it; an explicit value overrides the device list:
+ * https://github.com/androidx/androidx/blob/55e54e18102fbcdc3a4a6f68984c157dcbaaa852/camera/camera-core/src/main/java/androidx/camera/core/ImageAnalysis.java#L563-L576
+ */
+@SuppressLint("RestrictedApi")
+private fun qrImageAnalysisBuilder() = ImageAnalysis.Builder()
+    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+    .setOnePixelShiftEnabled(false)
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
 private fun processImageProxy(

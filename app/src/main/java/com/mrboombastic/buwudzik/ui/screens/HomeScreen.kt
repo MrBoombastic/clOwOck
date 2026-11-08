@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -73,13 +74,16 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavController
 import com.mrboombastic.buwudzik.R
 import com.mrboombastic.buwudzik.data.TokenStorage
 import com.mrboombastic.buwudzik.device.SensorData
+import com.mrboombastic.buwudzik.ui.components.AppSettingsButton
 import com.mrboombastic.buwudzik.ui.components.InstructionCard
 import com.mrboombastic.buwudzik.ui.components.MenuTile
 import com.mrboombastic.buwudzik.ui.components.NumberedStep
@@ -275,7 +279,8 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavController) {
                         .let { m ->
                             if (activeDevice != null) {
                                 // Top padding is manually applied to the chip above; we still need
-                                // the bottom padding so scrollable content doesn't hide under the FAB.
+                                // the bottom padding for the system bars. The FAB is handled
+                                // inside Dashboard.
                                 m.padding(bottom = padding.calculateBottomPadding())
                             } else {
                                 m.padding(padding)
@@ -501,6 +506,15 @@ fun Dashboard(
     var showAuthenticationTokenDialog by remember(activeDevice?.mac) {
         mutableStateOf(false)
     }
+    var hasBluetoothPermissions by remember {
+        mutableStateOf(BluetoothUtils.hasBluetoothPermissions(context))
+    }
+
+    // Also covers the system permission dialog, which pauses the app while it is open.
+    LifecycleResumeEffect(Unit) {
+        hasBluetoothPermissions = BluetoothUtils.hasBluetoothPermissions(context)
+        onPauseOrDispose { }
+    }
 
     if (showAuthenticationTokenDialog && activeDevice != null && !isPaired) {
         AlertDialog(
@@ -523,6 +537,11 @@ fun Dashboard(
                             Text(stringResource(R.string.import_token_label))
                         },
                         singleLine = true,
+                        // Password type keeps the keyboard from learning or "correcting" the token.
+                        keyboardOptions = KeyboardOptions(
+                            autoCorrectEnabled = false,
+                            keyboardType = KeyboardType.Password
+                        ),
                         textStyle = MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = FontFamily.Monospace
                         ),
@@ -581,7 +600,18 @@ fun Dashboard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (!isBluetoothEnabled) {
+        // Checked first: without the permission, the Bluetooth state cannot be read and is
+        // reported as disabled, whatever it really is.
+        if (!hasBluetoothPermissions) {
+            Text(
+                text = stringResource(R.string.permissions_required),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            AppSettingsButton(modifier = Modifier.padding(bottom = 16.dp))
+        } else if (!isBluetoothEnabled) {
             Text(
                 text = stringResource(R.string.bluetooth_disabled),
                 style = MaterialTheme.typography.titleMedium,
@@ -655,6 +685,13 @@ fun Dashboard(
                 ) {
                     Text(stringResource(R.string.have_token))
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                FilledTonalButton(
+                    onClick = { navController.navigate("device-import") },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    Text(stringResource(R.string.setup_scan_qr))
+                }
             }
         } else if (deviceConnecting && hasActiveDevice) {
             // Paired device (or fake): GATT connect in progress
@@ -664,69 +701,86 @@ fun Dashboard(
                 text = stringResource(R.string.connecting_to_device),
                 style = MaterialTheme.typography.bodyMedium
             )
-        } else if (sensorData == null) {
-            // We have a paired device but no broadcast data yet
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(stringResource(R.string.scanning_status))
         } else {
-            // Main Dashboard for paired (or fake) device with sensor data
-            if (!sensorData.name.isNullOrEmpty()) {
+            // Paired device. Readings are not required for connecting: the clock may not be
+            // broadcasting, for example while another phone is connected to it.
+            if (sensorData != null) {
+                if (!sensorData.name.isNullOrEmpty()) {
+                    Text(
+                        text = sensorData.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
                 Text(
-                    text = sensorData.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = "${
+                        String.format(
+                            LocalLocale.current.platformLocale,
+                            "%.1f",
+                            sensorData.temperature
+                        )
+                    }°C",
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
-            }
-            Text(
-                text = "${String.format(LocalLocale.current.platformLocale, "%.1f", sensorData.temperature)}°C",
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "${String.format(LocalLocale.current.platformLocale, "%.1f", sensorData.humidity)}%",
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.secondary
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = stringResource(R.string.battery_label, sensorData.battery),
-                    fontSize = 24.sp
+                    text = "${
+                        String.format(
+                            LocalLocale.current.platformLocale,
+                            "%.1f",
+                            sensorData.humidity
+                        )
+                    }%",
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.secondary
                 )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            val signalPercentage = BluetoothUtils.rssiToPercentage(sensorData.rssi)
-            Text(
-                text = stringResource(R.string.rssi_label, sensorData.rssi, signalPercentage),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            val dateFormat = SimpleDateFormat("HH:mm:ss", LocalLocale.current.platformLocale)
-            val timeString = dateFormat.format(Date(sensorData.timestamp))
-            Text(
-                text = stringResource(R.string.last_update_label, timeString),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Spacer(modifier = Modifier.height(32.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.battery_label, sensorData.battery),
+                        fontSize = 24.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                val signalPercentage = BluetoothUtils.rssiToPercentage(sensorData.rssi)
+                Text(
+                    text = stringResource(R.string.rssi_label, sensorData.rssi, signalPercentage),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val dateFormat = SimpleDateFormat("HH:mm:ss", LocalLocale.current.platformLocale)
+                val timeString = dateFormat.format(Date(sensorData.timestamp))
+                Text(
+                    text = stringResource(R.string.last_update_label, timeString),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            } else if (isBluetoothEnabled && !deviceConnected) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(stringResource(R.string.scanning_status))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             if (!deviceConnected) {
                 // Not connected via GATT
-                MenuTile(
-                    title = stringResource(R.string.connect_to_device),
-                    icon = Icons.Default.PhonelinkSetup,
-                    onClick = { viewModel.connectToDevice() },
-                    modifier = Modifier.fillMaxWidth(0.9f),
-                    arrangementH = Arrangement.Center
-                )
+                if (isBluetoothEnabled) {
+                    MenuTile(
+                        title = stringResource(R.string.connect_to_device),
+                        icon = Icons.Default.PhonelinkSetup,
+                        onClick = { viewModel.connectToDevice() },
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        arrangementH = Arrangement.Center
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 ShareDeviceButton(
                     navController = navController,
                     modifier = Modifier.fillMaxWidth(0.9f)
@@ -762,5 +816,9 @@ fun Dashboard(
                 )
             }
         }
+
+        // Scaffold padding leaves out the settings button, so without this the last button
+        // cannot be scrolled out from under it.
+        Spacer(modifier = Modifier.height(64.dp))
     }
 }

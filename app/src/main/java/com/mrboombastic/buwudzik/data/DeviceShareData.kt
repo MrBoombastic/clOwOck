@@ -15,8 +15,26 @@ data class DeviceShareData(
     val mac: String,
     val token: String,
     val batteryType: String = BatteryType.ALKALINE,
-    val alarmTitles: Map<Int, String> = emptyMap()
+    val alarmTitles: Map<Int, String> = emptyMap(),
+    val alias: String? = null       // Missing in QR codes from older app versions
 ) {
+    /**
+     * Profile to save for this QR code. A device already on this phone keeps its name and its
+     * place on the list; only the shared settings are updated.
+     */
+    fun toProfile(existing: DeviceProfile?, defaultAlias: String): DeviceProfile {
+        val sharedBatteryType =
+            batteryType.takeIf { it == BatteryType.ALKALINE || it == BatteryType.NIMH }
+        if (existing != null) {
+            return existing.copy(batteryType = sharedBatteryType ?: existing.batteryType)
+        }
+        return DeviceProfile(
+            mac = mac.normalizedBluetoothMac(),
+            alias = alias?.trim()?.takeIf { it.isNotEmpty() } ?: defaultAlias,
+            batteryType = sharedBatteryType ?: BatteryType.ALKALINE
+        )
+    }
+
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
 
