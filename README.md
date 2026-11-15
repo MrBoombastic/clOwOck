@@ -248,17 +248,17 @@ secondary payload. Firmware decompilation reveals byte 3 is a fixed delimiter wh
 definitive status code — e.g. `04 ff 01 00 06` is not a success with payload `06`, but error
 code `0x06` indicating pairing mode was not active.)*
 
-| Status | Meaning                                                              |
-|--------|----------------------------------------------------------------------|
-| `00`   | Success (`OK`)                                                       |
-| `01`   | Authentication failure (token mismatch)                              |
-| `02`   | Invalid state machine context (`ERR_INVALID_STATE`)                  |
-| `04`   | Parameter error (e.g. invalid alarm payload or audio block sequence) |
-| `05`   | Invalid length / payload size                                        |
-| `06`   | Pairing mode required (physical top button not held on fw ≥ 0130)    |
-| `07`   | SPI Flash memory write failure                                       |
-| `08`   | Storage error / device not bonded                                    |
-| `09`   | Busy / transfer rejected                                             |
+| Status | Meaning                                                               |
+|--------|-----------------------------------------------------------------------|
+| `00`   | Success (`OK`)                                                        |
+| `01`   | Authentication failure (token mismatch)                               |
+| `02`   | Invalid state machine context (`ERR_INVALID_STATE`)                   |
+| `04`   | Parameter error (e.g. invalid alarm payload or audio block sequence)  |
+| `05`   | Invalid length / payload size                                         |
+| `06`   | Pairing mode required (physical top button not held on fw ≥ 0130)     |
+| `07`   | SPI Flash memory write failure                                        |
+| `08`   | Storage error / device not bonded                                     |
+| `09`   | Command-specific; fast Audio Init link-length warning (see section 9) |
 
 #### 2.1. Length Byte per Command
 
@@ -617,6 +617,10 @@ app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it
   never acknowledge the final incomplete block and the upload will time out.
 - The PCM payload, including padding, must not exceed **98,304 bytes (96 KiB)**; at 8 kHz mono
   unsigned 8-bit PCM, this permits up to **12.288 seconds**. Larger declared sizes are rejected.
+- Enable Data Notify and wait for the CCC descriptor write callback before sending Init.
+- Negotiate ATT MTU before uploading: the app requests 247 and waits for `onMtuChanged`.
+  A 130-byte audio writing requires MTU of at least 133. ATT MTU and the firmware's
+  link-length gate are separate: a successful MTU negotiation can still be followed by Init `09`.
 
 **Step 1 - Init Command (Data Write):**
 
@@ -633,8 +637,10 @@ app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it
 04 ff 10 00 [Status]
 ```
 
-- Status `00` = success, proceed with upload (non-zero indicates failure, e.g. `05` = invalid size,
-  `09` = rejected/busy)
+- Status `00` = success. For fast Init, `09` reports the firmware's link-length gate:
+  the traced firmware has already activated the upload, so the app continues and requires
+  successful block ACKs. Other Init errors and missing ACKs abort the upload.
+- This exception applies only to fast Audio Init; block ACKs must still return `00`.
 
 **Step 3 - Send Audio Data:**
 

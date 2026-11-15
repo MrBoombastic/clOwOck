@@ -8,6 +8,25 @@ import kotlin.test.assertTrue
 
 class BleProtocolParserTest {
     @Test
+    fun `audio init accepts link gate warning but rejects errors and timeout`() {
+        assertTrue(acceptsAudioInitStatus(parseBleAck(hex("04 ff 10 00 09"))!!.status))
+        assertTrue(acceptsAudioInitStatus(0))
+        for (status in listOf(null, 1, 2, 4, 5, 6, 7, 8)) {
+            assertFalse(acceptsAudioInitStatus(status))
+        }
+    }
+
+    @Test
+    fun `fast audio packet must fit negotiated ATT MTU`() {
+        assertFalse(supportsFastAudioUpload(0))
+        assertFalse(supportsFastAudioUpload(23))
+        assertFalse(supportsFastAudioUpload(132))
+        assertTrue(supportsFastAudioUpload(133))
+        assertTrue(supportsFastAudioUpload(247))
+        assertTrue(supportsFastAudioUpload(517))
+    }
+
+    @Test
     fun `five byte ack extracts status at index 4`() {
         assertEquals(
             BleAck(command = 1, payloadSize = 0, status = 2, subIndex = 0, firstPayloadByte = null),

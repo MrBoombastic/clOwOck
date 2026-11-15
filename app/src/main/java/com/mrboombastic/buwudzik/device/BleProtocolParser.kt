@@ -1,5 +1,12 @@
 package com.mrboombastic.buwudzik.device
 
+// A fast audio write carries a two-byte header and 128 PCM bytes, plus three ATT bytes.
+internal fun supportsFastAudioUpload(mtu: Int): Boolean = mtu >= 133
+
+// Firmware activates fast upload before reporting 09 for its link-length gate.
+internal fun acceptsAudioInitStatus(status: Int?): Boolean =
+    status == BleConstants.Status.SUCCESS || status == BleConstants.Status.ERR_BUSY
+
 /** Parsed acknowledgement sent by the CGD1 notify characteristics. */
 internal data class BleAck(
     val command: Int,

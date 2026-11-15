@@ -43,6 +43,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -149,6 +150,9 @@ class BleDeviceController(private val context: Context) : DeviceController {
     private var pendingDataCommand: ByteArray? = null
     private val enabledNotifications = mutableSetOf<UUID>()
     private var writeCompleteDeferred: CompletableDeferred<Boolean>? = null
+    private var dataNotificationDeferred: CompletableDeferred<Boolean>? = null
+    private var mtuDeferred: CompletableDeferred<Int>? = null
+    private var negotiatedMtu = 23
 
     override var onSensorData: ((temperature: Float, humidity: Float) -> Unit)? = null
     override var onRssiUpdate: ((rssi: Int) -> Unit)? = null
@@ -166,6 +170,9 @@ class BleDeviceController(private val context: Context) : DeviceController {
         isConnected = false
         isAuthenticated = false
         enabledNotifications.clear()
+        dataNotificationDeferred?.complete(false)
+        mtuDeferred?.complete(0)
+        negotiatedMtu = 23
         authInitAckReceived = false
         authInitWriteCompleted = false
         authConfirmSent = false
@@ -547,6 +554,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
                         pendingAuthWrite = null
                     }
                     UUID_DATA_NOTIFY -> {
+                        dataNotificationDeferred?.complete(false)
                         val error = Exception("Enable data notification failed: $status")
                         alarmReadContinuation?.resumeWithException(error)
                         alarmReadContinuation = null
@@ -598,6 +606,7 @@ class BleDeviceController(private val context: Context) : DeviceController {
                 }
                 UUID_DATA_NOTIFY -> {
                     enabledNotifications.add(UUID_DATA_NOTIFY)
+                    dataNotificationDeferred?.complete(true)
                     pendingDataCommand?.let { cmd ->
                         AppLogger.d(TAG, "Descriptor write complete, now sending data command: ${cmd.toHexString()}...")
                         val dataService = gatt?.services?.find { it.getCharacteristic(UUID_DATA_WRITE) != null }
@@ -614,6 +623,12 @@ class BleDeviceController(private val context: Context) : DeviceController {
                     sensorNotificationContinuation = null
                 }
             }
+        }
+
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            AppLogger.d(TAG, "MTU negotiation: mtu=$mtu status=$status")
+            if (status == BluetoothGatt.GATT_SUCCESS) negotiatedMtu = mtu
+            mtuDeferred?.complete(if (status == BluetoothGatt.GATT_SUCCESS) mtu else 0)
         }
 
         override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
@@ -1103,13 +1118,47 @@ class BleDeviceController(private val context: Context) : DeviceController {
         )
 
         if (!enabledNotifications.contains(UUID_DATA_NOTIFY)) {
-            currentGatt.setCharacteristicNotification(dataNotifyChar, true)
+            if (!currentGatt.setCharacteristicNotification(dataNotifyChar, true)) {
+                AppLogger.e(TAG, "Audio upload aborted: could not register data notifications")
+                return false
+            }
             val descriptor = dataNotifyChar.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG)
-            if (descriptor != null && !writeDescriptorWithRetry(currentGatt, descriptor)) {
+            if (descriptor == null) {
+                AppLogger.e(TAG, "Audio upload aborted: data notification descriptor not found")
+                return false
+            }
+            val deferred = CompletableDeferred<Boolean>()
+            dataNotificationDeferred = deferred
+            val notificationsEnabled = try {
+                withTimeoutOrNull(TIMEOUT_OPERATION.milliseconds) {
+                    writeDescriptorWithRetry(currentGatt, descriptor) && deferred.await()
+                } == true
+            } finally {
+                dataNotificationDeferred = null
+            }
+            if (!notificationsEnabled) {
                 AppLogger.e(TAG, "Audio upload aborted: could not enable data notifications")
                 return false
             }
-            delay(DELAY_ALARM_RELOAD.milliseconds)
+        }
+
+        if (!supportsFastAudioUpload(negotiatedMtu)) {
+            val deferred = CompletableDeferred<Int>()
+            mtuDeferred = deferred
+            val mtu = try {
+                withTimeoutOrNull(TIMEOUT_OPERATION.milliseconds) {
+                    if (currentGatt.requestMtu(247)) deferred.await() else 0
+                } ?: 0
+            } finally {
+                mtuDeferred = null
+            }
+            if (!supportsFastAudioUpload(mtu)) {
+                AppLogger.e(
+                    TAG,
+                    "Audio upload aborted: MTU negotiation failed or MTU too small ($mtu)"
+                )
+                return false
+            }
         }
 
         // Send Init
@@ -1123,9 +1172,15 @@ class BleDeviceController(private val context: Context) : DeviceController {
             return false
         }
         val initStatus = awaitUploadAck(AUDIO_INIT_ACK_WAIT_ITERATIONS) { uploadInitAckStatus }
-        if (!isSuccessfulUploadStatus(initStatus)) {
+        if (!acceptsAudioInitStatus(initStatus)) {
             AppLogger.e(TAG, "Audio upload aborted: Audio Init ACK status ${initStatus?.toHexString() ?: "timeout"}")
             return false
+        }
+        if (initStatus == Status.ERR_BUSY) {
+            AppLogger.w(
+                TAG,
+                "Audio Init returned 09 (link-length gate); continuing with block ACK validation"
+            )
         }
 
         val packetSize = AUDIO_PACKET_SIZE
@@ -1215,14 +1270,11 @@ class BleDeviceController(private val context: Context) : DeviceController {
     }
 
     private suspend fun writeCharAndWait(characteristic: BluetoothGattCharacteristic, data: ByteArray): Boolean {
-        val currentGatt = gatt ?: return false
+        if (gatt == null) return false
         val deferred = CompletableDeferred<Boolean>()
         writeCompleteDeferred = deferred
-        if (!writeCharacteristicCompat(currentGatt, characteristic, data)) {
-            writeCompleteDeferred = null
-            return false
-        }
         return try {
+            if (!writeCharacteristicWithRetry(characteristic, data, RETRY_GATT_BUSY)) return false
             withTimeout(TIMEOUT_OPERATION.milliseconds) { deferred.await() }
         } catch (_: Exception) {
             false
