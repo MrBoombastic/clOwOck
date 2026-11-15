@@ -12,7 +12,7 @@ import androidx.navigation.NavBackStackEntry
 
 /**
  * Consistent navigation animations across the app.
- * All screen transitions use horizontal slide with fade.
+ * All screen transitions use a horizontal slide with a fade.
  */
 object NavigationAnimations {
     private const val ANIMATION_DURATION = 300

@@ -42,7 +42,7 @@
 </div>
 
 
-Android app for the Qingping Cleargrass CGD1 (`cgllc.clock.dove`) - Bluetooth LE alarm clock with
+Android app for the Qingping Cleargrass CGD1 (`cgllc.clock.dove`) - a Bluetooth LE alarm clock with
 sensors.
 
 <details>
@@ -84,7 +84,7 @@ sensors.
 
 ## Warning
 
-App was largely created using LLMs. I still have reviewed the code,
+The app was largely created using LLMs. I did review the code,
 so it's only semi-slop, but you have been warned, etc., etc.
 
 ## Features
@@ -239,7 +239,7 @@ Consequently, an **ACK is always exactly 5 bytes**: `04 ff [Command] 00 [Status]
 - **Byte 1 (`0xFF`):** Response / ACK indicator opcode.
 - **Byte 2 (`[Command]`):** Echoed command identifier (e.g. `01`, `02`, `03`, `05`, `08`, `09`,
   `10`).
-- **Byte 3 (`0x00`):** Fixed separator / sub-index (always `0x00` for command responses).
+- **Byte 3 (`0x00`):** Fixed separator / subindex (always `0x00` for command responses).
 - **Byte 4 (`[Status]`):** Actual status / return code of the operation (`0x00` = Success,
   non-zero = Error).
 
@@ -279,8 +279,8 @@ values as named constants:
 
 #### 2.2. Authentication & Pairing (Token Protocol)
 
-The device uses a 16-byte random token for authentication. Firmwares handle token provisioning (
-bonding) and session authentication as two distinct operations:
+The device uses a 16-byte random token for authentication. The firmware handles token provisioning
+(bonding) and session authentication as two distinct operations:
 
 - **Auth Init (`11 01 [Token 16B]`):** Flash Token Provisioning / Bonding.  
   Writes the 16-byte token to persistent SPI Flash. On firmware ≥ `1.0.1_0130`, the device checks
@@ -360,7 +360,7 @@ To create or modify an alarm:
 
 #### 3.2. Alarm Payload (5 bytes)
 
-The 5-byte alarm entry structure used in both **Set Alarm** and **Read Alarms**:
+The following 5-byte alarm entry structure is used in both **Set Alarm** and **Read Alarms**:
 
 | Byte | Description   | Range / Values                            |
 |------|---------------|-------------------------------------------|
@@ -431,10 +431,11 @@ This byte acts as a **bitfield** where individual bits control specific boolean 
 > Bit 3 (`0x08`) stores the auto/manual time synchronization setting; no functional use was found in
 > the analyzed firmware paths.
 
-**Workaround:** Disabling night mode is being done via setting 1-minute night mode (i.e.
+**Workaround:** Night mode is disabled by setting a 1-minute night mode window (i.e.
 `00:00 - 00:01`). Yup, it's that stupid; even an official app does this (it uses `21:00 - 21:01`).
-Firmware has no night mode on/off switch: it picks the night brightness whenever the current time
-is within `[start, end)` (equal start and end means all day). clOwOck therefore treats a
+The firmware has no night mode on/off switch: it picks the night brightness whenever the current
+time
+is within `[start, end)` (equal start and end times mean all day). clOwOck therefore treats a
 1-minute window exactly as disabled when reading settings, regardless of byte 14.
 
 #### 4.1. Set Immediate Brightness (Preview)
@@ -519,7 +520,7 @@ and the version string occupies 10 bytes.
 
 #### Known Ringtone Signatures
 
-Official apps are using these 4-byte signatures to identify ringtones:
+Official apps use these 4-byte signatures to identify ringtones:
 
 | Ringtone           | Signature (Hex) |
 |--------------------|-----------------|
@@ -542,21 +543,22 @@ For uploading custom ringtones, clOwOck uses these alternating slot signatures:
 | Custom 1 | `de ad de ad`   |
 | Custom 2 | `be ef be ef`   |
 
-**Important:** Always alternate between slots when uploading new custom audio. Doesn't matter how
+**Important:** Always alternate between slots when uploading new custom audio. It doesn't matter how
 you name it. The device may reject
-uploads if the target signature matches the currently active ringtone, but audio itself is different
+uploads if the target signature matches the currently active ringtone, but the audio itself is
+different
 from the one you are uploading.
 
 #### Custom Ringtone JSON Manifest
 
 If you want to host your own ringtone repository, you can create a JSON manifest file. Just point to
 a JSON file (e.g., `https://example.com/rings/index.json`), and clOwOck will parse the manifest for
-ringtone URLs
+ringtone URLs.
 
 **Manifest Format:**
 
 The JSON file should map hex signatures to objects containing at least a `"wav"` URL. The official
-app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it on its own.
+app uses an additional `"pcm"` field, but clOwOck takes the WAV file and converts it on its own.
 
 ```json
 {
@@ -599,8 +601,8 @@ app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it
 }
 ```
 
-**Key:** Hex signature (without `0x` prefix).  
-**Value:** Object with `name` (display name) and `wav` (full URL to WAV file).
+**Key:** Hex signature (without the `0x` prefix).<br>
+**Value:** Object with `name` (display name) and `wav` (full URL to the WAV file).
 
 #### Upload Protocol
 
@@ -611,7 +613,8 @@ app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it
 - Decode/resample the source file to 8-bit unsigned PCM, 8000 Hz, mono (stereo sources can be
   mixed down or taken from a single channel)
 - Pad the result to a multiple of **512 bytes**: the first padding byte is `00` (end-of-audio
-  marker), the remaining ones are `FF`. **This alignment is mandatory:** the firmware's fast audio
+  marker), and the remaining ones are `FF`. **This alignment is mandatory:** the firmware's fast
+  audio
   receiver strictly expects 128-byte packets and only commits data and sends a block ACK every 4
   packets (512 bytes). If the total stream is not an exact multiple of 512 bytes, the clock will
   never acknowledge the final incomplete block and the upload will time out.
@@ -619,7 +622,7 @@ app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it
   unsigned 8-bit PCM, this permits up to **12.288 seconds**. Larger declared sizes are rejected.
 - Enable Data Notify and wait for the CCC descriptor write callback before sending Init.
 - Negotiate ATT MTU before uploading: the app requests 247 and waits for `onMtuChanged`.
-  A 130-byte audio writing requires MTU of at least 133. ATT MTU and the firmware's
+  A 130-byte audio write requires an ATT MTU of at least 133. ATT MTU and the firmware's
   link-length gate are separate: a successful MTU negotiation can still be followed by Init `09`.
 
 **Step 1 - Init Command (Data Write):**
@@ -651,7 +654,7 @@ app uses an additional `"pcm"` field, but clOwOck takes the Wave and converts it
   continuing.
 - The fast receiver handles four 128-byte packets per block, so transmitted audio must be 512-byte
   aligned.
-- Write every packet with *write-with-response* and wait for the writing callback; short delays
+- Write every packet with *write-with-response* and wait for the write callback; short delays
   between packets keep the device from falling behind.
 
 | Status | Meaning                                                                                                                                |
@@ -672,7 +675,7 @@ screen on and the link alive until it finishes.
 
 ### 10. Known Command IDs Summary
 
-The first column is the length byte, the second one the actual command:
+The first column is the length byte; the second is the actual command:
 
 | Len | Cmd | Characteristic | Description                              |
 |-----|-----|----------------|------------------------------------------|

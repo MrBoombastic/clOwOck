@@ -9,8 +9,8 @@ import com.mrboombastic.buwudzik.utils.AppLogger
 import com.mrboombastic.buwudzik.widget.WidgetUpdateScheduler
 
 /**
- * Receiver that triggers widget update after device boot.
- * Also, re-schedules periodic updates since AlarmManager alarms are cleared on reboot.
+ * Receiver that triggers a widget update after the device boots.
+ * Also, reschedules periodic updates since AlarmManager alarms are cleared on reboot.
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -26,7 +26,7 @@ class BootReceiver : BroadcastReceiver() {
             val settingsRepository = SettingsRepository(context)
             val intervalMinutes = settingsRepository.updateInterval
 
-            // Re-schedule periodic updates using AlarmManager (alarms are cleared on reboot)
+            // Reschedule periodic updates using AlarmManager (alarms are cleared on reboot)
             WidgetUpdateScheduler.scheduleUpdates(context, intervalMinutes)
 
             // Use a separate alarm so it does not replace the repeating update PendingIntent.

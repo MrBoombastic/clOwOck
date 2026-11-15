@@ -17,7 +17,7 @@ import com.mrboombastic.buwudzik.utils.TimeFormatUtils
  * @param minute Minute value (0-59)
  * @param modifier Optional modifier
  * @param enabled Whether the card is enabled
- * @param onClick Callback when card is clicked
+ * @param onClick Callback when the card is clicked
  */
 @Composable
 fun TimePickerCard(

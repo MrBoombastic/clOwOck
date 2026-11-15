@@ -120,7 +120,7 @@ fun SettingsScreen(navController: NavController, viewModel: MainViewModel) {
         }
     }
 
-    // Load version name asynchronously to avoid blocking main thread
+    // Load the version name asynchronously to avoid blocking the main thread
     LaunchedEffect(Unit) {
         val fetchedVersionName = withContext(Dispatchers.IO) {
             try {

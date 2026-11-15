@@ -103,7 +103,7 @@ class AudioConverter(private val context: Context) {
     }
 
     /**
-     * Convert audio file to PCM U8 8kHz mono
+     * Convert an audio file to PCM U8 8kHz mono
      */
     fun convertToPcm(
         uri: Uri,
@@ -260,8 +260,8 @@ class AudioConverter(private val context: Context) {
     }
 
     /**
-     * Add padding to align to block boundary.
-     * First 2 bytes are 0x00 (end marker), rest is 0xFF (silence).
+     * Add padding to align to a block boundary.
+     * The first 2 bytes are 0x00 (end marker); the rest are 0xFF (silence).
      */
     fun addPadding(data: ByteArray): ByteArray {
         val remainder = data.size % PADDING_BOUNDARY

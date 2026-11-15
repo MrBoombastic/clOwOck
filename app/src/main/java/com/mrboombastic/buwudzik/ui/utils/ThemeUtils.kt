@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatDelegate
 object ThemeUtils {
 
     /**
-     * Convert theme string to AppCompat night mode constant
+     * Convert a theme string to an AppCompat night mode constant
      */
     fun themeToNightMode(theme: String): Int = when (theme) {
         "light" -> AppCompatDelegate.MODE_NIGHT_NO

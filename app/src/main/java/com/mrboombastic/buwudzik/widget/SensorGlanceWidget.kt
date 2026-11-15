@@ -78,7 +78,7 @@ class SensorGlanceWidget : GlanceAppWidget() {
                 val sensorRepo = com.mrboombastic.buwudzik.data.SensorRepository(context, mac)
                 val settingsRepo = com.mrboombastic.buwudzik.data.SettingsRepository(context)
 
-                // Fallback to repo if prefs are empty (e.g. first run or migration)
+                // Fall back to the repo if prefs are empty (e.g. first run or migration)
                 val temp = prefs[KEY_TEMP] ?: sensorRepo.getSensorData()?.temperature
                 val humidity = prefs[KEY_HUMIDITY] ?: sensorRepo.getSensorData()?.humidity
                 val battery = prefs[KEY_BATTERY] ?: sensorRepo.getSensorData()?.battery ?: 0

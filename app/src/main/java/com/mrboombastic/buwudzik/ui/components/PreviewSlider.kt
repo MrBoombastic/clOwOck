@@ -18,10 +18,10 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  * @param label Slider label
  * @param value Current value
- * @param onValueChange Called when value changes (not debounced)
- * @param onValueChangeFinished Called when user finishes changing value
+ * @param onValueChange Called when the value changes (not debounced)
+ * @param onValueChangeFinished Called when the user finishes changing the value
  * @param modifier Optional modifier
- * @param enabled Whether slider is enabled
+ * @param enabled Whether the slider is enabled
  * @param onPreview Called with debouncing for preview updates (optional)
  * @param valueRange Range of values
  * @param steps Number of steps

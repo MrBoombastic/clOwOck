@@ -349,7 +349,7 @@ fun RingtoneUploadScreen(navController: NavController, viewModel: MainViewModel)
                 trimDurationMs = durationMs
                 showAudioTrimmer = false
 
-                // Use online ringtone signature if selected, otherwise fallback to custom slot
+                // Use the online ringtone signature if selected; otherwise, fall back to a custom slot
                 val targetSig =
                     selectedOnlineRingtone?.signature ?: BleConstants.getCustomSlotSignature(
                         currentSignature

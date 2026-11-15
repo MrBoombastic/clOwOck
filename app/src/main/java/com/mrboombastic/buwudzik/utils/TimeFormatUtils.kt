@@ -7,7 +7,7 @@ import java.util.Locale
 object TimeFormatUtils {
 
     /**
-     * Format milliseconds to time string with optional minutes
+     * Format milliseconds as a time string with optional minutes
      * @param ms Time in milliseconds
      * @return Formatted string like "1:23.4" or "23.4" (without minutes if < 1 min)
      */
@@ -24,7 +24,7 @@ object TimeFormatUtils {
     }
 
     /**
-     * Format milliseconds to time input format (always includes minutes)
+     * Format milliseconds for time input (always includes minutes)
      * @param ms Time in milliseconds
      * @return Formatted string like "1:23.4"
      */
@@ -37,7 +37,7 @@ object TimeFormatUtils {
     }
 
     /**
-     * Parse time input string to milliseconds
+     * Parse a time input string into milliseconds
      * Supports formats:
      * - "123" -> 123 seconds
      * - "1:23" -> 1 minute 23 seconds
@@ -72,7 +72,7 @@ object TimeFormatUtils {
     }
 
     /**
-     * Format absolute timestamp to date and time string
+     * Format an absolute timestamp as a date and time string
      * @param timestampMs Timestamp in milliseconds
      * @param locale Locale for formatting
      * @return Formatted string like "12.02 14:30"
@@ -83,7 +83,7 @@ object TimeFormatUtils {
     }
 
     /**
-     * Format hour and minute to time string
+     * Format the hour and minute as a time string
      * @param hour Hour (0-23)
      * @param minute Minute (0-59)
      * @return Formatted string like "14:30"

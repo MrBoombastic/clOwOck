@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        // Stop BLE scanning and active connection when the app goes to the background.
+        // Stop BLE scanning and the active connection when the app goes to the background.
         // The connection is only suspended: system pickers (audio file chooser, permission
         // dialogs) pause the activity too, so it has to come back when the user returns.
         mainViewModel?.stopScanning()
@@ -147,7 +147,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         /**
-         * Force reschedule updates with a new interval.
+         * Force updates to be rescheduled with a new interval.
          * Call this when the user changes the update interval in settings.
          */
         fun rescheduleUpdates(context: Context, intervalMinutes: Long) {

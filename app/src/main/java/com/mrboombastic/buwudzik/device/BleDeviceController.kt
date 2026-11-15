@@ -51,7 +51,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Controller for QP CGD1 device via BLE GATT
+ * Controller for the QP CGD1 device via BLE GATT
  * Maintains a persistent connection with the device
  */
 @SuppressLint("MissingPermission")
@@ -1370,14 +1370,14 @@ class BleDeviceController(private val context: Context) : DeviceController {
                 currentGatt.setCharacteristicNotification(sensorNotifyChar, true)
                 val descriptor = sensorNotifyChar.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG)
                 if (descriptor == null) {
-                    // Nothing to wait for: without a CCC descriptor the local enable is all there is.
+                    // Nothing to wait for: without a CCC descriptor, only local notification enabling is needed.
                     sensorNotificationContinuation = null
                     continuation.resume(true)
                     return@suspendCancellableCoroutine
                 }
                 continuation.invokeOnCancellation { sensorNotificationContinuation = null }
                 scope.launch {
-                    // Right after authentication the stack may still be finishing the previous
+                    // Right after authentication, the stack may still be finishing the previous
                     // operation, so retry instead of giving up on the first "GATT busy".
                     if (!writeDescriptorWithRetry(currentGatt, descriptor) &&
                         sensorNotificationContinuation === continuation

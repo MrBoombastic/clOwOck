@@ -300,7 +300,7 @@ fun AudioTrimmerDialog(
     val estimatedSize = rawSize + paddingNeeded
     val isValidSize = estimatedSize <= MAX_AUDIO_SIZE && selectionDurationMs > 0
 
-    // Cleanup media player on disposal
+    // Clean up the media player on disposal
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer?.release()
@@ -467,7 +467,7 @@ fun AudioTrimmerDialog(
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center)
                     )
 
-                    // Apply button implicit on blur, but also on keyboard done
+                    // Apply implicitly on focus loss and when the keyboard's Done action is pressed
 
                     Row {
                         IconButton(onClick = { seekBy(-200) }) {
@@ -485,7 +485,7 @@ fun AudioTrimmerDialog(
                     }
                 }
 
-                // Apply time input when focus lost
+                // Apply time input when focus is lost
                 LaunchedEffect(startTimeText) {
                     delay(500.milliseconds) // Debounce
                     parseAndSetStartTime(startTimeText)

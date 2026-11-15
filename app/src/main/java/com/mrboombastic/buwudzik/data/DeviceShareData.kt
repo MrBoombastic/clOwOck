@@ -39,7 +39,7 @@ data class DeviceShareData(
         private val json = Json { ignoreUnknownKeys = true }
 
         /**
-         * Decode from Base64-encoded JSON string (from QR code).
+         * Decode from a Base64-encoded JSON string (from a QR code).
          * Returns null if decoding fails.
          */
         fun fromQrContent(content: String): DeviceShareData? {
@@ -54,7 +54,7 @@ data class DeviceShareData(
     }
 
     /**
-     * Encode to Base64-encoded JSON string for QR code.
+     * Encode as a Base64-encoded JSON string for a QR code.
      */
     fun toQrContent(): String {
         val jsonString = json.encodeToString(this)

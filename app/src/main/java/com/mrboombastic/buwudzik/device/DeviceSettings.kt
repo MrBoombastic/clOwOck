@@ -59,10 +59,10 @@ data class DeviceSettings(
     }
 
     /**
-     * Get the ringtone name. Returns null for custom ringtones - caller should use localized string.
+     * Get the ringtone name. Returns null for custom ringtones - the caller should use a localized string.
      */
     fun getRingtoneName(): String? {
-        // Check for custom slots first - return null so the caller can use localized string
+        // Check for custom slots first - return null so the caller can use a localized string
         if (BleConstants.isCustomSlot(ringtoneSignature)) return null
         // Then check standard ringtones
         return BleConstants.RINGTONE_SIGNATURES.entries.find {
@@ -87,7 +87,7 @@ fun TimeZone.encodeOffsetSign(): Byte {
 
 /**
  * Firmware applies night brightness purely from the schedule (start inclusive, end exclusive; equal
- * start and end means all day), so apps "disable" it with a 1-minute window (this app uses
+ * start and end times mean all day), so apps "disable" it with a 1-minute window (this app uses
  * 00:00-00:01, Qingping+ 21:00-21:01). Deriving the state from the window keeps it correct regardless
  * of which app wrote the settings or how it interpreted the night mode flag byte.
  */

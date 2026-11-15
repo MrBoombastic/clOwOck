@@ -3,7 +3,7 @@ package com.mrboombastic.buwudzik.device
 // A fast audio write carries a two-byte header and 128 PCM bytes, plus three ATT bytes.
 internal fun supportsFastAudioUpload(mtu: Int): Boolean = mtu >= 133
 
-// Firmware activates fast upload before reporting 09 for its link-length gate.
+// The firmware activates fast upload before reporting 09 for its link-length gate.
 internal fun acceptsAudioInitStatus(status: Int?): Boolean =
     status == BleConstants.Status.SUCCESS || status == BleConstants.Status.ERR_BUSY
 
@@ -27,7 +27,7 @@ internal data class BleAck(
  * - Byte 4: `[status]` (return/error code: 0x00 = success, non-zero = error)
  *
  * If extra payload follows (size > 5), it is captured in `firstPayloadByte`.
- * If a truncated 4-byte frame is received (`04 ff [command] [status]`), index 3 is taken as status.
+ * If a truncated 4-byte frame is received (`04 ff [command] [status]`), index 3 is taken as the status.
  */
 internal fun parseBleAck(value: ByteArray): BleAck? {
     if (value.size < 4 || value[0] != 0x04.toByte() || value[1] != 0xff.toByte()) return null
@@ -44,7 +44,7 @@ internal fun parseBleAck(value: ByteArray): BleAck? {
             firstPayloadByte = value.getOrNull(5)?.toInt()?.and(0xff)
         )
     } else {
-        // Fallback for truncated 4-byte frame
+        // Fallback for a truncated 4-byte frame
         val status = value[3].toInt() and 0xff
         BleAck(
             command = command,

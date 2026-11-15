@@ -11,7 +11,7 @@ import java.security.SecureRandom
 /**
  * Manages auth tokens for paired QP devices.
  * Each device (by MAC address) gets its own unique 16-byte token.
- * Token is generated randomly during the first pairing and stored for future use.
+ * The token is generated randomly during the first pairing and stored for future use.
  */
 class TokenStorage(context: Context) {
 
@@ -40,7 +40,7 @@ class TokenStorage(context: Context) {
     }
 
     /**
-     * Get the stored token as hex string or null if not paired yet.
+     * Get the stored token as a hex string or null if not paired yet.
      */
     fun getTokenHex(macAddress: String): String? {
         val key = macAddressToKey(macAddress)
@@ -89,19 +89,19 @@ class TokenStorage(context: Context) {
     internal fun tokenPreferenceKey(macAddress: String): String = macAddressToKey(macAddress)
 
     private fun macAddressToKey(macAddress: String): String {
-        // Convert MAC to safe key: "58:2D:34:50:A0:81" -> "token_58_2d_34_50_a0_81"
+        // Convert the MAC address to a safe key: "58:2D:34:50:A0:81" -> "token_58_2d_34_50_a0_81"
         return "token_${macAddress.lowercase().replace(":", "_")}"
     }
 
     /**
-     * Convert bytes to hex string.
+     * Convert bytes to a hex string.
      */
     fun bytesToHex(bytes: ByteArray): String {
         return HexUtils.bytesToHex(bytes)
     }
 
     /**
-     * Convert hex string to bytes.
+     * Convert a hex string to bytes.
      */
     fun hexToBytes(hex: String): ByteArray {
         return HexUtils.hexToBytes(hex)

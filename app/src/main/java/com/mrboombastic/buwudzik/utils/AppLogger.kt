@@ -55,7 +55,7 @@ object AppLogger {
     private fun getCallerInfo(): String {
         // Optimize: throwable stack trace is usually faster than thread stack trace on Android
         val stackTrace = Throwable().stackTrace
-        // Find the first frame that is NOT AppLogger and NOT internal VM calls
+        // Find the first frame that is neither an AppLogger call nor an internal VM call
         val caller = stackTrace.firstOrNull { element ->
             val className = element.className
             className != AppLogger::class.java.name &&

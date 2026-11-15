@@ -164,7 +164,7 @@ object BleConstants {
         byteArrayOf(0xbe.toByte(), 0xef.toByte(), 0xbe.toByte(), 0xef.toByte()) // beef
 
     /**
-     * Get the appropriate custom slot to use (alternates between dead and beef based on current)
+     * Get the appropriate custom slot to use (alternates between dead and beef based on the current slot)
      */
     fun getCustomSlotSignature(currentSignature: ByteArray?): ByteArray {
         return if (currentSignature?.contentEquals(CUSTOM_RINGTONE_SLOT_1) == true) {
@@ -175,7 +175,7 @@ object BleConstants {
     }
 
     /**
-     * Check if the signature is a custom slot (for i18n - caller should use localized string)
+     * Check if the signature is a custom slot (for i18n - the caller should use a localized string)
      */
     fun isCustomSlot(signature: ByteArray): Boolean {
         return signature.contentEquals(CUSTOM_RINGTONE_SLOT_1) || signature.contentEquals(
