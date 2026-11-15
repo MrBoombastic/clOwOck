@@ -18,8 +18,8 @@ configure<com.android.build.api.variant.ApplicationAndroidComponentsExtension> {
 
 var minSDK = 29
 var targetSDK = 37
-var version = 53
-var name = "1.13.0"
+var version = 54
+var name = "1.13.1"
 
 configure<ApplicationExtension> {
     val canaryBuild = providers.gradleProperty("CANARY_BUILD").orNull
